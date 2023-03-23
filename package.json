@@ -1,16 +1,59 @@
 {
-  "name": "songtimer",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "song-timer",
+  "description": "Awesome Nuxt 3 app 🥳",
+  "version": "0.1.0",
+  "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "export NODE_OPTIONS=--openssl-legacy-provider; nuxi dev",
+    "build": "export NODE_OPTIONS=--openssl-legacy-provider; nuxi build",
+    "start": "export NODE_OPTIONS=--openssl-legacy-provider; node .output/server/index.mjs",
+    "generate": "export NODE_OPTIONS=--openssl-legacy-provider; nuxi generate",
+    "lint": "npm run lint:eslint && npm run lint:prettier && npm run lint:css",
+    "lintfix": "npm run lint:eslint:fix && npm run lint:prettier:fix && npm run lint:css:fix",
+    "lint:js": "npm run lint:eslint && npm run lint:prettier",
+    "lint:eslint": "eslint \"{,!(node_modules|.nuxt|dist|static)/**/}*.{js,cjs,json,ts,vue}\" --ignore-path .gitignore",
+    "lint:eslint:fix": "eslint --fix \"{,!(node_modules|.nuxt|dist|static)/**/}*.{js,cjs,json,ts,vue}\" --ignore-path .gitignore",
+    "lint:prettier": "prettier --check \"{,!(node_modules|.nuxt|dist|static)/**/}*.{js,cjs,json,ts,vue}\" --ignore-path .gitignore",
+    "lint:prettier:fix": "prettier --write \"{,!(node_modules|.nuxt|dist|static)/**/}*.{js,cjs,json,ts,vue}\" --ignore-path .gitignore",
+    "lint:css": "stylelint \"{,!(node_modules|.nuxt|dist|static)/**/}*.{css,scss,sass,vue}\" --ignore-path .gitignore",
+    "lint:css:fix": "stylelint --fix \"{,!(node_modules|.nuxt|dist|static)/**/}*.{css,scss,sass,vue}\" --ignore-path .gitignore",
+    "prepare": "husky install"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "@ffmpeg/core": "^0.11.0",
     "@ffmpeg/ffmpeg": "^0.11.6",
-    "express": "^4.18.2"
-  }
+    "@picocss/pico": "^1.5.7",
+    "wavesurfer.js": "^6.6.1"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.1.2",
+    "@commitlint/config-conventional": "^17.1.0",
+    "@ffmpeg/core": "^0.11.0",
+    "@nuxt/types": "^2.15.8",
+    "@types/wavesurfer.js": "^6.0.3",
+    "@typescript-eslint/eslint-plugin": "^5.41.0",
+    "@typescript-eslint/parser": "^5.41.0",
+    "@vinayakkulkarni/prettier-config-vue": "^1.0.0",
+    "eslint": "^8.26.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-jsdoc": "^39.6.1",
+    "eslint-plugin-nuxt": "^4.0.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-security": "^1.5.0",
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.3",
+    "nuxt": "^3.0.0-rc.12",
+    "nuxt-windicss": "^2.5.2",
+    "prettier": "^2.8.1",
+    "shipjs": "^0.24.4",
+    "stylelint": "^14.15.0",
+    "stylelint-config-prettier": "^9.0.3",
+    "stylelint-config-recommended-vue": "^1.4.0",
+    "stylelint-config-standard": "^29.0.0",
+    "typescript": "^4.8.4"
+  },
+  "engines": {
+    "node": ">=17.8.0",
+    "npm": ">=8.5.5"
+  },
+  "license": "MIT"
 }
