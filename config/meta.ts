@@ -2,7 +2,7 @@ import type { NuxtOptionsHead } from '@nuxt/types/config/head';
 import { description } from '../package.json';
 
 const meta: NuxtOptionsHead = {
-  title: 'Nuxt App :: FFMPEG',
+  title: 'Song Timer',
   meta: [
     { charset: 'utf-8' },
     { name: 'viewport', content: 'width=device-width, initial-scale=1' },
