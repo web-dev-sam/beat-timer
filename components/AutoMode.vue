@@ -21,6 +21,7 @@
         step: 0,
         silenceAtStart: 0,
         fileExtension: '',
+        downloading: false,
       };
     },
     computed: {
@@ -33,6 +34,9 @@
       },
       converterURL() {
         return `https://convertio.co/${this.fileExtension}-ogg/`;
+      },
+      recommendedMeasures() {
+        return Math.max(1, Math.min(4, Math.ceil(1000 / this.beatTime)));
       },
     },
     mounted() {
@@ -137,14 +141,19 @@
         this.step = 2;
       },
       goBackToBeginning() {
-        this.step = 0;
+        window.location.reload();
       },
       onMeasureClick(amount: number) {
         this.silenceAtStart = amount * this.beatTime;
         this.step = 3;
       },
-      download() {
-        this.ffmpegHandler.download(this.timingOffset, this.silenceAtStart);
+      async download() {
+        this.downloading = true;
+        await this.ffmpegHandler.download(
+          this.timingOffset,
+          this.silenceAtStart,
+        );
+        this.downloading = false;
       },
     },
   });
@@ -278,16 +287,28 @@
       <button class="btn-primary" @click="goToSilenceStep">Continue</button>
     </div>
     <div v-if="step === 2" class="flex justify-center gap-2">
-      <button class="btn-secondary" @click="() => onMeasureClick(1)">
+      <button
+        :class="recommendedMeasures === 1 ? 'btn-primary' : 'btn-secondary'"
+        @click="() => onMeasureClick(1)"
+      >
         1 measure
       </button>
-      <button class="btn-secondary" @click="() => onMeasureClick(2)">
+      <button
+        :class="recommendedMeasures === 2 ? 'btn-primary' : 'btn-secondary'"
+        @click="() => onMeasureClick(2)"
+      >
         2 measures
       </button>
-      <button class="btn-secondary" @click="() => onMeasureClick(3)">
+      <button
+        :class="recommendedMeasures === 3 ? 'btn-primary' : 'btn-secondary'"
+        @click="() => onMeasureClick(3)"
+      >
         3 measures
       </button>
-      <button class="btn-secondary" @click="() => onMeasureClick(4)">
+      <button
+        :class="recommendedMeasures === 4 ? 'btn-primary' : 'btn-secondary'"
+        @click="() => onMeasureClick(4)"
+      >
         4 measures
       </button>
     </div>
@@ -295,7 +316,9 @@
       <button class="btn-secondary mr-2" @click="goBackToBeginning">
         Time another song
       </button>
-      <button @click="download">Download</button>
+      <button @click="download">
+        {{ downloading ? 'Processing...' : 'Download' }}
+      </button>
       <p v-show="fileExtension !== 'ogg'" class="muted-text">
         You can convert to .ogg here <br />
         <a :href="converterURL" target="_blank">{{ converterURL }}</a>
@@ -303,7 +326,7 @@
     </div>
     <div v-if="step === 2" class="muted-text">
       One measure equals ~{{ Math.round(beatTime) }}ms. I recommend
-      {{ Math.max(1, Math.min(4, Math.ceil(1000 / beatTime))) }} measures.
+      {{ recommendedMeasures }} measures.
     </div>
   </main>
   <section class="track">
