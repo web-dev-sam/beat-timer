@@ -194,7 +194,7 @@
       <div class="flex items-center justify-center w-full">
         <label
           for="dropzone-file"
-          class="upload__border flex flex-col items-center justify-center w-full h-72 border-2 border-dashed rounded-lg cursor-pointer"
+          class="upload__border flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer"
         >
           <div
             class="flex flex-col items-center justify-center pt-5 pb-6 muted-text"
@@ -208,7 +208,7 @@
             id="dropzone-file"
             type="file"
             class="hidden"
-            accept="audio/mp3,audio/m4a,audio/wav,audio/ogg,audio/egg,audio/flac"
+            accept="audio/mp3,audio/m4a,audio/wav,audio/ogg,audio/flac"
             @change="onFileChange"
           />
         </label>
