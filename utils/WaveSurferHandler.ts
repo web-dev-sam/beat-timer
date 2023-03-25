@@ -29,8 +29,8 @@ export default class WaveSurferHandler {
   create() {
     this.wavesurfer = WaveSurfer.create({
       container: this.container,
-      waveColor: '#1095c1',
-      progressColor: '#19b3e6',
+      waveColor: 'white',
+      progressColor: '#f5a714',
       fillParent: true,
     });
     this.metronomeTick = new Audio('/metronome.mp3');
