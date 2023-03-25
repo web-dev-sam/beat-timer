@@ -19,6 +19,7 @@ export default class WaveSurferHandler {
   timingOffset: number;
   volume: number;
   playing: Ref<boolean>;
+  file: File;
 
   constructor({ container }: { container: HTMLElement }) {
     this.container = container;
@@ -30,11 +31,20 @@ export default class WaveSurferHandler {
       container: this.container,
       waveColor: '#1095c1',
       progressColor: '#19b3e6',
+      fillParent: true,
     });
     this.metronomeTick = new Audio('/metronome.mp3');
     this.wavesurfer.on('ready', () => {
       this.alignMetronomeToSongAbsolutely();
     });
+  }
+
+  isMuted() {
+    return this.wavesurfer.getMute();
+  }
+
+  isMetronomeMuted() {
+    return this.metronomeTick.muted;
   }
 
   setBpm(bpm: number) {
@@ -51,6 +61,10 @@ export default class WaveSurferHandler {
     this.metronomeTick.volume = volume / 100;
   }
 
+  setMetronomeVolume(volume: number) {
+    this.metronomeTick.volume = volume / 100;
+  }
+
   setPlaybackRate(playbackRate: number) {
     this.wavesurfer.setPlaybackRate(playbackRate);
   }
@@ -64,12 +78,38 @@ export default class WaveSurferHandler {
     }
   }
 
+  toggleMetronome() {
+    this.metronomeTick.muted = !this.metronomeTick.muted;
+  }
+
+  toggleMute() {
+    this.wavesurfer.toggleMute();
+    this.metronomeTick.muted = this.wavesurfer.getMute();
+  }
+
+  play() {
+    this.wavesurfer.setVolume(this.volume / 100);
+    this.wavesurfer.play();
+  }
+
+  pause() {
+    this.wavesurfer.pause();
+  }
+
+  stop() {
+    this.wavesurfer.stop();
+  }
+
   isPlaying() {
     return this.wavesurfer.isPlaying();
   }
 
   onFinish(callback: () => void) {
     this.wavesurfer.on('finish', callback);
+  }
+
+  onReady(callback: () => void) {
+    this.wavesurfer.on('ready', callback);
   }
 
   /**
@@ -111,7 +151,30 @@ export default class WaveSurferHandler {
     });
   }
 
-  loadAudio(blob: Blob) {
-    this.wavesurfer.loadBlob(blob);
+  loadAudio(file: File) {
+    this.file = file;
+    this.wavesurfer.loadBlob(file);
+  }
+
+  loadExampleAudio() {
+    this.wavesurfer.load('/assets/audios/sample.mp3');
+  }
+
+  getAudioBuffer() {
+    const audioContext = new AudioContext();
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(this.file);
+    return new Promise<AudioBuffer>((resolve, reject) => {
+      reader.onload = () => {
+        audioContext.decodeAudioData(reader.result as ArrayBuffer).then(
+          (buffer) => {
+            resolve(buffer);
+          },
+          (err) => {
+            reject(err);
+          },
+        );
+      };
+    });
   }
 }

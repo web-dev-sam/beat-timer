@@ -13,5 +13,4 @@ export default defineNuxtConfig({
   modules,
   // https://v3.nuxtjs.org/docs/directory-structure/nuxt.config#buildmodules
   buildModules,
-  css: ['@picocss/pico'],
 });

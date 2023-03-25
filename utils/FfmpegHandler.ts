@@ -17,21 +17,21 @@ export default class FfmpegHandler {
     this.file = file;
   }
 
-  /**
-   * @param timingOffset in milliseconds
-   * @param startSilence in milliseconds
-   */
+  loadExampleAudio() {
+    this.file = new File([''], '/assets/audios/sample.mp3', {
+      type: 'audio/mp3',
+    });
+  }
+
   async download(timingOffset: number, startSilence: number) {
     const file = this.file;
     const beginningPad = timingOffset + startSilence;
-    console.log(timingOffset, startSilence);
     console.log('Beginning pad:', beginningPad);
     const downloadFile = await this.padAudio(file, beginningPad);
     downloadFile();
   }
 
   // async trimAudio(file, beginningTrim = 0, endTrim = 0) {
-  //   console.log('Trimming audio...');
 
   //   const name = file.name;
   //   const trimmedName = 'trimmed_' + name;
@@ -46,15 +46,6 @@ export default class FfmpegHandler {
   //   const formattedDuration = this.formatDuration(duration);
   //   const trimDuration = duration - trimStart - trimEnd;
   //   const formattedTrimDuration = this.formatDuration(trimDuration);
-  //   console.log('Trimming audio...');
-  //   console.log('Name:', name);
-  //   console.log('Duration:', duration);
-  //   console.log('Formatted duration:', formattedDuration);
-  //   console.log('Trim start:', trimStart);
-  //   console.log('Trim end:', trimEnd);
-  //   console.log('Trim duration:', trimDuration);
-  //   console.log('Formatted Trim duration:', formattedTrimDuration);
-  //   console.log('Trimmed name:', trimmedName);
 
   //   await this.ffmpeg.run(
   //     '-i',
@@ -73,10 +64,8 @@ export default class FfmpegHandler {
   // }
 
   async padAudio(file, beginningPad = 0) {
-    console.log('Padding audio...');
-
     const name = file.name;
-    const paddedName = 'padded_' + name;
+    const paddedName = 'timed_' + name;
 
     this.ffmpeg.FS('writeFile', name, await fetchFile(file));
 
@@ -113,7 +102,6 @@ export default class FfmpegHandler {
   }
 
   getDuration(dataArray) {
-    console.log('Getting duration...');
     return new Promise((resolve, reject) => {
       const hiddenAudio = document.createElement('audio');
       const blob = new Blob([dataArray.buffer], { type: 'audio/wav' });
