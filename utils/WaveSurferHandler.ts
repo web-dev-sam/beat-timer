@@ -29,7 +29,7 @@ export default class WaveSurferHandler {
   create() {
     this.wavesurfer = WaveSurfer.create({
       container: this.container,
-      waveColor: 'white',
+      waveColor: '#929292',
       progressColor: '#f5a714',
       fillParent: true,
     });
