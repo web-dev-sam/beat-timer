@@ -110,20 +110,20 @@
         this.playing = false;
       },
       setVolume(event) {
-        const volume = event.target.value;
+        const volume = parseFloat(event.target.value);
         this.wavesurferHandler.setVolume(volume / 100);
       },
       setMetronomeVolume(event) {
-        const volume = event.target.value;
+        const volume = parseFloat(event.target.value);
         this.wavesurferHandler.setMetronomeVolume(volume / 100);
       },
       onBPMChange(event) {
-        const bpm = event.target.value;
+        const bpm = parseFloat(event.target.value);
         this.bpm = bpm;
         this.wavesurferHandler.setBpm(bpm);
       },
       onTimingOffsetChange(event) {
-        const timingOffset = event.target.value;
+        const timingOffset = parseFloat(event.target.value);
         this.timingOffset = timingOffset;
         this.wavesurferHandler.setTimingOffset(timingOffset);
       },
@@ -144,6 +144,8 @@
         this.step = 3;
       },
       download() {
+        console.log(this.timingOffset, this.silenceAtStart);
+        return;
         this.ffmpegHandler.download(this.timingOffset, this.silenceAtStart);
       },
     },
