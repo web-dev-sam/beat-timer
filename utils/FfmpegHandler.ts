@@ -17,12 +17,6 @@ export default class FfmpegHandler {
     this.file = file;
   }
 
-  loadExampleAudio() {
-    this.file = new File([''], '/assets/audios/sample.mp3', {
-      type: 'audio/mp3',
-    });
-  }
-
   async download(timingOffset: number, startSilence: number) {
     const file = this.file;
     const beginningPad = timingOffset + startSilence;

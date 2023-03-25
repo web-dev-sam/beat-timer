@@ -156,10 +156,6 @@ export default class WaveSurferHandler {
     this.wavesurfer.loadBlob(file);
   }
 
-  loadExampleAudio() {
-    this.wavesurfer.load('/assets/audios/sample.mp3');
-  }
-
   getAudioBuffer() {
     const audioContext = new AudioContext();
     const reader = new FileReader();
