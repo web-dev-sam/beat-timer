@@ -144,8 +144,6 @@
         this.step = 3;
       },
       download() {
-        console.log(this.timingOffset, this.silenceAtStart);
-        return;
         this.ffmpegHandler.download(this.timingOffset, this.silenceAtStart);
       },
     },
