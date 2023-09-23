@@ -1,6 +1,5 @@
 <template>
-  <!--<ManualMode />-->
-  <AutoMode />
+  <App />
 </template>
 
 <script></script>
@@ -9,10 +8,10 @@
   :root {
     --color-gold: #f5a714;
     --color-text-on-gold: #4e3405;
-    --color-muted: #929292;
-    --color-light-dark: #2d2d2d;
-    --color-lighter-dark: #3d3d3d;
-    --color-dark: #212121;
+    --color-muted: #94a8ff;
+    --color-light-dark: #3c4467;
+    --color-lighter-dark: #262b41;
+    --color-dark: #10121b;
 
     --body-bg: var(--color-dark);
     --border-color: var(--color-muted);
@@ -53,27 +52,12 @@
   }
 
   label {
-    display: block;
+    display: inline-block;
   }
 
   input {
     display: block;
     margin: 0 auto;
-  }
-
-  button {
-    background: var(--color-gold);
-    color: var(--color-text-on-gold);
-    border: none;
-    border-radius: 0.5rem;
-    padding: 0.5rem 1rem;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  button:hover {
-    opacity: 0.8;
   }
 
   input[type='radio'].btn {
@@ -96,18 +80,8 @@
     color: var(--color-text-on-gold);
   }
 
-  .btn-primary {
-    background: var(--color-gold);
-    color: var(--color-text-on-gold);
-  }
-
-  .btn-secondary {
-    background: var(--color-lighter-dark);
-    color: white;
-  }
-
   .heading {
-    font-size: 2rem;
+    font-size: 3rem;
     font-weight: 900;
     text-rendering: geometricPrecision;
   }
@@ -128,5 +102,10 @@
 
   .container {
     margin: 0 auto;
+  }
+
+  [class*='rotate-'] {
+    transform-origin: bottom bottom;
+    transform: rotate(var(--tw-rotate, 0deg));
   }
 </style>

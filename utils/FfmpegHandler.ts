@@ -114,6 +114,31 @@ export default class FfmpegHandler {
     });
   }
 
+  getAudioBuffer(): Promise<AudioBuffer> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function (fileEvent) {
+        const arrayBuffer = fileEvent.target.result;
+        new window.AudioContext()
+          .decodeAudioData(arrayBuffer as ArrayBuffer)
+          .then((audioBuffer) => {
+            resolve(audioBuffer);
+          })
+          .catch((error) => {
+            console.error('Error decoding audio data:', error);
+            reject(error);
+          });
+      };
+
+      reader.onerror = function (error) {
+        console.error('Error reading file:', error);
+        reject(error);
+      };
+
+      reader.readAsArrayBuffer(this.file);
+    });
+  }
+
   downloadAudio(data, filename) {
     const blob = new Blob([data.buffer], { type: 'audio/wav' });
     const url = URL.createObjectURL(blob);
