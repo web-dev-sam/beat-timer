@@ -4,9 +4,9 @@
   export default defineComponent({
     name: 'USlider',
     props: {
-      value: {
+      modelValue: {
         type: Number,
-        default: 0,
+        required: true,
       },
       min: {
         type: Number,
@@ -17,7 +17,7 @@
         default: 100,
       },
     },
-    emits: ['change'],
+    emits: ['change', 'update:modelValue'],
   });
 </script>
 
@@ -27,8 +27,8 @@
     class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
     :min="min"
     :max="max"
-    :value="value"
-    @input="$emit('change', $event)"
+    :value="modelValue"
+    @input="$emit('update:modelValue', Number($event.target.value))"
   />
 </template>
 

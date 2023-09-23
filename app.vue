@@ -9,9 +9,9 @@
     --color-gold: #f5a714;
     --color-text-on-gold: #4e3405;
     --color-muted: #94a8ff;
-    --color-light-dark: #3c4467;
-    --color-lighter-dark: #262b41;
-    --color-dark: #10121b;
+    --color-light-dark: #0a317c;
+    --color-lighter-dark: #072256;
+    --color-dark: #041330;
 
     --body-bg: var(--color-dark);
     --border-color: var(--color-muted);

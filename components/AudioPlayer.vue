@@ -24,12 +24,15 @@
     },
     data() {
       return {
-        mute: false,
-        muteMetronome: false,
-        stopped: true,
-        playing: false,
-        volume: 0.5,
-        metronomeTickVolume: 0.5,
+        isStopped: true,
+        isPaused: false,
+        isPlaying: false,
+        volume: localStorage.getItem('volume')
+          ? Number(localStorage.getItem('volume'))
+          : 100,
+        metronomeTickVolume: localStorage.getItem('metronomeTickVolume')
+          ? Number(localStorage.getItem('metronomeTickVolume'))
+          : 100,
       };
     },
     watch: {
@@ -37,7 +40,18 @@
         this.audio = this.createAudio();
       },
       volume() {
-        this.audio.volume = this.volume;
+        this.audio.volume = this.volume / 200;
+        if (this.volume > 0) {
+          localStorage.setItem('volume', this.volume.toString());
+        }
+      },
+      metronomeTickVolume() {
+        if (this.metronomeTickVolume > 0) {
+          localStorage.setItem(
+            'metronomeTickVolume',
+            this.metronomeTickVolume.toString(),
+          );
+        }
       },
     },
     async mounted() {
@@ -95,40 +109,36 @@
         beepNode.buffer = this.metronomeTickBuffer;
 
         const gainNode = this.audioContext.createGain();
-        gainNode.gain.value = this.metronomeTickVolume;
+        gainNode.gain.value = this.metronomeTickVolume / 200;
 
         beepNode.connect(gainNode);
         gainNode.connect(this.audioContext.destination);
         beepNode.start(time + this.timingOffset / 1000);
       },
       toggleMute() {
-        this.mute = !this.mute;
+        this.volume = this.volume > 0 ? 0 : 100;
       },
       toggleMetronome() {
-        this.muteMetronome = !this.muteMetronome;
+        this.metronomeTickVolume = this.metronomeTickVolume > 0 ? 0 : 100;
       },
       play() {
         this.audio.play();
-        this.stopped = false;
-        this.playing = true;
+        this.isPlaying = true;
+        this.isPaused = false;
+        this.isStopped = false;
       },
       pause() {
         this.audio.pause();
-        this.playing = false;
+        this.isPlaying = false;
+        this.isPaused = true;
+        this.isStopped = false;
       },
       stop() {
         this.audio.pause();
         this.audio.currentTime = 0;
-        this.stopped = true;
-        this.playing = false;
-      },
-      setVolume(event) {
-        const volume = parseFloat(event.target.value);
-        this.volume = volume / 200;
-      },
-      setMetronomeVolume(event) {
-        const volume = parseFloat(event.target.value);
-        this.metronomeTickVolume = volume / 200;
+        this.isPlaying = false;
+        this.isPaused = false;
+        this.isStopped = true;
       },
     },
   });
@@ -139,20 +149,27 @@
     <div class="track__controls flex justify-between items-end gap-3">
       <div class="track__volume flex flex-col">
         <div class="track__sliderleft mb-6">
-          <USlider min="0" max="200" value="50" @change="setVolume" />
+          <USlider v-model="volume" :min="0" :max="200" />
         </div>
-        <button :mute="mute" @click="toggleMute">
+        <button @click="toggleMute">
           <IconsSpeaker />
         </button>
       </div>
       <div class="flex-1"></div>
       <div>
-        <AudioPlayerBasicControls @play="play" @pause="pause" @stop="stop" />
+        <AudioPlayerBasicControls
+          :is-playing="isPlaying"
+          :is-paused="isPaused"
+          :is-stopped="isStopped"
+          @play="play"
+          @pause="pause"
+          @stop="stop"
+        />
       </div>
       <div class="flex-1"></div>
       <div class="track__metronome-volume flex flex-col items-end">
         <div class="track__sliderright mb-6">
-          <USlider min="0" max="200" value="50" @change="setMetronomeVolume" />
+          <USlider v-model="metronomeTickVolume" :min="0" :max="200" />
         </div>
         <div
           class="track__metronome-volume-icon"

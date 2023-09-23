@@ -3,34 +3,41 @@
 
   export default defineComponent({
     name: 'AudioPlayerBasicControls',
+    props: {
+      isStopped: {
+        type: Boolean,
+        default: true,
+      },
+      isPaused: {
+        type: Boolean,
+        default: false,
+      },
+      isPlaying: {
+        type: Boolean,
+        default: false,
+      },
+    },
     emits: ['pause', 'play', 'stop'],
   });
 </script>
 
 <template>
   <div class="flex items-end gap-12">
-    <div
-      role="button"
-      :disabled="!playing || audioFile == null"
-      @click="$emit('pause')"
-    >
+    <button :disabled="isPaused || isStopped" @click="$emit('pause')">
       <IconsPause />
-    </div>
-    <div
-      role="button"
-      :disabled="playing || audioFile == null"
-      @click="$emit('play')"
-    >
+    </button>
+    <button :disabled="isPlaying" @click="$emit('play')">
       <IconsPlay />
-    </div>
-    <div
-      role="button"
-      :disabled="stopped || audioFile == null"
-      @click="$emit('stop')"
-    >
+    </button>
+    <button :disabled="isStopped" @click="$emit('stop')">
       <IconsStop />
-    </div>
+    </button>
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+  [disabled] {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+</style>
