@@ -7,6 +7,8 @@
   });
 </script>
 
-<template>big b00ba</template>
+<template>
+  <canvas id="spectogram" class="w-full h-32"></canvas>
+</template>
 
 <style scoped></style>

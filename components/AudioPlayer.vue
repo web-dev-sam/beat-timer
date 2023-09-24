@@ -1,27 +1,26 @@
 <script lang="ts">
   import { defineComponent, ref } from 'vue';
   import { debounce } from 'debounce';
+  import Metronome from '~~/utils/Metronome';
+  import Player from '~~/utils/Player';
 
   export default defineComponent({
     name: 'AudioPlayer',
     props: {
-      audioFile: {
-        type: File,
-        default: null,
-      },
       bpm: {
         type: Number,
-        default: 120,
+        required: true,
       },
       audioBuffer: {
         type: AudioBuffer,
-        default: null,
+        required: true,
       },
       timingOffset: {
         type: Number,
-        default: 0,
+        required: true,
       },
     },
+    emits: ['metronome'],
     data() {
       return {
         isStopped: true,
@@ -33,14 +32,18 @@
         metronomeTickVolume: localStorage.getItem('metronomeTickVolume')
           ? Number(localStorage.getItem('metronomeTickVolume'))
           : 100,
+        songProgress: 0,
       };
     },
     watch: {
-      audioFile() {
-        this.audio = this.createAudio();
+      bpm() {
+        this.metronomeNew.setBpm(this.bpm);
+      },
+      timingOffset() {
+        this.metronomeNew.setOffset(this.timingOffset / 1000);
       },
       volume() {
-        this.audio.volume = this.volume / 200;
+        this.playerNew.setVolume(this.volume / 2);
         if (this.volume > 0) {
           localStorage.setItem('volume', this.volume.toString());
         }
@@ -65,56 +68,28 @@
       this.metronomeTickBuffer = await this.audioContext.decodeAudioData(
         await (await fetch('/metronome.mp3')).arrayBuffer(),
       );
+      await this.audioContext.audioWorklet.addModule(
+        '/js/metronome-processor.js',
+      );
+      console.log('right, right?', this.bpm, this.timingOffset);
+      this.playerNew = new Player(this.audioContext);
+      this.metronomeNew = new Metronome(
+        this.audioContext,
+        this.bpm,
+        this.metronomeTickBuffer,
+        this.timingOffset / 1000,
+        this.playerNew,
+        () => {
+          this.$emit('metronome');
+          this.songProgress =
+            (this.playerNew.getCurrentTime() / this.playerNew.getDuration()) *
+            100;
+        },
+      );
+      this.playerNew.loadBuffer(this.audioBuffer);
+      this.playerNew.setVolume(this.volume / 2);
     },
     methods: {
-      createAudio() {
-        const audio = new Audio();
-        audio.src = URL.createObjectURL(this.audioFile);
-        audio.addEventListener('play', () => {
-          if (!this.sourceNode) {
-            this.sourceNode = this.audioContext.createMediaElementSource(audio);
-            this.sourceNode.connect(this.audioContext.destination);
-          }
-          this.scheduleNextBeep();
-        });
-        audio.addEventListener('seeked', () => {
-          this.scheduleNextBeep();
-        });
-        audio.addEventListener('ended', () => {
-          this.stop();
-        });
-
-        return audio;
-      },
-      scheduleNextBeep() {
-        let intervalBetweenBeeps = 60 / this.bpm;
-
-        // Calculate time until the next beep based on audio's current position
-        let timeUntilNextBeep =
-          intervalBetweenBeeps -
-          (this.audio.currentTime % intervalBetweenBeeps);
-
-        setTimeout(() => {
-          if (
-            !this.audio.paused &&
-            this.audio.currentTime < this.audio.duration
-          ) {
-            this.debouncedPlayBeep(this.audioContext.currentTime);
-            this.scheduleNextBeep();
-          }
-        }, timeUntilNextBeep * 1000);
-      },
-      playBeep(time: number) {
-        const beepNode = this.audioContext.createBufferSource();
-        beepNode.buffer = this.metronomeTickBuffer;
-
-        const gainNode = this.audioContext.createGain();
-        gainNode.gain.value = this.metronomeTickVolume / 200;
-
-        beepNode.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
-        beepNode.start(time + this.timingOffset / 1000);
-      },
       toggleMute() {
         this.volume = this.volume > 0 ? 0 : 100;
       },
@@ -122,30 +97,39 @@
         this.metronomeTickVolume = this.metronomeTickVolume > 0 ? 0 : 100;
       },
       play() {
-        this.audio.play();
+        this.playerNew.play();
+        this.metronomeNew.start(this.timingOffset / 1000);
         this.isPlaying = true;
         this.isPaused = false;
         this.isStopped = false;
       },
       pause() {
-        this.audio.pause();
+        this.playerNew.pause();
+        this.metronomeNew.stop();
         this.isPlaying = false;
         this.isPaused = true;
         this.isStopped = false;
       },
       stop() {
-        this.audio.pause();
-        this.audio.currentTime = 0;
+        this.playerNew.stop();
+        this.metronomeNew.stop();
+        this.songProgress = 0;
         this.isPlaying = false;
         this.isPaused = false;
         this.isStopped = true;
+      },
+      onProgressDrag(progress: number) {
+        const intervalBetweenBeeps = 60 / this.bpm;
+        const targetTime = (progress / 100) * this.audio.duration;
+        const beatsPassed = Math.round(targetTime / intervalBetweenBeeps);
+        this.audio.currentTime = beatsPassed * intervalBetweenBeeps;
       },
     },
   });
 </script>
 
 <template>
-  <section class="track">
+  <section class="track flex flex-col">
     <div class="track__controls flex justify-between items-end gap-3">
       <div class="track__volume flex flex-col">
         <div class="track__sliderleft mb-6">
@@ -180,6 +164,12 @@
         </div>
       </div>
     </div>
+    <div class="pt-12">
+      <UAudioSlider
+        :progress="songProgress"
+        @change="(prog: number) => onProgressDrag(prog)"
+      />
+    </div>
   </section>
 </template>
 
@@ -192,14 +182,5 @@
   .track__sliderright {
     transform-origin: bottom left;
     transform: translate(calc(100% - 0.5rem)) rotate(270deg);
-  }
-
-  .track__metronome-volume-slider {
-    scale: -1;
-  }
-
-  [role='status'] svg {
-    fill: var(--color-gold);
-    color: var(--color-lighter-dark);
   }
 </style>

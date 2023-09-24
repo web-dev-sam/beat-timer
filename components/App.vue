@@ -21,6 +21,7 @@
         audioBuffer: null,
         initialExampleFileLoading: false,
         initialSelectFileLoading: false,
+        beatCloudSize: 1,
       };
     },
     computed: {
@@ -78,7 +79,9 @@
             Math.round((offset * 1000) / 4) * 4;
         } catch {
           this.myBPMGuess = -1;
-          this.myOffsetGuess = this.timingOffset = 0;
+          this.bpm = 120;
+          this.myOffsetGuess = -1;
+          this.timingOffset = (30 / this.bpm) * 1000;
         }
         this.step = 1;
         this.initialLoading = false;
@@ -123,6 +126,7 @@
 
 <template>
   <div class="h-screen flex flex-col">
+    <IconsBeatCloud v-if="step >= 0" :size="beatCloudSize" />
     <HeaderButtons>
       <template #left>
         <IconsHelp />
@@ -133,7 +137,7 @@
           :loading="initialExampleFileLoading"
           @click="loadExampleFile"
         >
-          Load example song
+          Use Example
         </UButton>
       </template>
     </HeaderButtons>
@@ -149,16 +153,17 @@
       </template>
       <template #1>
         <h1 class="heading">Align the beat.</h1>
+        <p>big b00ba WIP...</p>
         <USpectogram />
       </template>
     </Step>
     <FooterArea>
       <AudioPlayer
-        v-show="step > 0"
-        :audio-file="audioFile"
+        v-if="step > 0"
         :bpm="bpm"
         :audio-buffer="audioBuffer"
         :timing-offset="timingOffset"
+        @metronome="beatCloudSize = beatCloudSize > 1 ? 0.8 : 1.2"
       />
     </FooterArea>
   </div>

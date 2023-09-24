@@ -28,7 +28,12 @@
     :min="min"
     :max="max"
     :value="modelValue"
-    @input="$emit('update:modelValue', Number($event.target.value))"
+    @input="
+      $emit(
+        'update:modelValue',
+        Number(($event.target as HTMLInputElement).value),
+      )
+    "
   />
 </template>
 
