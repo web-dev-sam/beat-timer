@@ -11,12 +11,14 @@ export default class Metronome {
   private source: AudioBufferSourceNode | null = null;
   private gainNode: GainNode;
   private player: Player;
+  private volume: number = 0.5;
 
   constructor(
     context: AudioContext,
     bpm: number,
     audioBuffer: AudioBuffer,
     offset: number,
+    volume: number,
     player: Player,
     onBeat: () => void,
   ) {
@@ -27,6 +29,7 @@ export default class Metronome {
     this.offset = offset;
     this.player = player;
     this.onBeat = onBeat;
+    this.volume = volume;
     this.setupAudioWorkletNode();
   }
 
@@ -45,6 +48,7 @@ export default class Metronome {
     };
 
     this.gainNode = new GainNode(this.context);
+    this.gainNode.gain.value = this.volume;
     this.metronomeNode.connect(this.gainNode);
     this.gainNode.connect(this.context.destination);
   }
@@ -78,7 +82,6 @@ export default class Metronome {
   public async start() {
     this.stop();
     this.setupAudioWorkletNode();
-    this.gainNode.gain.value = 1;
     this.metronomeNode.connect(this.context.destination);
     this.metronomeNode.parameters
       .get('interval')
@@ -89,7 +92,6 @@ export default class Metronome {
   }
 
   public pause() {
-    this.gainNode.gain.value = 0;
     this.metronomeNode.port.postMessage('stop');
     this.metronomeNode.disconnect();
     this.gainNode.disconnect();
@@ -100,7 +102,6 @@ export default class Metronome {
   }
 
   public stop() {
-    this.gainNode.gain.value = 0;
     this.metronomeNode.port.postMessage('stop');
     this.metronomeNode.disconnect();
     this.gainNode.disconnect();
@@ -117,5 +118,11 @@ export default class Metronome {
 
   public setOffset(offset: number) {
     this.offset = offset;
+  }
+
+  public setTickVolume(volume: number) {
+    console.log(volume);
+    this.volume = volume / 100;
+    this.gainNode.gain.value = this.volume;
   }
 }

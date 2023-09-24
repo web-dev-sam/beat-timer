@@ -64,6 +64,7 @@ export default class Player {
     }
     this.source!.stop();
     this.pausedTime = this.context.currentTime - this.startTime;
+    console.log('pause', this.pausedTime);
     this.started = false;
   }
 
@@ -73,5 +74,11 @@ export default class Player {
       this.pausedTime = 0;
       this.started = false;
     }
+  }
+
+  setCurrentTime(time: number): void {
+    this.pause();
+    this.pausedTime = time;
+    this.play();
   }
 }

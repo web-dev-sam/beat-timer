@@ -49,6 +49,7 @@
         }
       },
       metronomeTickVolume() {
+        this.metronomeNew.setTickVolume(this.metronomeTickVolume / 2);
         if (this.metronomeTickVolume > 0) {
           localStorage.setItem(
             'metronomeTickVolume',
@@ -78,6 +79,7 @@
         this.bpm,
         this.metronomeTickBuffer,
         this.timingOffset / 1000,
+        this.metronomeTickVolume / 200,
         this.playerNew,
         () => {
           this.$emit('metronome');
@@ -98,7 +100,7 @@
       },
       play() {
         this.playerNew.play();
-        this.metronomeNew.start(this.timingOffset / 1000);
+        this.metronomeNew.start();
         this.isPlaying = true;
         this.isPaused = false;
         this.isStopped = false;
@@ -119,10 +121,12 @@
         this.isStopped = true;
       },
       onProgressDrag(progress: number) {
-        const intervalBetweenBeeps = 60 / this.bpm;
-        const targetTime = (progress / 100) * this.audio.duration;
-        const beatsPassed = Math.round(targetTime / intervalBetweenBeeps);
-        this.audio.currentTime = beatsPassed * intervalBetweenBeeps;
+        const targetTime = (progress / 100) * this.playerNew.getDuration();
+        this.playerNew.setCurrentTime(targetTime);
+        this.metronomeNew.start();
+        this.isPlaying = true;
+        this.isPaused = false;
+        this.isStopped = false;
       },
     },
   });
