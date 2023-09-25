@@ -24,7 +24,7 @@ export default class Metronome {
   ) {
     this.context = context;
     this.bpm = bpm;
-    this.interval = 60 / bpm;
+    this.interval = 60 / this.bpm;
     this.audioBuffer = audioBuffer;
     this.offset = offset;
     this.player = player;
@@ -116,7 +116,13 @@ export default class Metronome {
 
   public setBpm(bpm: number) {
     this.bpm = bpm;
-    this.interval = 60 / bpm;
+    this.interval = 60 / this.bpm;
+    this.metronomeNode.parameters
+      .get('interval')
+      .setValueAtTime(
+        this.context.sampleRate * this.interval,
+        this.context.currentTime,
+      );
   }
 
   public setOffset(offset: number) {

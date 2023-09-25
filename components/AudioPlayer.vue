@@ -19,6 +19,8 @@
   import Metronome from '~~/utils/Metronome';
   import Player from '~~/utils/Player';
 
+  const MAX_METRONOME_BPM = 400;
+
   export default defineComponent({
     name: 'AudioPlayer',
     props: {
@@ -48,7 +50,13 @@
           ? Number(localStorage.getItem('metronomeTickVolume'))
           : 100,
         songProgress: 0,
+        bpmMultiplier: 1,
       };
+    },
+    computed: {
+      metronomeDoubleSpeedDisabled() {
+        return this.bpmMultiplier * this.bpm > MAX_METRONOME_BPM;
+      },
     },
     watch: {
       bpm() {
@@ -73,9 +81,15 @@
           );
         }
       },
+      bpmMultiplier() {
+        if (this.bpmMultiplier * this.bpm > MAX_METRONOME_BPM) {
+          return;
+        }
+
+        this.metronomeNew.setBpm(this.bpm * this.bpmMultiplier);
+      },
     },
     async mounted() {
-      const MAX_METRONOME_BPM = 400;
       this.debouncedPlayBeep = debounce(
         this.playBeep,
         (60 / MAX_METRONOME_BPM) * 1000,
@@ -112,6 +126,13 @@
       },
       toggleMetronome() {
         this.metronomeTickVolume = this.metronomeTickVolume > 0 ? 0 : 100;
+      },
+      toggleMetronomeSpeed(n: number) {
+        if (this.bpmMultiplier === n) {
+          this.bpmMultiplier = 1;
+          return;
+        }
+        this.bpmMultiplier = n;
       },
       play() {
         this.playerNew.play();
@@ -174,12 +195,23 @@
         <div class="track__sliderright mb-6">
           <USlider v-model="metronomeTickVolume" :min="0" :max="200" />
         </div>
-        <div
-          class="track__metronome-volume-icon"
-          role="button"
-          @click="toggleMetronome"
-        >
-          <IconsMetronome />
+        <div class="flex gap-6">
+          <button
+            v-show="bpmMultiplier !== 2"
+            :disabled="metronomeDoubleSpeedDisabled"
+            @click="() => toggleMetronomeSpeed(2)"
+          >
+            <IconsX2 />
+          </button>
+          <button
+            v-show="bpmMultiplier !== 1"
+            @click="() => toggleMetronomeSpeed(1)"
+          >
+            <IconsX1 />
+          </button>
+          <button @click="toggleMetronome">
+            <IconsMetronome />
+          </button>
         </div>
       </div>
     </div>
@@ -201,5 +233,10 @@
   .track__sliderright {
     transform-origin: bottom left;
     transform: translate(calc(100% - 0.5rem)) rotate(270deg);
+  }
+
+  [disabled] {
+    opacity: 0.2;
+    pointer-events: none;
   }
 </style>

@@ -74,6 +74,8 @@
         this.audioBuffer = await this.ffmpegHandler.getAudioBuffer();
         try {
           const { bpm, offset } = await guess(this.audioBuffer);
+          console.table('Guessed BPM: ' + bpm + 'bpm');
+          console.info('Guessed offset: ' + (offset * 1000).toFixed(2) + 'ms');
           this.myBPMGuess = this.bpm = bpm === 0 ? -1 : bpm;
           this.myOffsetGuess = this.timingOffset =
             Math.round((offset * 1000) / 4) * 4;
@@ -138,6 +140,9 @@
           @click="loadExampleFile"
         >
           Use Example
+        </UButton>
+        <UButton v-if="step === 1" @click="goToSilenceStep">
+          Seems On Time
         </UButton>
       </template>
     </HeaderButtons>
