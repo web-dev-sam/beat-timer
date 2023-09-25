@@ -58,6 +58,7 @@
         this.metronomeNew.setOffset(this.timingOffset / 1000);
       },
       volume() {
+        this.metronomeTickVolume = this.volume;
         this.playerNew.setVolume(this.volume / 2);
         if (this.volume > 0) {
           localStorage.setItem('volume', this.volume.toString());
