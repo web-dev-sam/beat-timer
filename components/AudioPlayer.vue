@@ -1,4 +1,19 @@
 <script lang="ts">
+  /**
+   * To whoever is reading this:
+   *
+   * Let me tell you a story. I spent 3 days trying to get the timing right.
+   * I started with a simple setInterval, but that was inaccurate.
+   * Then I tried to use the Web Audio API's script processor node,
+   * but OF COURSE that was deprecated AND I couldn't get it the visualizers timing
+   * to sync up with the audio. Then I tried to use the Web Audio API's AudioWorklet,
+   * BUT I COULDN'T GET IT TO WORK. So I went back to using setTimeout, then requestAnimationFrame
+   * (It was fucking 8pm give me a break). AND THEN FINALLY I got it to work with the AudioWorklet.
+   *
+   * The next day I woke up the first word I thought about was "ArrayBuffer". Thank you for reading this.
+   * It's probably gonna be an article on dev.to
+   */
+
   import { defineComponent, ref } from 'vue';
   import { debounce } from 'debounce';
   import Metronome from '~~/utils/Metronome';
@@ -72,7 +87,6 @@
       await this.audioContext.audioWorklet.addModule(
         '/js/metronome-processor.js',
       );
-      console.log('right, right?', this.bpm, this.timingOffset);
       this.playerNew = new Player(this.audioContext);
       this.metronomeNew = new Metronome(
         this.audioContext,

@@ -47,9 +47,12 @@ export default class Metronome {
       }
     };
 
+    if (this.gainNode) {
+      this.gainNode.disconnect();
+    }
+
     this.gainNode = new GainNode(this.context);
     this.gainNode.gain.value = this.volume;
-    this.metronomeNode.connect(this.gainNode);
     this.gainNode.connect(this.context.destination);
   }
 
@@ -69,7 +72,7 @@ export default class Metronome {
     const time = this.calculateNextNoteTimeInSeconds();
     this.source = this.context.createBufferSource();
     this.source.buffer = this.audioBuffer;
-    this.source.connect(this.context.destination);
+    this.source.connect(this.gainNode);
     this.source.start(time);
 
     const timeDifference = (time - this.context.currentTime) * 1000;
@@ -121,7 +124,6 @@ export default class Metronome {
   }
 
   public setTickVolume(volume: number) {
-    console.log(volume);
     this.volume = volume / 100;
     this.gainNode.gain.value = this.volume;
   }
