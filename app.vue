@@ -11,7 +11,7 @@
     --color-muted: #94a8ff;
     --color-light-dark: #0a317c;
     --color-lighter-dark: #072256;
-    --color-dark: #041330;
+    --color-dark: #04122f;
 
     --body-bg: var(--color-dark);
     --border-color: var(--color-muted);

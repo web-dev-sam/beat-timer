@@ -22,6 +22,7 @@
         initialExampleFileLoading: false,
         initialSelectFileLoading: false,
         beatCloudSize: 1,
+        isZoomed: false,
       };
     },
     computed: {
@@ -122,6 +123,14 @@
         );
         this.downloading = false;
       },
+      toggleZoom() {
+        this.isZoomed = !this.isZoomed;
+        if (this.isZoomed) {
+          this.$refs.spectogram.zoomOut();
+        } else {
+          this.$refs.spectogram.zoomIn();
+        }
+      },
     },
   });
 </script>
@@ -157,9 +166,19 @@
         </UFileInput>
       </template>
       <template #1>
-        <h1 class="heading">Align the beat.</h1>
-        <p>big b00ba WIP...</p>
-        <USpectogram />
+        <div class="flex justify-between mx-6">
+          <div></div>
+          <h1 class="heading mb-6">Align the beat.</h1>
+          <button @click="toggleZoom">
+            <IconsZoomIn v-show="!isZoomed" />
+            <IconsZoomOut v-show="isZoomed" />
+          </button>
+        </div>
+        <USpectogram
+          v-if="step > 0"
+          ref="spectogram"
+          :audio-buffer="audioBuffer"
+        />
       </template>
     </Step>
     <FooterArea>
