@@ -11,13 +11,23 @@ export default class SpectogramHandler {
   private hzFilter: number;
   private durationInMS: number;
   private currentZoom: number;
+  private vw: number;
+  private onSpeclineUpdate: (speclines: any[]) => void;
+  private bpm: number;
+  private offset: number;
 
   constructor({
     audioBuffer,
     canvas,
+    onSpeclineUpdate,
+    bpm,
+    offset,
   }: {
     audioBuffer: AudioBuffer;
     canvas: HTMLCanvasElement;
+    onSpeclineUpdate: (speclines: any[]) => void;
+    bpm: number;
+    offset: number;
   }) {
     this.segmentSize = 1024;
     this.segmentOverlap = 512;
@@ -28,6 +38,10 @@ export default class SpectogramHandler {
     this.sampleRate = audioBuffer.sampleRate;
     this.durationInMS = audioBuffer.duration * 1000;
     this.currentZoom = 15;
+    this.vw = document.documentElement.clientWidth;
+    this.onSpeclineUpdate = onSpeclineUpdate;
+    this.bpm = bpm;
+    this.offset = offset;
 
     const height = Math.floor(
       (this.hzFilter * this.segmentSize) / this.sampleRate,
@@ -43,15 +57,29 @@ export default class SpectogramHandler {
     this.zoom(4);
   }
 
+  setBPM(bpm: number) {
+    if (this.bpm !== bpm) {
+      this.bpm = bpm;
+      this.onSpeclineUpdate(this.getSpecLines());
+    }
+  }
+
+  setOffset(offset: number) {
+    this.offset = offset;
+    this.onSpeclineUpdate(this.getSpecLines());
+  }
+
   private zoom(sPerVw: number) {
     this.currentZoom = sPerVw;
 
-    const vw = document.documentElement.clientWidth;
+    this.vw = document.documentElement.clientWidth;
     const currentPxPerS = (this.canvas.width * 1000) / this.durationInMS;
     const currentPxPerTimeframe = currentPxPerS * this.currentZoom;
-    const scale = vw / currentPxPerTimeframe;
+    const scale = this.vw / currentPxPerTimeframe;
     this.canvas.style.transform = `scaleX(${scale})`;
     this.canvas.style.transformOrigin = 'left';
+
+    this.onSpeclineUpdate(this.getSpecLines());
   }
 
   setSegmentSize(segmentSize: number) {
@@ -60,6 +88,24 @@ export default class SpectogramHandler {
 
   setSegmentOverlap(segmentOverlap: number) {
     this.segmentOverlap = segmentOverlap;
+  }
+
+  getSpecLines(): number[] {
+    const secPerVw = this.currentZoom;
+    const secPerBeat = 60 / this.bpm;
+    const sToPx = (s: number) => s * (this.vw / secPerVw);
+    const offsetPx = sToPx(this.offset / 1000);
+    const beatPx = sToPx(secPerBeat);
+
+    const beatLines = [];
+    while (offsetPx + beatPx * beatLines.length <= this.vw) {
+      beatLines.push({
+        left: offsetPx + beatPx * beatLines.length,
+        activeOffset: false,
+        activeBPM: false,
+      });
+    }
+    return beatLines;
   }
 
   async generateSpectogram() {

@@ -28,12 +28,12 @@
         type: Number,
         required: true,
       },
-      audioBuffer: {
-        type: AudioBuffer,
-        required: true,
-      },
       timingOffset: {
         type: Number,
+        required: true,
+      },
+      audioBuffer: {
+        type: AudioBuffer,
         required: true,
       },
     },

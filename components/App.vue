@@ -75,7 +75,7 @@
         this.audioBuffer = await this.ffmpegHandler.getAudioBuffer();
         try {
           const { bpm, offset } = await guess(this.audioBuffer);
-          console.table('Guessed BPM: ' + bpm + 'bpm');
+          console.info('Guessed BPM: ' + bpm + 'bpm');
           console.info('Guessed offset: ' + (offset * 1000).toFixed(2) + 'ms');
           this.myBPMGuess = this.bpm = bpm === 0 ? -1 : bpm;
           this.myOffsetGuess = this.timingOffset =
@@ -178,6 +178,8 @@
           v-if="step > 0"
           ref="spectogram"
           :audio-buffer="audioBuffer"
+          :initial-offset="timingOffset"
+          :initial-bpm="bpm"
         />
       </template>
     </Step>
