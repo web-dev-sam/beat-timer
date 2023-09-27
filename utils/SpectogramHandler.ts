@@ -15,6 +15,8 @@ export default class SpectogramHandler {
   private onSpeclineUpdate: (speclines: any[]) => void;
   private bpm: number;
   private offset: number;
+  private currentPage: number;
+  private scale: number;
 
   constructor({
     audioBuffer,
@@ -38,6 +40,8 @@ export default class SpectogramHandler {
     this.sampleRate = audioBuffer.sampleRate;
     this.durationInMS = audioBuffer.duration * 1000;
     this.currentZoom = 15;
+    this.currentPage = 0;
+    this.scale = 1;
     this.vw = document.documentElement.clientWidth;
     this.onSpeclineUpdate = onSpeclineUpdate;
     this.bpm = bpm;
@@ -69,32 +73,47 @@ export default class SpectogramHandler {
     this.onSpeclineUpdate(this.getSpecLines());
   }
 
+  updateTime(time: number, duration: number) {
+    console.log('updateTime', time);
+
+    const secPerPage = this.currentZoom;
+    const currentPage = Math.floor(time / secPerPage);
+    if (this.currentPage === currentPage) {
+      return;
+    }
+
+    this.currentPage = currentPage;
+
+    const leftEdgePx = this.currentPage * this.vw;
+    this.canvas.style.transition = 'transform 0.2s ease-in-out';
+    this.canvas.style.transform = `translateX(-${leftEdgePx}px) scaleX(${this.scale})`;
+    this.canvas.style.transformOrigin = 'left';
+
+    this.onSpeclineUpdate(this.getSpecLines());
+  }
+
   private zoom(sPerVw: number) {
     this.currentZoom = sPerVw;
 
-    this.vw = document.documentElement.clientWidth;
-    const currentPxPerS = (this.canvas.width * 1000) / this.durationInMS;
+    const scaledWidth = this.canvas.clientWidth;
+    const currentPxPerS = (scaledWidth * 1000) / this.durationInMS;
     const currentPxPerTimeframe = currentPxPerS * this.currentZoom;
     const scale = this.vw / currentPxPerTimeframe;
+    this.scale = scale;
     this.canvas.style.transform = `scaleX(${scale})`;
     this.canvas.style.transformOrigin = 'left';
 
     this.onSpeclineUpdate(this.getSpecLines());
   }
 
-  setSegmentSize(segmentSize: number) {
-    this.segmentSize = segmentSize;
-  }
-
-  setSegmentOverlap(segmentOverlap: number) {
-    this.segmentOverlap = segmentOverlap;
-  }
-
   getSpecLines(): number[] {
     const secPerVw = this.currentZoom;
+    const leftEdgeTimeInSec = this.currentPage * secPerVw;
     const secPerBeat = 60 / this.bpm;
+    const pageOffsetMS =
+      (leftEdgeTimeInSec * 1000 + this.offset) % (secPerBeat * 1000);
     const sToPx = (s: number) => s * (this.vw / secPerVw);
-    const offsetPx = sToPx(this.offset / 1000);
+    const offsetPx = sToPx(pageOffsetMS / 1000);
     const beatPx = sToPx(secPerBeat);
 
     const beatLines = [];
@@ -106,6 +125,14 @@ export default class SpectogramHandler {
       });
     }
     return beatLines;
+  }
+
+  setSegmentSize(segmentSize: number) {
+    this.segmentSize = segmentSize;
+  }
+
+  setSegmentOverlap(segmentOverlap: number) {
+    this.segmentOverlap = segmentOverlap;
   }
 
   async generateSpectogram() {
@@ -164,6 +191,8 @@ export default class SpectogramHandler {
 
     const width = this.canvas.width;
     const height = this.canvas.height;
+    const songLength = this.audioBuffer.duration;
+    const pointsPerS = width / songLength;
     const imageData = this.canvasContext.createImageData(width, height);
     const uint8ClampedData = imageData.data;
 
@@ -175,13 +204,21 @@ export default class SpectogramHandler {
         }
 
         const magnitude = spectrogram[x][y];
-        const intensity = Math.min(255, Math.log(magnitude + 1) * 10);
+        const intensity = Math.min(255, magnitude * 4);
         const [red, green, blue] = this.getColorFromIntensity(intensity);
 
         uint8ClampedData[idx++] = red;
         uint8ClampedData[idx++] = green;
         uint8ClampedData[idx++] = blue;
         uint8ClampedData[idx++] = 255;
+
+        // uint8ClampedData[idx++] =
+        //   Math.floor(x / pointsPerS) % 2 === 0 ? 0 : 225;
+        // uint8ClampedData[idx++] =
+        //   Math.floor(x / pointsPerS) % 2 === 0 ? 0 : 225;
+        // uint8ClampedData[idx++] =
+        //   Math.floor(x / pointsPerS) % 2 === 0 ? 0 : 225;
+        // uint8ClampedData[idx++] = 255;
       }
     }
 

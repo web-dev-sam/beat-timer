@@ -119,6 +119,9 @@
 
         this.dragStart = null;
       },
+      onMetronome(time: number, duration: number) {
+        this.spectogramHandler.updateTime(time, duration);
+      },
     },
   });
 </script>

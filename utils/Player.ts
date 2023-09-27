@@ -1,3 +1,5 @@
+import SpectogramHandler from './SpectogramHandler';
+
 export default class Player {
   private context: AudioContext;
   private source: AudioBufferSourceNode | null;
@@ -6,6 +8,7 @@ export default class Player {
   private pausedTime: number;
   private started: boolean;
   private gainNode: GainNode;
+  private spectogramHandler: SpectogramHandler | null;
 
   constructor(context: AudioContext) {
     this.context = context;
@@ -16,6 +19,7 @@ export default class Player {
     this.started = false;
     this.gainNode = this.context.createGain();
     this.gainNode.connect(this.context.destination);
+    this.spectogramHandler = null;
   }
 
   getCurrentTime(): number {
@@ -30,6 +34,11 @@ export default class Player {
       return this.buffer.duration;
     }
     return 0;
+  }
+
+  setSpectogramHandler(spectogramHandler: SpectogramHandler): void {
+    console.log('setSpectogramHandler');
+    this.spectogramHandler = spectogramHandler;
   }
 
   loadBuffer(buffer: AudioBuffer): void {

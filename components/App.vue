@@ -131,6 +131,12 @@
           this.$refs.spectogram.zoomIn();
         }
       },
+      onMetronome(time: number, duration: number) {
+        this.beatCloudSize = this.beatCloudSize > 1 ? 0.8 : 1.2;
+        if (this.$refs.spectogram) {
+          this.$refs.spectogram.onMetronome(time, duration);
+        }
+      },
     },
   });
 </script>
@@ -189,7 +195,7 @@
         :bpm="bpm"
         :audio-buffer="audioBuffer"
         :timing-offset="timingOffset"
-        @metronome="beatCloudSize = beatCloudSize > 1 ? 0.8 : 1.2"
+        @metronome="onMetronome"
       />
     </FooterArea>
   </div>

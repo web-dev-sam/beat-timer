@@ -18,6 +18,7 @@
   import { debounce } from 'debounce';
   import Metronome from '~~/utils/Metronome';
   import Player from '~~/utils/Player';
+  import { AudioPlayer } from '~~/.nuxt/components';
 
   const MAX_METRONOME_BPM = 400;
 
@@ -60,20 +61,20 @@
     },
     watch: {
       bpm() {
-        this.metronomeNew.setBpm(this.bpm);
+        this.metronome.setBpm(this.bpm);
       },
       timingOffset() {
-        this.metronomeNew.setOffset(this.timingOffset / 1000);
+        this.metronome.setOffset(this.timingOffset / 1000);
       },
       volume() {
         this.metronomeTickVolume = this.volume;
-        this.playerNew.setVolume(this.volume / 2);
+        this.player.setVolume(this.volume / 2);
         if (this.volume > 0) {
           localStorage.setItem('volume', this.volume.toString());
         }
       },
       metronomeTickVolume() {
-        this.metronomeNew.setTickVolume(this.metronomeTickVolume / 2);
+        this.metronome.setTickVolume(this.metronomeTickVolume / 2);
         if (this.metronomeTickVolume > 0) {
           localStorage.setItem(
             'metronomeTickVolume',
@@ -86,7 +87,7 @@
           return;
         }
 
-        this.metronomeNew.setBpm(this.bpm * this.bpmMultiplier);
+        this.metronome.setBpm(this.bpm * this.bpmMultiplier);
       },
     },
     async mounted() {
@@ -102,23 +103,26 @@
       await this.audioContext.audioWorklet.addModule(
         '/js/metronome-processor.js',
       );
-      this.playerNew = new Player(this.audioContext);
-      this.metronomeNew = new Metronome(
+      this.player = new Player(this.audioContext);
+      this.metronome = new Metronome(
         this.audioContext,
         this.bpm,
         this.metronomeTickBuffer,
         this.timingOffset / 1000,
         this.metronomeTickVolume / 200,
-        this.playerNew,
+        this.player,
         () => {
-          this.$emit('metronome');
+          this.$emit(
+            'metronome',
+            this.player.getCurrentTime(),
+            this.player.getDuration(),
+          );
           this.songProgress =
-            (this.playerNew.getCurrentTime() / this.playerNew.getDuration()) *
-            100;
+            (this.player.getCurrentTime() / this.player.getDuration()) * 100;
         },
       );
-      this.playerNew.loadBuffer(this.audioBuffer);
-      this.playerNew.setVolume(this.volume / 2);
+      this.player.loadBuffer(this.audioBuffer);
+      this.player.setVolume(this.volume / 2);
     },
     methods: {
       toggleMute() {
@@ -135,31 +139,31 @@
         this.bpmMultiplier = n;
       },
       play() {
-        this.playerNew.play();
-        this.metronomeNew.start();
+        this.player.play();
+        this.metronome.start();
         this.isPlaying = true;
         this.isPaused = false;
         this.isStopped = false;
       },
       pause() {
-        this.playerNew.pause();
-        this.metronomeNew.stop();
+        this.player.pause();
+        this.metronome.stop();
         this.isPlaying = false;
         this.isPaused = true;
         this.isStopped = false;
       },
       stop() {
-        this.playerNew.stop();
-        this.metronomeNew.stop();
+        this.player.stop();
+        this.metronome.stop();
         this.songProgress = 0;
         this.isPlaying = false;
         this.isPaused = false;
         this.isStopped = true;
       },
       onProgressDrag(progress: number) {
-        const targetTime = (progress / 100) * this.playerNew.getDuration();
-        this.playerNew.setCurrentTime(targetTime);
-        this.metronomeNew.start();
+        const targetTime = (progress / 100) * this.player.getDuration();
+        this.player.setCurrentTime(targetTime);
+        this.metronome.start();
         this.isPlaying = true;
         this.isPaused = false;
         this.isStopped = false;
