@@ -89,13 +89,11 @@
         this.step = 1;
         this.initialLoading = false;
       },
-      onBPMChange(event) {
-        const bpm = parseFloat(event.target.value);
+      onBPMChange(bpm: number) {
         this.bpm = bpm;
       },
-      onTimingOffsetChange(event) {
-        const timingOffset = parseFloat(event.target.value);
-        this.timingOffset = timingOffset;
+      onTimingOffsetChange(offset: number) {
+        this.timingOffset = offset;
       },
       resetBPMGuess() {
         if (this.myBPMGuess <= 0) {
@@ -186,6 +184,8 @@
           :audio-buffer="audioBuffer"
           :initial-offset="timingOffset"
           :initial-bpm="bpm"
+          @bpm-change="onBPMChange"
+          @offset-change="onTimingOffsetChange"
         />
       </template>
     </Step>

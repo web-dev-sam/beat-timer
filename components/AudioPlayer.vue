@@ -14,11 +14,10 @@
    * It's probably gonna be an article on dev.to
    */
 
-  import { defineComponent, ref } from 'vue';
+  import { defineComponent } from 'vue';
   import { debounce } from 'debounce';
   import Metronome from '~~/utils/Metronome';
   import Player from '~~/utils/Player';
-  import { AudioPlayer } from '~~/.nuxt/components';
 
   const MAX_METRONOME_BPM = 400;
 

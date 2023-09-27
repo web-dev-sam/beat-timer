@@ -18,6 +18,7 @@
         required: true,
       },
     },
+    emits: ['bpm-change', 'offset-change'],
     data() {
       return {
         spectogramHandler: null,
@@ -28,6 +29,20 @@
         bpm: null,
         offset: null,
       };
+    },
+    watch: {
+      bpm() {
+        if (this.bpm != null && this.bpm !== this.initialBpm) {
+          this.spectogramHandler.setBPM(this.bpm);
+          this.$emit('bpm-change', this.bpm);
+        }
+      },
+      offset() {
+        if (this.offset != null && this.offset !== this.initialOffset) {
+          this.spectogramHandler.setOffset(this.offset);
+          this.$emit('offset-change', this.offset);
+        }
+      },
     },
     async mounted() {
       this.bpm = this.initialBpm;
@@ -106,7 +121,6 @@
           const newBPM =
             Math.round((this.bpm + bpmDiff) / snapPrecision) * snapPrecision;
           this.bpm = newBPM;
-          this.spectogramHandler.setBPM(this.bpm);
         }
 
         // Update Offset
@@ -114,7 +128,6 @@
           const offsetDiff = (this.dragStart - event.offsetX) / 4;
           const newOffset = (this.offset - offsetDiff) % (60000 / this.bpm);
           this.offset = newOffset;
-          this.spectogramHandler.setOffset(this.offset);
         }
 
         this.dragStart = null;

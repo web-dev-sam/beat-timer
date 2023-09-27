@@ -62,15 +62,11 @@ export default class SpectogramHandler {
   }
 
   setBPM(bpm: number) {
-    if (this.bpm !== bpm) {
-      this.bpm = bpm;
-      this.onSpeclineUpdate(this.getSpecLines());
-    }
+    this.onBPMOrOffsetChange(bpm, this.offset);
   }
 
   setOffset(offset: number) {
-    this.offset = offset;
-    this.onSpeclineUpdate(this.getSpecLines());
+    this.onBPMOrOffsetChange(this.bpm, offset);
   }
 
   updateTime(time: number, duration: number) {
@@ -90,6 +86,18 @@ export default class SpectogramHandler {
     this.canvas.style.transformOrigin = 'left';
 
     this.onSpeclineUpdate(this.getSpecLines());
+  }
+
+  private onBPMOrOffsetChange(bpm: number, offset: number) {
+    if (this.bpm !== bpm) {
+      this.bpm = bpm;
+      this.onSpeclineUpdate(this.getSpecLines());
+    }
+
+    if (this.offset !== offset) {
+      this.offset = offset;
+      this.onSpeclineUpdate(this.getSpecLines());
+    }
   }
 
   private zoom(sPerVw: number) {
