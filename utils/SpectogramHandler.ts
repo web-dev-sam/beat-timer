@@ -88,14 +88,19 @@ export default class SpectogramHandler {
     this.onSpeclineUpdate(this.getSpecLines());
   }
 
-  private onBPMOrOffsetChange(bpm: number, offset: number) {
-    if (this.bpm !== bpm) {
+  onBPMOrOffsetChange(bpm: number, offset: number) {
+    const prevBPM = this.bpm;
+    const prevOffset = this.offset;
+
+    if (prevBPM !== bpm) {
       this.bpm = bpm;
-      this.onSpeclineUpdate(this.getSpecLines());
     }
 
-    if (this.offset !== offset) {
+    if (prevOffset !== offset) {
       this.offset = offset;
+    }
+
+    if (prevBPM !== bpm || prevOffset !== offset) {
       this.onSpeclineUpdate(this.getSpecLines());
     }
   }
@@ -126,8 +131,11 @@ export default class SpectogramHandler {
 
     const beatLines = [];
     while (offsetPx + beatPx * beatLines.length <= this.vw) {
+      const leftPX = offsetPx + beatPx * beatLines.length;
+      const leftS = pageOffsetMS / 1000 + secPerBeat * beatLines.length;
       beatLines.push({
-        left: offsetPx + beatPx * beatLines.length,
+        left: leftPX,
+        time: leftS,
         activeOffset: false,
         activeBPM: false,
       });

@@ -53,6 +53,18 @@
         bpm: this.initialBpm,
         offset: this.initialOffset,
         onSpeclineUpdate: (speclines) => {
+          const activeSpecline = this.speclines.find(
+            (specline) => specline.activeBPM || specline.activeOffset,
+          );
+          if (activeSpecline != null) {
+            speclines.forEach((specline) => {
+              if (Math.abs(specline.time - activeSpecline.time) < 0.1) {
+                specline.activeBPM = activeSpecline.activeBPM;
+                specline.activeOffset = activeSpecline.activeOffset;
+              }
+            });
+          }
+
           this.speclines = speclines;
         },
       });
@@ -66,46 +78,74 @@
         this.spectogramHandler.zoomOut();
       },
       onCanvasMouseMove(event) {
-        this.speclines.forEach((specline) => {
-          specline.activeBPM = false;
-          specline.activeOffset = false;
-        });
-        const nearestSpecline = this.speclines.reduce((prev, curr) =>
-          Math.abs(curr.left - event.offsetX) <
-          Math.abs(prev.left - event.offsetX)
-            ? curr
-            : prev,
-        );
-
         const currentlyDragging = this.dragStart != null;
-        const movingInUpperHalf =
-          event.offsetY < event.srcElement.clientHeight / 2;
-        nearestSpecline.activeBPM =
-          (currentlyDragging && this.draggingMode === 'BPM') ||
-          (!currentlyDragging && movingInUpperHalf);
-        nearestSpecline.activeOffset =
-          (currentlyDragging && this.draggingMode === 'OFFSET') ||
-          (!currentlyDragging && !movingInUpperHalf);
+        if (!currentlyDragging) {
+          this.speclines.forEach((specline) => {
+            specline.activeBPM = false;
+            specline.activeOffset = false;
+          });
+          const nearestSpecline = this.speclines.reduce((prev, curr) =>
+            Math.abs(curr.left - event.offsetX) <
+            Math.abs(prev.left - event.offsetX)
+              ? curr
+              : prev,
+          );
+
+          const movingInUpperHalf =
+            event.offsetY < event.srcElement.clientHeight / 2;
+          nearestSpecline.activeBPM = movingInUpperHalf;
+          nearestSpecline.activeOffset = !movingInUpperHalf;
+          this.draggingMode = movingInUpperHalf ? 'BPM' : 'OFFSET';
+          this.speclines = [...this.speclines];
+          return;
+        }
+
+        const activeSpecline = this.speclines.find(
+          (specline) => specline.activeBPM || specline.activeOffset,
+        );
+        if (activeSpecline == null) {
+          return;
+        }
 
         // Adjust BPM
-        if (currentlyDragging && this.draggingMode === 'BPM') {
-          const snapPrecision = 0.5;
-          const bpmDiff = (this.dragStart - event.offsetX) / 50;
-          const newBPM =
-            Math.round((this.bpm + bpmDiff) / snapPrecision) * snapPrecision;
-          console.log(newBPM);
-          this.spectogramHandler.setBPM(newBPM);
+        if (activeSpecline.activeBPM) {
+          const [newBPM, newOffset] = this.calculateBPMDrag(
+            this.dragStart - event.offsetX,
+            activeSpecline,
+          );
+
+          console.log('BPM', newBPM);
+          console.log('Offset', newOffset);
+          this.spectogramHandler.onBPMOrOffsetChange(newBPM, newOffset);
         }
 
         // Adjust Offset
-        if (currentlyDragging && this.draggingMode === 'OFFSET') {
-          const offsetDiff = (this.dragStart - event.offsetX) / 4;
-          const newOffset = (this.offset - offsetDiff) % (60000 / this.bpm);
-          console.log(newOffset);
+        if (activeSpecline.activeOffset) {
+          const newOffset = this.calculateOffsetDrag(
+            this.dragStart - event.offsetX,
+          );
+          console.log('Offset', newOffset);
           this.spectogramHandler.setOffset(newOffset);
         }
 
         this.speclines = [...this.speclines];
+      },
+      calculateBPMDrag(dragChange, fromSpecline) {
+        const snapPrecision = 0.5;
+        const bpmDiff = dragChange / 40;
+        const newBPM =
+          Math.round((this.bpm + bpmDiff) / snapPrecision) * snapPrecision;
+
+        const interval = 60 / newBPM;
+        const activeSpeclineTime = fromSpecline.time;
+        const newOffset = (activeSpeclineTime % interval) * 1000;
+
+        return [newBPM, newOffset];
+      },
+      calculateOffsetDrag(dragChange) {
+        const offsetDiff = dragChange / 4;
+        const newOffset = (this.offset - offsetDiff) % (60000 / this.bpm);
+        return newOffset;
       },
       onCanvasMouseDown(event) {
         this.dragStart = event.offsetX;
@@ -116,17 +156,26 @@
       onCanvasMouseUp(event) {
         // Update BPM
         if (this.dragStart != null && this.draggingMode === 'BPM') {
-          const snapPrecision = 0.5;
-          const bpmDiff = (this.dragStart - event.offsetX) / 50;
-          const newBPM =
-            Math.round((this.bpm + bpmDiff) / snapPrecision) * snapPrecision;
+          const activeSpecline = this.speclines.find(
+            (specline) => specline.activeBPM || specline.activeOffset,
+          );
+          if (activeSpecline == null) {
+            return;
+          }
+
+          const [newBPM, newOffset] = this.calculateBPMDrag(
+            this.dragStart - event.offsetX,
+            activeSpecline,
+          );
           this.bpm = newBPM;
+          this.offset = newOffset;
         }
 
         // Update Offset
         if (this.dragStart != null && this.draggingMode === 'OFFSET') {
-          const offsetDiff = (this.dragStart - event.offsetX) / 4;
-          const newOffset = (this.offset - offsetDiff) % (60000 / this.bpm);
+          const newOffset = this.calculateOffsetDrag(
+            this.dragStart - event.offsetX,
+          );
           this.offset = newOffset;
         }
 
