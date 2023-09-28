@@ -8,9 +8,9 @@ export default class Player {
   private pausedTime: number;
   private started: boolean;
   private gainNode: GainNode;
-  private spectogramHandler: SpectogramHandler | null;
+  private onStop: (arg: any) => void;
 
-  constructor(context: AudioContext) {
+  constructor(context: AudioContext, onStop: (arg: any) => void) {
     this.context = context;
     this.source = null;
     this.buffer = null;
@@ -19,14 +19,20 @@ export default class Player {
     this.started = false;
     this.gainNode = this.context.createGain();
     this.gainNode.connect(this.context.destination);
-    this.spectogramHandler = null;
+    this.onStop = onStop;
   }
 
   getCurrentTime(): number {
-    if (this.started) {
-      return this.context.currentTime - this.startTime;
+    const currentTime = this.started
+      ? this.context.currentTime - this.startTime
+      : this.pausedTime;
+
+    if (currentTime > this.getDuration()) {
+      this.stop();
+      return 0;
     }
-    return this.pausedTime;
+
+    return currentTime;
   }
 
   getDuration(): number {
@@ -34,11 +40,6 @@ export default class Player {
       return this.buffer.duration;
     }
     return 0;
-  }
-
-  setSpectogramHandler(spectogramHandler: SpectogramHandler): void {
-    console.log('setSpectogramHandler');
-    this.spectogramHandler = spectogramHandler;
   }
 
   loadBuffer(buffer: AudioBuffer): void {
@@ -81,6 +82,7 @@ export default class Player {
       this.source.stop(0);
       this.pausedTime = 0;
       this.started = false;
+      this.onStop('player');
     }
   }
 

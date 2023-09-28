@@ -102,7 +102,7 @@
       await this.audioContext.audioWorklet.addModule(
         '/js/metronome-processor.js',
       );
-      this.player = new Player(this.audioContext);
+      this.player = new Player(this.audioContext, this.stop.bind(this));
       this.metronome = new Metronome(
         this.audioContext,
         this.bpm,
@@ -151,8 +151,10 @@
         this.isPaused = true;
         this.isStopped = false;
       },
-      stop() {
-        this.player.stop();
+      stop(sender: any) {
+        if (sender !== 'player') {
+          this.player.stop();
+        }
         this.metronome.stop();
         this.songProgress = 0;
         this.isPlaying = false;
