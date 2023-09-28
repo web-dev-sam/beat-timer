@@ -32,7 +32,21 @@
         dragEnd: null,
         bpm: null,
         offset: null,
+        progress: 0,
       };
+    },
+    computed: {
+      progressPX() {
+        if (this.spectogramHandler) {
+          console.log(this.progress);
+          const asd = this.spectogramHandler.getProgressPX(
+            this.progress + 60 / this.spectogramHandler.bpm,
+          );
+          console.log(asd);
+          return asd;
+        }
+        return 0;
+      },
     },
     watch: {
       bpm() {
@@ -46,6 +60,10 @@
           this.spectogramHandler.setOffset(this.offset);
           this.$emit('offset-change', this.offset);
         }
+      },
+      speclines() {
+        const beatTime = 60 / this.spectogramHandler.bpm;
+        this.$refs.progressFilter.style.transition = `left ${beatTime}s linear`;
       },
     },
     async mounted() {
@@ -176,6 +194,7 @@
         this.dragStart = null;
       },
       onMetronome(time: number, duration: number) {
+        this.progress = time;
         this.spectogramHandler.updateTime(time, duration);
       },
     },
@@ -184,13 +203,18 @@
 
 <template>
   <div
-    class="w-full canvas-root py-8"
+    class="canvas-root w-full relative mb-8"
     @mousemove="onCanvasMouseMove"
     @mousedown="onCanvasMouseDown"
     @mouseup="onCanvasMouseUp"
     @mouseleave="onCanvasMouseUp"
   >
     <canvas ref="canvas" class="h-32"></canvas>
+    <div
+      ref="progressFilter"
+      class="progress-filter absolute h-32 top-0 w-full"
+      :style="{ left: progressPX + 'px' }"
+    ></div>
     <div class="spec-line-wrapper w-full">
       <div
         v-for="(specline, index) in speclines"
@@ -229,6 +253,11 @@
 </template>
 
 <style scoped>
+  .progress-filter {
+    background-color: #04122f20;
+    backdrop-filter: saturate(18%);
+  }
+
   .canvas-root:hover {
     cursor: move;
     cursor: grab;

@@ -70,8 +70,6 @@ export default class SpectogramHandler {
   }
 
   updateTime(time: number, duration: number) {
-    console.log('updateTime', time);
-
     const secPerPage = this.currentZoom;
     const currentPage = Math.floor(time / secPerPage);
     if (this.currentPage === currentPage) {
@@ -86,6 +84,13 @@ export default class SpectogramHandler {
     this.canvas.style.transformOrigin = 'left';
 
     this.onSpeclineUpdate(this.getSpecLines(this.bpm, this.offset));
+  }
+
+  getProgressPX(time: number) {
+    const secPerPage = this.currentZoom;
+    const timeInPage = time - this.currentPage * secPerPage;
+    const pxPerS = this.vw / secPerPage;
+    return timeInPage * pxPerS;
   }
 
   onBPMOrOffsetChange(bpm: number, offset: number) {
