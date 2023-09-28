@@ -38,11 +38,9 @@
     computed: {
       progressPX() {
         if (this.spectogramHandler) {
-          console.log(this.progress);
           const asd = this.spectogramHandler.getProgressPX(
             this.progress + 60 / this.spectogramHandler.bpm,
           );
-          console.log(asd);
           return asd;
         }
         return 0;
