@@ -145,18 +145,21 @@
         const interval = 60 / newBPM;
         const activeSpeclineTime = fromSpecline.time;
         const newOffset = (activeSpeclineTime % interval) * 1000;
-        this.spectogramHandler.setOffset(newOffset);
+        const positiveNewOffset = newOffset < 0 ? 0 : newOffset;
+        this.spectogramHandler.setOffset(positiveNewOffset);
 
-        this.$emit('bpm-offset-change', newBPM, newOffset);
-        return [newBPM, newOffset];
+        this.$emit('bpm-offset-change', newBPM, positiveNewOffset);
+        return [newBPM, positiveNewOffset];
       },
       calculateOffsetDrag(dragChange) {
         const offsetDiff = dragChange / 4;
-        const newOffset = (this.offset - offsetDiff) % (60000 / this.bpm);
-        this.spectogramHandler.setOffset(newOffset);
+        const interval = 60000 / this.bpm;
+        const newOffset = (this.offset - offsetDiff) % interval;
+        const positiveNewOffset = newOffset < 0 ? 0 : newOffset;
+        this.spectogramHandler.setOffset(positiveNewOffset);
 
-        this.$emit('bpm-offset-change', this.bpm, newOffset);
-        return newOffset;
+        this.$emit('bpm-offset-change', this.bpm, positiveNewOffset);
+        return positiveNewOffset;
       },
       onCanvasMouseDown(event) {
         this.dragStart = event.offsetX;
