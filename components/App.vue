@@ -117,8 +117,11 @@
         this.bpm = this.myBPMGuess;
         this.timingOffset = this.myOffsetGuess;
       },
-      goToSilenceStep() {
+      goToDownloadStep() {
         this.step = 2;
+      },
+      goBackToTiming() {
+        this.step = 1;
       },
       goBackToBeginning() {
         window.location.reload();
@@ -174,7 +177,7 @@
         >
           Use Example
         </UButton>
-        <UButton v-if="step === 1" class="mb-0 mr-0" @click="goToSilenceStep">
+        <UButton v-if="step === 1" class="mb-0 mr-0" @click="goToDownloadStep">
           Seems On Time
         </UButton>
       </template>
@@ -221,10 +224,16 @@
           <button></button>
         </div>
       </template>
+      <template #2>
+        <h1 class="heading">Processing...</h1>
+        <p class="muted-text mb-6"></p>
+        <UButton @click="goBackToTiming"> Back </UButton>
+        <UButton> Download </UButton>
+      </template>
     </Step>
     <FooterArea>
       <AudioPlayer
-        v-if="step > 0"
+        v-if="step === 1"
         ref="audioPlayer"
         :bpm="bpm"
         :audio-buffer="audioBuffer"

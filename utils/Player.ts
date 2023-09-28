@@ -1,5 +1,3 @@
-import SpectogramHandler from './SpectogramHandler';
-
 export default class Player {
   private context: AudioContext;
   private source: AudioBufferSourceNode | null;

@@ -27,6 +27,13 @@
     >
       <slot name="1"></slot>
     </div>
+
+    <div
+      class="auto-flow-small step-2"
+      :class="step === 2 ? 'main-shown' : 'main-hidden'"
+    >
+      <slot name="2"></slot>
+    </div>
   </main>
 </template>
 
