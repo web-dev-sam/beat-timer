@@ -1,4 +1,5 @@
 <script lang="ts">
+  import debounce from 'debounce';
   import { defineComponent } from 'vue';
   import SpectogramHandler from '~~/utils/SpectogramHandler';
 
@@ -18,7 +19,7 @@
         required: true,
       },
     },
-    emits: ['bpm-change', 'offset-change', 'drag-start'],
+    emits: ['bpm-change', 'offset-change', 'drag-start', 'bpm-offset-change'],
     data() {
       return {
         spectogramHandler: null,
@@ -48,6 +49,7 @@
       },
     },
     async mounted() {
+      this.debouncedLogBPMAndOffset = debounce(this.logBPMAndOffset, 1000);
       this.bpm = this.initialBpm;
       this.offset = this.initialOffset;
       this.spectogramHandler = new SpectogramHandler({
@@ -98,8 +100,7 @@
             this.activeSpecline.data,
           );
 
-          console.log('BPM', newBPM);
-          console.log('Offset', newOffset);
+          this.debouncedLogBPMAndOffset(newBPM, newOffset);
         }
 
         // Adjust Offset
@@ -107,36 +108,38 @@
           const newOffset = this.calculateOffsetDrag(
             this.dragStart - event.offsetX,
           );
-          console.log('Offset', newOffset);
-          this.spectogramHandler.setOffset(newOffset);
+          this.debouncedLogBPMAndOffset(this.bpm, newOffset);
         }
 
         this.speclines = [...this.speclines];
       },
+      logBPMAndOffset(bpm: number, offset: number) {
+        console.groupCollapsed('BPM & Offset');
+        console.log('BPM', bpm);
+        console.log('Offset', offset);
+        console.groupEnd();
+      },
       calculateBPMDrag(dragChange, fromSpecline) {
         const snapPrecision = 0.5;
         const bpmDiff = dragChange / 40;
-        // console.log('BPM Diff', bpmDiff);
-        // console.log('BPMMMMMM', this.bpm);
         const newBPM =
           Math.round((this.bpm + bpmDiff) / snapPrecision) * snapPrecision;
-        // console.log('NEW BPM', newBPM);
         this.spectogramHandler.setBPM(newBPM);
 
         const interval = 60 / newBPM;
         const activeSpeclineTime = fromSpecline.time;
-        // console.log('activeSpeclineTime', activeSpeclineTime);
         const newOffset = (activeSpeclineTime % interval) * 1000;
-        // console.log('NEW OFFSET', newOffset);
-        // console.log('----------------------------');
         this.spectogramHandler.setOffset(newOffset);
 
+        this.$emit('bpm-offset-change', newBPM, newOffset);
         return [newBPM, newOffset];
       },
       calculateOffsetDrag(dragChange) {
         const offsetDiff = dragChange / 4;
         const newOffset = (this.offset - offsetDiff) % (60000 / this.bpm);
         this.spectogramHandler.setOffset(newOffset);
+
+        this.$emit('bpm-offset-change', this.bpm, newOffset);
         return newOffset;
       },
       onCanvasMouseDown(event) {

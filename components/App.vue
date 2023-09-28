@@ -13,7 +13,9 @@
         myBPMGuess: 0,
         myOffsetGuess: 0,
         bpm: 120,
+        draggingBPM: 120,
         timingOffset: 0,
+        draggingOffset: 0,
         step: 0,
         silenceAtStart: 0,
         fileExtension: '',
@@ -38,6 +40,14 @@
       },
       recommendedMeasures() {
         return Math.max(1, Math.min(4, Math.ceil(1000 / this.beatTime)));
+      },
+    },
+    watch: {
+      bpm() {
+        this.draggingBPM = this.bpm;
+      },
+      timingOffset() {
+        this.draggingOffset = this.timingOffset;
       },
     },
     mounted() {
@@ -90,10 +100,14 @@
         this.initialLoading = false;
       },
       onBPMChange(bpm: number) {
-        this.bpm = bpm;
+        this.bpm = this.draggingBPM = bpm;
       },
       onTimingOffsetChange(offset: number) {
-        this.timingOffset = offset;
+        this.timingOffset = this.draggingOffset = offset;
+      },
+      onBPMOffsetDraggingChange(bpm: number, offset: number) {
+        this.draggingBPM = bpm;
+        this.draggingOffset = offset;
       },
       resetBPMGuess() {
         if (this.myBPMGuess <= 0) {
@@ -149,6 +163,9 @@
       <template #left>
         <IconsHelp />
       </template>
+      <template #center>
+        <h1 class="heading"></h1>
+      </template>
       <template #right>
         <UButton
           v-if="step === 0"
@@ -157,7 +174,7 @@
         >
           Use Example
         </UButton>
-        <UButton v-if="step === 1" @click="goToSilenceStep">
+        <UButton v-if="step === 1" class="mb-0 mr-0" @click="goToSilenceStep">
           Seems On Time
         </UButton>
       </template>
@@ -173,9 +190,12 @@
         </UFileInput>
       </template>
       <template #1>
-        <div class="flex justify-between mx-6">
-          <div></div>
-          <h1 class="heading mb-6">Align the beat.</h1>
+        <div class="flex justify-between mx-6 items-end">
+          <h2>
+            <span class="muted-text">BPM: </span
+            ><span class="subheading">{{ draggingBPM }}</span>
+          </h2>
+          <h1 class="heading">Align the beat.</h1>
           <button @click="toggleZoom">
             <IconsZoomIn v-show="!isZoomed" />
             <IconsZoomOut v-show="isZoomed" />
@@ -190,7 +210,16 @@
           @bpm-change="onBPMChange"
           @offset-change="onTimingOffsetChange"
           @drag-start="pauseAudio"
+          @bpm-offset-change="onBPMOffsetDraggingChange"
         />
+        <div class="flex justify-between mx-6 mt-6">
+          <h2>
+            <span class="muted-text">Start: </span
+            ><span class="subheading">{{ draggingOffset.toFixed(0) }}ms</span>
+          </h2>
+          <h1 class="heading"></h1>
+          <button></button>
+        </div>
       </template>
     </Step>
     <FooterArea>

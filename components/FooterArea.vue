@@ -13,7 +13,7 @@
 </script>
 
 <template>
-  <div class="p-12 w-full">
+  <div class="p-12 pt-32 w-full">
     <slot></slot>
   </div>
 </template>

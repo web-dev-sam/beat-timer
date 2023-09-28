@@ -17,6 +17,7 @@
 <template>
   <div class="flex justify-between p-12">
     <slot name="left"></slot>
+    <slot name="center"></slot>
     <slot name="right"></slot>
   </div>
 </template>

@@ -1,9 +1,8 @@
 <script lang="ts">
   import { defineComponent, ref } from 'vue';
-  import { debounce } from 'debounce';
 
   export default defineComponent({
-    name: 'AudioPlayer',
+    name: 'StepContainer',
     props: {
       step: {
         type: Number,
@@ -38,10 +37,6 @@
   }
 
   .step-0 {
-    height: 12rem;
-  }
-
-  .step-1 {
     height: 12rem;
   }
 

@@ -86,6 +86,12 @@
     text-rendering: geometricPrecision;
   }
 
+  .subheading {
+    font-size: 1.5rem;
+    font-weight: 900;
+    text-rendering: geometricPrecision;
+  }
+
   .muted-text {
     font-size: 1rem;
     font-weight: 400;

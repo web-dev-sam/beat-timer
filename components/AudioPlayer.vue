@@ -176,7 +176,7 @@
     <div class="track__controls flex justify-between items-end gap-3">
       <div class="track__volume flex flex-col">
         <div class="track__sliderleft mb-6">
-          <USlider v-model="volume" :min="0" :max="200" />
+          <USlider v-model="volume" :min="0" :max="200" class="w-32" />
         </div>
         <button @click="toggleMute">
           <IconsSpeaker />
@@ -196,7 +196,12 @@
       <div class="flex-1"></div>
       <div class="track__metronome-volume flex flex-col items-end">
         <div class="track__sliderright mb-6">
-          <USlider v-model="metronomeTickVolume" :min="0" :max="200" />
+          <USlider
+            v-model="metronomeTickVolume"
+            :min="0"
+            :max="200"
+            class="w-32"
+          />
         </div>
         <div class="flex gap-6">
           <button
