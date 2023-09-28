@@ -225,10 +225,14 @@
         </div>
       </template>
       <template #2>
-        <h1 class="heading">Processing...</h1>
-        <p class="muted-text mb-6"></p>
-        <UButton @click="goBackToTiming"> Back </UButton>
-        <UButton> Download </UButton>
+        <h1 class="heading">Download</h1>
+        <p class="muted-text mb-6">
+          You have made it! You can now download your song.
+        </p>
+        <div class="flex justify-center">
+          <UButton :secondary="true" @click="goBackToTiming"> Back </UButton>
+          <UButton :loading="downloading" @click="download"> Download </UButton>
+        </div>
       </template>
     </Step>
     <FooterArea>
