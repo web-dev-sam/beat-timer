@@ -127,12 +127,13 @@
         window.location.reload();
       },
       onMeasureClick(amount: number) {
-        this.silenceAtStart = amount * this.beatTime;
+        //this.silenceAtStart = amount * this.beatTime;
         this.step = 3;
       },
       async download() {
         this.downloading = true;
         await this.ffmpegHandler.download(
+          this.bpm,
           this.timingOffset,
           this.silenceAtStart,
         );

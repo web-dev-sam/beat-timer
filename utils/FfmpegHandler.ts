@@ -17,10 +17,9 @@ export default class FfmpegHandler {
     this.file = file;
   }
 
-  async download(timingOffset: number, startSilence: number) {
+  async download(bpm: number, timingOffset: number, startSilence: number = 0) {
     const file = this.file;
-    const beginningPad = timingOffset + startSilence;
-    console.log('Beginning pad:', beginningPad);
+    const beginningPad = 60000 / bpm - timingOffset + startSilence;
     const downloadFile = await this.padAudio(file, beginningPad);
     downloadFile();
   }
