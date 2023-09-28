@@ -18,7 +18,7 @@ const meta: NuxtOptionsHead = {
     { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: true },
     {
       rel: 'stylesheet',
-      href: 'https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,900&display=swap',
+      href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap',
     },
   ],
   noscript: [
