@@ -7,6 +7,7 @@ class MetronomeProcessor extends AudioWorkletProcessor {
     super();
     this.currentSample = 0;
     this.active = true;
+    console.log("from thread");
 
     // Add a message event listener to the port
     this.port.onmessage = (event) => {

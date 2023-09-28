@@ -118,17 +118,11 @@
         this.timingOffset = this.myOffsetGuess;
       },
       goToDownloadStep() {
+        this.pauseAudio();
         this.step = 2;
       },
       goBackToTiming() {
         this.step = 1;
-      },
-      goBackToBeginning() {
-        window.location.reload();
-      },
-      onMeasureClick(amount: number) {
-        //this.silenceAtStart = amount * this.beatTime;
-        this.step = 3;
       },
       async download() {
         this.downloading = true;
@@ -228,7 +222,9 @@
       <template #2>
         <h1 class="heading">Download</h1>
         <p class="muted-text mb-6">
-          You have made it! You can now download your song.
+          You have made it! You can now download your song. If you want to
+          convert it to another format, you can use
+          <a :href="converterURL" target="_blank">this converter</a>.
         </p>
         <div class="flex justify-center">
           <UButton :secondary="true" @click="goBackToTiming"> Back </UButton>
@@ -249,4 +245,10 @@
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+  a {
+    text-decoration: underline;
+    text-decoration: underline wavy;
+    color: white;
+  }
+</style>
