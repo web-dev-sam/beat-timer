@@ -12,6 +12,7 @@ export default class Metronome {
   private gainNode: GainNode;
   private player: Player;
   private volume: number = 0.5;
+  private isPlaying: boolean;
 
   constructor(
     context: AudioContext,
@@ -30,6 +31,7 @@ export default class Metronome {
     this.player = player;
     this.onBeat = onBeat;
     this.volume = volume;
+    this.isPlaying = false;
     this.setupAudioWorkletNode();
   }
 
@@ -83,6 +85,7 @@ export default class Metronome {
   }
 
   public async start() {
+    this.isPlaying = false;
     this.stop();
     this.setupAudioWorkletNode();
     this.metronomeNode.connect(this.context.destination);
@@ -92,6 +95,7 @@ export default class Metronome {
         this.context.sampleRate * this.interval,
         this.context.currentTime,
       );
+    this.isPlaying = true;
   }
 
   public pause() {
@@ -102,6 +106,7 @@ export default class Metronome {
       this.source.stop();
       this.source.disconnect();
     }
+    this.isPlaying = false;
   }
 
   public stop() {
@@ -112,17 +117,20 @@ export default class Metronome {
       this.source.stop();
       this.source.disconnect();
     }
+    this.isPlaying = false;
   }
 
   public setBpm(bpm: number) {
     this.bpm = bpm;
     this.interval = 60 / this.bpm;
-    this.metronomeNode.parameters
-      .get('interval')
-      .setValueAtTime(
-        this.context.sampleRate * this.interval,
-        this.context.currentTime,
-      );
+    if (this.isPlaying) {
+      this.metronomeNode.parameters
+        .get('interval')
+        .setValueAtTime(
+          this.context.sampleRate * this.interval,
+          this.context.currentTime,
+        );
+    }
   }
 
   public setOffset(offset: number) {

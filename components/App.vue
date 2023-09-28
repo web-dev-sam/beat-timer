@@ -135,6 +135,9 @@
           this.$refs.spectogram.onMetronome(time, duration);
         }
       },
+      pauseAudio() {
+        this.$refs.audioPlayer.pause();
+      },
     },
   });
 </script>
@@ -186,12 +189,14 @@
           :initial-bpm="bpm"
           @bpm-change="onBPMChange"
           @offset-change="onTimingOffsetChange"
+          @drag-start="pauseAudio"
         />
       </template>
     </Step>
     <FooterArea>
       <AudioPlayer
         v-if="step > 0"
+        ref="audioPlayer"
         :bpm="bpm"
         :audio-buffer="audioBuffer"
         :timing-offset="timingOffset"

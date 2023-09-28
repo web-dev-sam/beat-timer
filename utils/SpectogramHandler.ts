@@ -85,7 +85,7 @@ export default class SpectogramHandler {
     this.canvas.style.transform = `translateX(-${leftEdgePx}px) scaleX(${this.scale})`;
     this.canvas.style.transformOrigin = 'left';
 
-    this.onSpeclineUpdate(this.getSpecLines());
+    this.onSpeclineUpdate(this.getSpecLines(this.bpm, this.offset));
   }
 
   onBPMOrOffsetChange(bpm: number, offset: number) {
@@ -101,7 +101,7 @@ export default class SpectogramHandler {
     }
 
     if (prevBPM !== bpm || prevOffset !== offset) {
-      this.onSpeclineUpdate(this.getSpecLines());
+      this.onSpeclineUpdate(this.getSpecLines(this.bpm, this.offset));
     }
   }
 
@@ -116,28 +116,29 @@ export default class SpectogramHandler {
     this.canvas.style.transform = `scaleX(${scale})`;
     this.canvas.style.transformOrigin = 'left';
 
-    this.onSpeclineUpdate(this.getSpecLines());
+    this.onSpeclineUpdate(this.getSpecLines(this.bpm, this.offset));
   }
 
-  getSpecLines(): number[] {
+  getSpecLines(bpm: number, offset: number): number[] {
     const secPerVw = this.currentZoom;
-    const leftEdgeTimeInSec = this.currentPage * secPerVw;
-    const secPerBeat = 60 / this.bpm;
-    const pageOffsetMS =
-      (leftEdgeTimeInSec * 1000 + this.offset) % (secPerBeat * 1000);
+    const interval = 60 / bpm;
+    const currentPageLeftInS = this.currentPage * secPerVw;
+    const currentPageOffsetInS = interval - (currentPageLeftInS % interval);
     const sToPx = (s: number) => s * (this.vw / secPerVw);
-    const offsetPx = sToPx(pageOffsetMS / 1000);
-    const beatPx = sToPx(secPerBeat);
+    const pxToS = (px: number) => px / (this.vw / secPerVw);
+    const currentPageOffsetInPX = sToPx(currentPageOffsetInS);
+    const intervalInPX = sToPx(interval);
+
+    // console.log('Interval (s)', interval);
+    // console.log('Interval (px)', intervalInPX);
 
     const beatLines = [];
-    while (offsetPx + beatPx * beatLines.length <= this.vw) {
-      const leftPX = offsetPx + beatPx * beatLines.length;
-      const leftS = pageOffsetMS / 1000 + secPerBeat * beatLines.length;
+    while (currentPageOffsetInPX + intervalInPX * beatLines.length <= this.vw) {
+      const leftPX = currentPageOffsetInPX + intervalInPX * beatLines.length;
+      const leftS = currentPageLeftInS + pxToS(leftPX);
       beatLines.push({
-        left: leftPX,
-        time: leftS,
-        activeOffset: false,
-        activeBPM: false,
+        left: leftPX - sToPx(interval * 1000 - offset) / 1000,
+        time: leftS - (interval * 1000 - offset) / 1000,
       });
     }
     return beatLines;

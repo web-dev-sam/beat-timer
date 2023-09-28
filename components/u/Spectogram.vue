@@ -18,14 +18,17 @@
         required: true,
       },
     },
-    emits: ['bpm-change', 'offset-change'],
+    emits: ['bpm-change', 'offset-change', 'drag-start'],
     data() {
       return {
         spectogramHandler: null,
         speclines: [],
+        activeSpecline: {
+          type: 'BPM',
+          data: null,
+        },
         dragStart: null,
         dragEnd: null,
-        draggingMode: 'BPM',
         bpm: null,
         offset: null,
       };
@@ -53,18 +56,6 @@
         bpm: this.initialBpm,
         offset: this.initialOffset,
         onSpeclineUpdate: (speclines) => {
-          const activeSpecline = this.speclines.find(
-            (specline) => specline.activeBPM || specline.activeOffset,
-          );
-          if (activeSpecline != null) {
-            speclines.forEach((specline) => {
-              if (Math.abs(specline.time - activeSpecline.time) < 0.1) {
-                specline.activeBPM = activeSpecline.activeBPM;
-                specline.activeOffset = activeSpecline.activeOffset;
-              }
-            });
-          }
-
           this.speclines = speclines;
         },
       });
@@ -80,10 +71,6 @@
       onCanvasMouseMove(event) {
         const currentlyDragging = this.dragStart != null;
         if (!currentlyDragging) {
-          this.speclines.forEach((specline) => {
-            specline.activeBPM = false;
-            specline.activeOffset = false;
-          });
           const nearestSpecline = this.speclines.reduce((prev, curr) =>
             Math.abs(curr.left - event.offsetX) <
             Math.abs(prev.left - event.offsetX)
@@ -93,34 +80,30 @@
 
           const movingInUpperHalf =
             event.offsetY < event.srcElement.clientHeight / 2;
-          nearestSpecline.activeBPM = movingInUpperHalf;
-          nearestSpecline.activeOffset = !movingInUpperHalf;
-          this.draggingMode = movingInUpperHalf ? 'BPM' : 'OFFSET';
-          this.speclines = [...this.speclines];
+          this.activeSpecline = {
+            data: nearestSpecline,
+            type: movingInUpperHalf ? 'BPM' : 'OFFSET',
+          };
           return;
         }
 
-        const activeSpecline = this.speclines.find(
-          (specline) => specline.activeBPM || specline.activeOffset,
-        );
-        if (activeSpecline == null) {
+        if (this.activeSpecline == null || this.activeSpecline.data == null) {
           return;
         }
 
         // Adjust BPM
-        if (activeSpecline.activeBPM) {
+        if (this.activeSpecline.type === 'BPM') {
           const [newBPM, newOffset] = this.calculateBPMDrag(
             this.dragStart - event.offsetX,
-            activeSpecline,
+            this.activeSpecline.data,
           );
 
           console.log('BPM', newBPM);
           console.log('Offset', newOffset);
-          this.spectogramHandler.onBPMOrOffsetChange(newBPM, newOffset);
         }
 
         // Adjust Offset
-        if (activeSpecline.activeOffset) {
+        if (this.activeSpecline.type === 'OFFSET') {
           const newOffset = this.calculateOffsetDrag(
             this.dragStart - event.offsetX,
           );
@@ -133,46 +116,54 @@
       calculateBPMDrag(dragChange, fromSpecline) {
         const snapPrecision = 0.5;
         const bpmDiff = dragChange / 40;
+        // console.log('BPM Diff', bpmDiff);
+        // console.log('BPMMMMMM', this.bpm);
         const newBPM =
           Math.round((this.bpm + bpmDiff) / snapPrecision) * snapPrecision;
+        // console.log('NEW BPM', newBPM);
+        this.spectogramHandler.setBPM(newBPM);
 
         const interval = 60 / newBPM;
         const activeSpeclineTime = fromSpecline.time;
+        // console.log('activeSpeclineTime', activeSpeclineTime);
         const newOffset = (activeSpeclineTime % interval) * 1000;
+        // console.log('NEW OFFSET', newOffset);
+        // console.log('----------------------------');
+        this.spectogramHandler.setOffset(newOffset);
 
         return [newBPM, newOffset];
       },
       calculateOffsetDrag(dragChange) {
         const offsetDiff = dragChange / 4;
         const newOffset = (this.offset - offsetDiff) % (60000 / this.bpm);
+        this.spectogramHandler.setOffset(newOffset);
         return newOffset;
       },
       onCanvasMouseDown(event) {
         this.dragStart = event.offsetX;
         this.dragEnd = null;
-        this.draggingMode =
+        this.activeSpecline.type =
           event.offsetY < event.srcElement.clientHeight / 2 ? 'BPM' : 'OFFSET';
+        this.$emit('drag-start');
       },
       onCanvasMouseUp(event) {
         // Update BPM
-        if (this.dragStart != null && this.draggingMode === 'BPM') {
-          const activeSpecline = this.speclines.find(
-            (specline) => specline.activeBPM || specline.activeOffset,
-          );
-          if (activeSpecline == null) {
+        if (this.dragStart != null && this.activeSpecline.type === 'BPM') {
+          if (this.activeSpecline == null || this.activeSpecline.data == null) {
+            this.dragStart = null;
             return;
           }
 
           const [newBPM, newOffset] = this.calculateBPMDrag(
             this.dragStart - event.offsetX,
-            activeSpecline,
+            this.activeSpecline.data,
           );
           this.bpm = newBPM;
           this.offset = newOffset;
         }
 
         // Update Offset
-        if (this.dragStart != null && this.draggingMode === 'OFFSET') {
+        if (this.dragStart != null && this.activeSpecline.type === 'OFFSET') {
           const newOffset = this.calculateOffsetDrag(
             this.dragStart - event.offsetX,
           );
@@ -208,13 +199,24 @@
       >
         <div
           class="spec-line-bpm"
-          :style="{ opacity: specline.activeBPM ? 1 : 0 }"
+          :style="{
+            opacity:
+              specline === activeSpecline.data && activeSpecline.type === 'BPM'
+                ? 1
+                : 0,
+          }"
         >
           BPM
         </div>
         <div
           class="spec-line-offset"
-          :style="{ opacity: specline.activeOffset ? 1 : 0 }"
+          :style="{
+            opacity:
+              specline === activeSpecline.data &&
+              activeSpecline.type === 'OFFSET'
+                ? 1
+                : 0,
+          }"
         >
           POS
         </div>
