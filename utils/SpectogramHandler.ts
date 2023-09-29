@@ -134,9 +134,6 @@ export default class SpectogramHandler {
     const currentPageOffsetInPX = sToPx(currentPageOffsetInS);
     const intervalInPX = sToPx(interval);
 
-    // console.log('Interval (s)', interval);
-    // console.log('Interval (px)', intervalInPX);
-
     const beatLines = [];
     while (currentPageOffsetInPX + intervalInPX * beatLines.length <= this.vw) {
       const leftPX = currentPageOffsetInPX + intervalInPX * beatLines.length;

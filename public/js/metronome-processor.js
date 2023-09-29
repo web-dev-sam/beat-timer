@@ -7,7 +7,6 @@ class MetronomeProcessor extends AudioWorkletProcessor {
     super();
     this.currentSample = 0;
     this.active = true;
-    console.log("from thread");
 
     // Add a message event listener to the port
     this.port.onmessage = (event) => {
@@ -27,9 +26,9 @@ class MetronomeProcessor extends AudioWorkletProcessor {
 
     const output = outputs[0];
     const interval =
-      parameters.interval.length > 1
-        ? parameters.interval
-        : parameters.interval[0];
+      parameters.interval instanceof Float32Array
+        ? parameters.interval[0]
+        : parameters.interval;
 
     for (let channel = 0; channel < output.length; ++channel) {
       const outputChannel = output[channel];
