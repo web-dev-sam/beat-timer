@@ -202,6 +202,9 @@
       pauseAudio() {
         this.$refs.audioPlayer.pause();
       },
+      openHelpModal() {
+        this.$refs.helpModal.open();
+      },
     },
   });
 </script>
@@ -211,7 +214,72 @@
     <IconsBeatCloud v-if="step >= 0" :size="beatCloudSize" />
     <HeaderButtons>
       <template #left>
-        <IconsHelp />
+        <button @click="openHelpModal">
+          <IconsHelp />
+        </button>
+        <UModal ref="helpModal">
+          <div class="auto-flow-small text-center">
+            <h2 class="heading">Song Timer</h2>
+            <p class="muted-text">v1.0.0</p>
+            <p>
+              A web app to align the beat of your song to the beat of your game.
+              This app is still new, and tested primarily with Beat Saber.
+              Please report any issues you find on GitHub.
+            </p>
+            <h3 class="subheading !mt-12">How To Use</h3>
+            <ol class="auto-flow-small list-decimal list-inside text-left">
+              <li>Upload your song.</li>
+              <li>
+                When you see the fancy looking audio visualizer, hover over
+                lower part of the audio and drag to change the positioning a
+                beat starts at. When you have aligned the beat, hover over the
+                upper part of the audio and drag to change the BPM.<br />
+                <i class="block mt-2 orange">
+                  Tip 1: In most cases you should search the BPM on Google and
+                  try that value... its usually correct and saves you time.</i
+                >
+              </li>
+              <li>
+                Click "Seems On Time" when you aligned the audio.<br />
+                <i class="block mt-2 orange">
+                  Tip 2: If you have a song with BPM changes, align the beat to
+                  the starting BPM.</i
+                >
+              </li>
+              <li>
+                Just download it.
+                <i class="block mt-2 orange">
+                  Tip 3: You can convert the audio to .ogg using this tool:
+                  <a
+                    href="https://convertio.co/mp3-ogg/"
+                    target="_blank"
+                    class="orange"
+                    >Tool</a
+                  >.</i
+                >
+              </li>
+            </ol>
+            <h3 class="subheading !mt-12">Support</h3>
+            <p>
+              You can support me on GitHub by
+              <a
+                href="https://github.com/web-dev-sam/song-timer"
+                target="_blank"
+                class="orange"
+                >giving this project a star</a
+              >. I would really appreciate it!
+            </p>
+            <p class="!mt-12">
+              Made with &#129505; by
+              <a
+                href="https://github.com/web-dev-sam"
+                target="_blank"
+                class="author"
+                >Samuel Braun</a
+              >.
+            </p>
+          </div>
+        </UModal>
       </template>
       <template #center></template>
       <template #right>
@@ -306,5 +374,19 @@
     text-decoration: underline;
     text-decoration: underline wavy;
     color: white;
+  }
+
+  .orange {
+    color: #fd7d44;
+  }
+
+  .author {
+    color: #fd7d44;
+    text-decoration: none;
+  }
+
+  .author:hover {
+    text-decoration: underline;
+    text-decoration: underline wavy;
   }
 </style>

@@ -23,6 +23,7 @@
     "@ffmpeg/ffmpeg": "^0.11.6",
     "@picocss/pico": "^1.5.7",
     "debounce": "^1.2.1",
+    "esbuild": "^0.19.4",
     "fft.js": "^4.0.4",
     "wavesurfer.js": "^6.6.1",
     "web-audio-beat-detector": "^8.1.43"

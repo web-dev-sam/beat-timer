@@ -114,4 +114,8 @@
     transform-origin: bottom bottom;
     transform: rotate(var(--tw-rotate, 0deg));
   }
+
+  p {
+    line-height: 2;
+  }
 </style>
