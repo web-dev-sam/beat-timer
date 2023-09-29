@@ -1,12 +1,10 @@
 import { defineNuxtConfig } from 'nuxt/config';
-import { buildModules, meta, modules, publicRuntimeConfig } from './config';
+import { buildModules, modules, publicRuntimeConfig } from './config';
 
 // https://v3.nuxtjs.org/docs/directory-structure/nuxt.config
 export default defineNuxtConfig({
   // https://v3.nuxtjs.org/docs/directory-structure/nuxt.config#ssr
   ssr: false,
-  // https://v3.nuxtjs.org/docs/directory-structure/nuxt.config#meta
-  meta,
   app: {
     head: {
       meta: [
@@ -51,6 +49,24 @@ export default defineNuxtConfig({
           hid: 'og:site_name',
           property: 'og:site_name',
           content: 'Song Timer',
+        },
+        { charset: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+      ],
+      charset: 'utf-8',
+      viewport: 'width=device-width, initial-scale=1',
+      title: 'Song Timer',
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        {
+          rel: 'preconnect',
+          href: 'https://fonts.gstatic.com',
+          crossorigin: 'anonymous',
+        },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap',
         },
       ],
     },
