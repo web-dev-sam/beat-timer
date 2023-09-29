@@ -11,6 +11,40 @@ const meta: NuxtOptionsHead = {
       name: 'description',
       content: description,
     },
+    {
+      property: 'title',
+      content: 'Song Timer',
+    },
+    {
+      property: 'description',
+      content:
+        "A web app to align your song's beat to your game's beat. This app is still new and was tested primarily with Beat Saber.",
+    },
+    {
+      property: 'og:description',
+      content:
+        "A web app to align your song's beat to your game's beat. This app is still new and was tested primarily with Beat Saber.",
+    },
+    {
+      property: 'og:image',
+      content: 'https://song-timer.webry.com/meta/cover.png',
+    },
+    {
+      property: 'og:title',
+      content: 'Song Timer',
+    },
+    {
+      property: 'og:type',
+      content: 'website',
+    },
+    {
+      property: 'og:url',
+      content: 'https://song-timer.webry.com/',
+    },
+    {
+      property: 'og:site_name',
+      content: 'Song Timer',
+    },
   ],
   link: [
     { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },

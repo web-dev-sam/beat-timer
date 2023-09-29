@@ -1,8 +1,8 @@
+<script setup lang="ts"></script>
+
 <template>
   <App />
 </template>
-
-<script></script>
 
 <style>
   :root {
