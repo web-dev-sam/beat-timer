@@ -35,9 +35,6 @@
 
         return 60000 / this.bpm;
       },
-      converterURL() {
-        return `https://convertio.co/${this.fileExtension}-ogg/`;
-      },
       recommendedMeasures() {
         return Math.max(1, Math.min(4, Math.ceil(1000 / this.beatTime)));
       },
@@ -246,18 +243,7 @@
                   the starting BPM.</i
                 >
               </li>
-              <li>
-                Just download it.
-                <i class="block mt-2 orange">
-                  Tip 3: You can convert the audio to .ogg using this tool:
-                  <a
-                    href="https://convertio.co/mp3-ogg/"
-                    target="_blank"
-                    class="orange"
-                    >Tool</a
-                  >.</i
-                >
-              </li>
+              <li>Just download your timed .ogg.</li>
             </ol>
             <h3 class="subheading !mt-12">Support</h3>
             <p>
@@ -345,7 +331,7 @@
         <p class="muted-text mb-6">
           You have made it! You can now download your song. If you want to
           convert it to another format, you can use
-          <a :href="converterURL" target="_blank">this converter</a>.
+          <a href="https://convertio.co/" target="_blank">this converter</a>.
         </p>
         <div class="flex justify-center">
           <UButton :secondary="true" @click="goBackToTiming"> Back </UButton>
