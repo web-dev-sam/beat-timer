@@ -210,8 +210,6 @@ export default class SpectogramHandler {
 
     const width = this.canvas.width;
     const height = this.canvas.height;
-    const songLength = this.audioBuffer.duration;
-    const pointsPerS = width / songLength;
     const imageData = this.canvasContext.createImageData(width, height);
     const uint8ClampedData = imageData.data;
 
@@ -231,6 +229,8 @@ export default class SpectogramHandler {
         uint8ClampedData[idx++] = blue;
         uint8ClampedData[idx++] = 255;
 
+        // const songLength = this.audioBuffer.duration;
+        // const pointsPerS = width / songLength;
         // uint8ClampedData[idx++] =
         //   Math.floor(x / pointsPerS) % 2 === 0 ? 0 : 225;
         // uint8ClampedData[idx++] =

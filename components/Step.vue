@@ -21,10 +21,7 @@
       <slot name="0"></slot>
     </div>
 
-    <div
-      class="auto-flow-small step-1"
-      :class="step === 1 ? 'main-shown' : 'main-hidden'"
-    >
+    <div class="step-1" :class="step === 1 ? 'main-shown' : 'main-hidden'">
       <slot name="1"></slot>
     </div>
 

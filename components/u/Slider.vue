@@ -37,4 +37,8 @@
   />
 </template>
 
-<style scoped></style>
+<style scoped>
+  input {
+    width: clamp(100px, 10vh, 300px);
+  }
+</style>

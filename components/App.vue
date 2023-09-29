@@ -41,6 +41,58 @@
       recommendedMeasures() {
         return Math.max(1, Math.min(4, Math.ceil(1000 / this.beatTime)));
       },
+      compatibleDevice() {
+        const noWindow = typeof window === 'undefined';
+        if (noWindow) {
+          console.warn('No window object found, assuming incompatible device.');
+          return false;
+        }
+
+        const noAudioContext = !window.AudioContext;
+        if (noAudioContext) {
+          console.warn('No AudioContext found, assuming incompatible device.');
+          return false;
+        }
+
+        const isMobile = /iPad|iPhone|iPod|Android/.test(navigator.userAgent);
+        if (isMobile) {
+          console.warn('Mobile device detected, assuming incompatible device.');
+          return false;
+        }
+
+        const isSmallScreen =
+          document.body.clientWidth < 600 || document.body.clientHeight < 850;
+        if (isSmallScreen) {
+          console.warn('Small screen detected, assuming incompatible device.');
+          return false;
+        }
+
+        return true;
+      },
+      compatibleDeviceError() {
+        const noWindow = typeof window === 'undefined';
+        if (noWindow) {
+          return 'Your browser does not support this application. Please use the latest version of Chrome, Firefox or any other modern browser.';
+        }
+
+        const noAudioContext = !window.AudioContext;
+        if (noAudioContext) {
+          return 'Your browser does not support AudioContext. Please use the latest version of Chrome, Firefox or any other modern browser.';
+        }
+
+        const isMobile = /iPad|iPhone|iPod|Android/.test(navigator.userAgent);
+        if (isMobile) {
+          return 'You cannot use this application on a mobile device. Please use a desktop computer.';
+        }
+
+        const isSmallScreen =
+          document.body.clientWidth < 600 || document.body.clientHeight < 850;
+        if (isSmallScreen) {
+          return 'Your screen is too small to use this application effectively. Please make your browser window bigger and reload the page. If you are on a mobile device, please use a desktop computer.';
+        }
+
+        return '';
+      },
     },
     watch: {
       bpm() {
@@ -155,15 +207,13 @@
 </script>
 
 <template>
-  <div class="h-screen flex flex-col">
+  <div v-if="compatibleDevice" class="h-screen flex flex-col">
     <IconsBeatCloud v-if="step >= 0" :size="beatCloudSize" />
     <HeaderButtons>
       <template #left>
         <IconsHelp />
       </template>
-      <template #center>
-        <h1 class="heading"></h1>
-      </template>
+      <template #center></template>
       <template #right>
         <UButton
           v-if="step === 0"
@@ -188,12 +238,15 @@
         </UFileInput>
       </template>
       <template #1>
-        <div class="flex justify-between mx-6 items-end">
+        <div>
+          <h1 class="heading mb-18">Align the beat.</h1>
+        </div>
+        <div class="flex justify-between mx-12 items-end">
           <h2>
-            <span class="muted-text">BPM: </span
-            ><span class="subheading">{{ draggingBPM }}</span>
+            <span class="subheading">{{ draggingBPM }}</span
+            ><span class="ml-2 muted-text">BPM</span>
           </h2>
-          <h1 class="heading">Align the beat.</h1>
+          <h2 class="heading"></h2>
           <button @click="toggleZoom">
             <IconsZoomIn v-show="!isZoomed" />
             <IconsZoomOut v-show="isZoomed" />
@@ -210,10 +263,10 @@
           @drag-start="pauseAudio"
           @bpm-offset-change="onBPMOffsetDraggingChange"
         />
-        <div class="flex justify-between mx-6 mt-6">
+        <div class="flex justify-between mx-12 mt-6">
           <h2>
-            <span class="muted-text">Start: </span
-            ><span class="subheading">{{ draggingOffset.toFixed(0) }}ms</span>
+            <span class="subheading">{{ draggingOffset.toFixed(0) }}</span
+            ><span class="ml-2 muted-text">MS</span>
           </h2>
           <h1 class="heading"></h1>
           <button></button>
@@ -242,6 +295,9 @@
         @metronome="onMetronome"
       />
     </FooterArea>
+  </div>
+  <div v-else>
+    <p class="p-12 text-xl leading-10">{{ compatibleDeviceError }}</p>
   </div>
 </template>
 
