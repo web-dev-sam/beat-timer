@@ -1,10 +1,10 @@
 {
   "name": "song-timer",
-  "description": "Awesome Nuxt 3 app 🥳",
-  "version": "0.1.0",
+  "description": "A web app to align your song's beat to your game's beat.",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "export NODE_OPTIONS=--openssl-legacy-provider; nuxi dev",
+    "dev": "nuxi dev",
     "build": "export NODE_OPTIONS=--openssl-legacy-provider; nuxi build",
     "start": "export NODE_OPTIONS=--openssl-legacy-provider; node .output/server/index.mjs",
     "generate": "export NODE_OPTIONS=--openssl-legacy-provider; nuxi generate",
@@ -22,6 +22,9 @@
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.11.6",
     "@picocss/pico": "^1.5.7",
+    "debounce": "^1.2.1",
+    "esbuild": "^0.19.4",
+    "fft.js": "^4.0.4",
     "wavesurfer.js": "^6.6.1",
     "web-audio-beat-detector": "^8.1.43"
   },
@@ -36,10 +39,8 @@
     "@vinayakkulkarni/prettier-config-vue": "^1.0.0",
     "eslint": "^8.26.0",
     "eslint-config-prettier": "^8.5.0",
-    "eslint-plugin-jsdoc": "^39.6.1",
     "eslint-plugin-nuxt": "^4.0.0",
     "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-security": "^1.5.0",
     "husky": "^8.0.1",
     "lint-staged": "^13.0.3",
     "nuxt": "^3.0.0-rc.12",
