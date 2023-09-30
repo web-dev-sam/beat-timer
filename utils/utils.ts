@@ -57,3 +57,7 @@ function hueToRgb(p: number, q: number, t: number): number {
   if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
   return p;
 }
+
+export function songOffsetToSilencePadding(bpm: number, offset: number) {
+  return 60000 / bpm - offset;
+}

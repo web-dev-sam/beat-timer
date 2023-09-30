@@ -53,11 +53,6 @@
         bpmMultiplier: 1,
       };
     },
-    computed: {
-      metronomeDoubleSpeedDisabled() {
-        return this.bpmMultiplier * this.bpm > MAX_METRONOME_BPM;
-      },
-    },
     watch: {
       bpm() {
         this.metronome.setBpm(this.bpm);
@@ -122,6 +117,16 @@
       );
       this.player.loadBuffer(this.audioBuffer);
       this.player.setVolume(this.volume / 2);
+
+      document.addEventListener('keydown', (event) => {
+        if (event.code === 'Space') {
+          if (this.isPlaying) {
+            this.pause();
+          } else {
+            this.play();
+          }
+        }
+      });
     },
     methods: {
       toggleMute() {
@@ -130,14 +135,12 @@
       toggleMetronome() {
         this.metronomeTickVolume = this.metronomeTickVolume > 0 ? 0 : 100;
       },
-      toggleMetronomeSpeed(n: number) {
-        if (this.bpmMultiplier === n) {
-          this.bpmMultiplier = 1;
+      play() {
+        if (this.isPlaying) {
+          this.pause();
           return;
         }
-        this.bpmMultiplier = n;
-      },
-      play() {
+
         this.player.play();
         this.metronome.start();
         this.isPlaying = true;
@@ -169,6 +172,9 @@
         this.isPaused = false;
         this.isStopped = false;
       },
+      toggleMetronomeSpeed(bpmMultiplier: number) {
+        this.bpmMultiplier = bpmMultiplier;
+      },
     },
   });
 </script>
@@ -187,12 +193,13 @@
       <div class="flex-1"></div>
       <div>
         <AudioPlayerBasicControls
+          :bpm="bpm"
           :is-playing="isPlaying"
           :is-paused="isPaused"
           :is-stopped="isStopped"
           @play="play"
-          @pause="pause"
           @stop="stop"
+          @speed="toggleMetronomeSpeed"
         />
       </div>
       <div class="flex-1"></div>
@@ -206,19 +213,6 @@
           />
         </div>
         <div class="flex gap-6">
-          <button
-            v-show="bpmMultiplier !== 2"
-            :disabled="metronomeDoubleSpeedDisabled"
-            @click="() => toggleMetronomeSpeed(2)"
-          >
-            <IconsX2 />
-          </button>
-          <button
-            v-show="bpmMultiplier !== 1"
-            @click="() => toggleMetronomeSpeed(1)"
-          >
-            <IconsX1 />
-          </button>
           <button @click="toggleMetronome">
             <IconsMetronome />
           </button>

@@ -118,4 +118,60 @@
   p {
     line-height: 2;
   }
+
+  [tooltip] {
+    position: relative;
+  }
+
+  [tooltip]::after {
+    content: attr(tooltip);
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-light-dark);
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--color-muted);
+    pointer-events: none;
+    width: max-content;
+    opacity: 0;
+    transition: opacity 0.1s ease-in-out;
+  }
+
+  [tooltip]:hover::after {
+    opacity: 1;
+  }
+
+  [tooltip-position='left']::after {
+    transform: translate(calc(-100% - 1rem), -1rem);
+    top: 50%;
+    left: 0;
+  }
+
+  [tooltip-position='right']::after {
+    transform: translate(1rem, -1rem);
+    top: 50%;
+    left: 100%;
+  }
+
+  [tooltip-position='top']::after {
+    transform: translate(-50%, -1rem);
+    top: auto;
+    bottom: 100%;
+    left: 50%;
+  }
+
+  [tooltip-position='bottom']::after {
+    transform: translateX(-50%);
+    top: 100%;
+    left: 50%;
+  }
+
+  [prevent-user-select] {
+    user-select: none;
+  }
+
 </style>

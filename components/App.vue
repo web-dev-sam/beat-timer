@@ -2,6 +2,15 @@
   import { defineComponent, ref } from 'vue';
   import FfmpegHandler from '~~/utils/FfmpegHandler';
   import { guess } from 'web-audio-beat-detector';
+  import { songOffsetToSilencePadding } from '~~/utils/utils';
+
+  // 2x/1x other way around
+  // zooming slider
+  // moving spectogram
+  // Detect bpm for subsection
+
+  // TODAY
+  // Medium: output quality
 
   export default defineComponent({
     name: 'App',
@@ -17,7 +26,6 @@
         timingOffset: 0,
         draggingOffset: 0,
         step: 0,
-        silenceAtStart: 0,
         fileExtension: '',
         downloading: false,
         audioBuffer: null,
@@ -25,6 +33,9 @@
         initialSelectFileLoading: false,
         beatCloudSize: 1,
         isZoomed: false,
+        overrideCompatibleDevice: false,
+        advancedSettingsOpen: false,
+        exportQuality: 8,
       };
     },
     computed: {
@@ -58,7 +69,7 @@
         }
 
         const isSmallScreen =
-          document.body.clientWidth < 600 || document.body.clientHeight < 850;
+          document.body.clientWidth < 600 || document.body.clientHeight < 750;
         if (isSmallScreen) {
           console.warn('Small screen detected, assuming incompatible device.');
           return false;
@@ -89,6 +100,19 @@
         }
 
         return '';
+      },
+      visualOffset() {
+        return songOffsetToSilencePadding(this.bpm, this.draggingOffset);
+      },
+      estimateFileSize() {
+        if (!this.audioBuffer || !this.ffmpegHandler) {
+          return 0;
+        }
+
+        const seconds = this.audioBuffer?.duration ?? 0;
+        return this.ffmpegHandler.formatFileSize(
+          this.ffmpegHandler.estimateFileSize(seconds, this.exportQuality),
+        );
       },
     },
     watch: {
@@ -178,7 +202,7 @@
         await this.ffmpegHandler.download(
           this.bpm,
           this.timingOffset,
-          this.silenceAtStart,
+          this.exportQuality,
         );
         this.downloading = false;
       },
@@ -202,16 +226,25 @@
       openHelpModal() {
         this.$refs.helpModal.open();
       },
+      ignoreCompatibility() {
+        this.overrideCompatibleDevice = true;
+      },
+      toggleAdvancedSettings() {
+        this.advancedSettingsOpen = !this.advancedSettingsOpen;
+      },
     },
   });
 </script>
 
 <template>
-  <div v-if="compatibleDevice" class="h-screen flex flex-col">
+  <div
+    v-if="compatibleDevice || overrideCompatibleDevice"
+    class="h-screen flex flex-col"
+  >
     <IconsBeatCloud v-if="step >= 0" :size="beatCloudSize" />
     <HeaderButtons>
       <template #left>
-        <button @click="openHelpModal">
+        <button @click="openHelpModal" tooltip-position="right" tooltip="Help">
           <IconsHelp />
         </button>
         <UModal ref="helpModal">
@@ -295,13 +328,17 @@
         <div>
           <h1 class="heading mb-18">Align the beat.</h1>
         </div>
-        <div class="flex justify-between mx-12 items-end">
+        <div class="flex justify-between mx-12 items-end" prevent-user-select>
           <h2>
             <span class="subheading">{{ draggingBPM }}</span
             ><span class="ml-2 muted-text">BPM</span>
           </h2>
           <h2 class="heading"></h2>
-          <button @click="toggleZoom">
+          <button
+            @click="toggleZoom"
+            tooltip-position="left"
+            :tooltip="isZoomed ? 'Zoom Out' : 'Zoom In'"
+          >
             <IconsZoomIn v-show="!isZoomed" />
             <IconsZoomOut v-show="isZoomed" />
           </button>
@@ -317,9 +354,16 @@
           @drag-start="pauseAudio"
           @bpm-offset-change="onBPMOffsetDraggingChange"
         />
-        <div class="flex justify-between mx-12 mt-6">
-          <h2>
-            <span class="subheading">{{ draggingOffset.toFixed(0) }}</span
+        <div class="flex justify-between mx-12 mt-6" prevent-user-select>
+          <h2
+            tooltip-position="right"
+            :tooltip="
+              visualOffset > 0
+                ? 'Silence at the start'
+                : 'Trimming length at start'
+            "
+          >
+            <span class="subheading">{{ visualOffset.toFixed(0) }}</span
             ><span class="ml-2 muted-text">MS</span>
           </h2>
           <h1 class="heading"></h1>
@@ -337,6 +381,27 @@
           <UButton :secondary="true" @click="goBackToTiming"> Back </UButton>
           <UButton :loading="downloading" @click="download"> Download </UButton>
         </div>
+        <button class="muted-text !mt-12" @click="toggleAdvancedSettings">
+          Advanced <IconsDown v-if="!advancedSettingsOpen" class="ml-2 inline-block" /><IconsUp v-if="advancedSettingsOpen" class="ml-2 inline-block" />
+        </button>
+        <div v-if="advancedSettingsOpen">
+          <div class="flex justify-center gap-6 items-center muted-text">
+            <div>Export Quality</div>
+            <div class="subheading">
+              {{ exportQuality }}
+            </div>
+            <div>
+              <USlider
+                v-model="exportQuality"
+                :min="1"
+                :max="10"
+                class="!w-72"
+              />
+            </div>
+            <div tooltip-position="bottom" tooltip="Could be lower or higher based on the song.">
+            ~{{ estimateFileSize }}</div>
+          </div>
+        </div>
       </template>
     </Step>
     <FooterArea>
@@ -352,6 +417,7 @@
   </div>
   <div v-else>
     <p class="p-12 text-xl leading-10">{{ compatibleDeviceError }}</p>
+    <UButton @click="ignoreCompatibility">I understand</UButton>
   </div>
 </template>
 

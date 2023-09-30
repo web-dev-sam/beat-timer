@@ -2,6 +2,7 @@
   import debounce from 'debounce';
   import { defineComponent } from 'vue';
   import SpectogramHandler from '~~/utils/SpectogramHandler';
+  import { songOffsetToSilencePadding } from '~~/utils/utils';
 
   export default defineComponent({
     name: 'USpectogram',
@@ -41,10 +42,22 @@
     computed: {
       progressPX() {
         if (this.spectogramHandler) {
-          const asd = this.spectogramHandler.getProgressPX(
+          const progPX = this.spectogramHandler.getProgressPX(
             this.progress + 60 / this.spectogramHandler.bpm,
           );
-          return asd;
+          return progPX;
+        }
+        return 0;
+      },
+      visualOffset() {
+        return songOffsetToSilencePadding(this.bpm, this.draggingOffset);
+      },
+      scissorsPosition() {
+        if (
+          this.spectogramHandler &&
+          this.spectogramHandler.currentPage === 0
+        ) {
+          return this.spectogramHandler.sToPx(-this.visualOffset / 1000);
         }
         return 0;
       },
@@ -83,6 +96,20 @@
         },
       });
       await this.spectogramHandler.generateSpectogram();
+      this.$nextTick(() => {
+        document.body.addEventListener('mousemove', (e) => {
+          this.mouseX = e.clientX;
+          this.onCanvasMouseMove(e);
+        });
+
+        document.body.addEventListener('mouseleave', (e) => {
+          this.onCanvasMouseUp(e);
+        });
+
+        document.body.addEventListener('mouseup', (e) => {
+          this.onCanvasMouseUp(e);
+        });
+      });
     },
     methods: {
       zoomIn() {
@@ -92,20 +119,17 @@
         this.spectogramHandler.zoomOut();
       },
       onCanvasMouseMove(event) {
-        this.mouseX = event.offsetX;
-        this.hovering = true;
-
         const currentlyDragging = this.dragStart != null;
         if (!currentlyDragging) {
           const nearestSpecline = this.speclines.reduce((prev, curr) =>
-            Math.abs(curr.left - event.offsetX) <
-            Math.abs(prev.left - event.offsetX)
+            Math.abs(curr.left - event.clientX) <
+            Math.abs(prev.left - event.clientX)
               ? curr
               : prev,
           );
-
-          const movingInUpperHalf =
-            event.offsetY < event.srcElement.clientHeight / 2;
+          const canvasRect = this.$refs.canvas.getBoundingClientRect();
+          const middleOfCanvas = canvasRect.top + canvasRect.height / 2;
+          const movingInUpperHalf = event.clientY < middleOfCanvas;
           this.activeSpecline = {
             data: nearestSpecline,
             type: movingInUpperHalf ? 'BPM' : 'OFFSET',
@@ -120,7 +144,7 @@
         // Adjust BPM
         if (this.activeSpecline.type === 'BPM') {
           const [newBPM, newOffset] = this.calculateBPMDrag(
-            this.dragStart - event.offsetX,
+            this.dragStart - event.clientX,
             this.activeSpecline.data,
           );
 
@@ -130,7 +154,7 @@
         // Adjust Offset
         if (this.activeSpecline.type === 'OFFSET') {
           const newOffset = this.calculateOffsetDrag(
-            this.dragStart - event.offsetX,
+            this.dragStart - event.clientX,
           );
           this.debouncedLogBPMAndOffset(this.bpm, newOffset);
         }
@@ -154,28 +178,27 @@
         const interval = 60 / newBPM;
         const activeSpeclineTime = fromSpecline.time;
         const newOffset = (activeSpeclineTime % interval) * 1000;
-        const positiveNewOffset = newOffset < 0 ? 0 : newOffset;
-        this.draggingOffset = positiveNewOffset;
-        this.spectogramHandler.setOffset(positiveNewOffset);
+        this.draggingOffset = newOffset;
+        this.spectogramHandler.setOffset(newOffset);
 
-        this.$emit('bpm-offset-change', newBPM, positiveNewOffset);
-        return [newBPM, positiveNewOffset];
+        this.$emit('bpm-offset-change', newBPM, newOffset);
+        return [newBPM, newOffset];
       },
       calculateOffsetDrag(dragChange) {
         const offsetDiff = dragChange / 4;
-        const interval = 60000 / this.bpm;
-        const newOffset = (this.offset - offsetDiff) % interval;
-        const positiveNewOffset = newOffset < 0 ? 0 : newOffset;
-        this.draggingOffset = positiveNewOffset;
-        this.spectogramHandler.setOffset(positiveNewOffset);
+        const newOffset = this.offset - offsetDiff;
+        this.draggingOffset = newOffset;
+        this.spectogramHandler.setOffset(newOffset);
 
-        this.$emit('bpm-offset-change', this.bpm, positiveNewOffset);
-        return positiveNewOffset;
+        this.$emit('bpm-offset-change', this.bpm, newOffset);
+        return newOffset;
       },
       onCanvasMouseDown(event) {
-        this.dragStart = event.offsetX;
+        this.dragStart = event.clientX;
+        const canvasRect = this.$refs.canvas.getBoundingClientRect();
+        const middleOfCanvas = canvasRect.top + canvasRect.height / 2;
         this.activeSpecline.type =
-          event.offsetY < event.srcElement.clientHeight / 2 ? 'BPM' : 'OFFSET';
+          event.clientY < middleOfCanvas ? 'BPM' : 'OFFSET';
         this.$emit('drag-start');
       },
       onCanvasMouseUp(event) {
@@ -187,7 +210,7 @@
           }
 
           const [newBPM, newOffset] = this.calculateBPMDrag(
-            this.dragStart - event.offsetX,
+            this.dragStart - event.clientX,
             this.activeSpecline.data,
           );
           this.bpm = newBPM;
@@ -197,16 +220,18 @@
         // Update Offset
         if (this.dragStart != null && this.activeSpecline.type === 'OFFSET') {
           const newOffset = this.calculateOffsetDrag(
-            this.dragStart - event.offsetX,
+            this.dragStart - event.clientX,
           );
           this.offset = newOffset;
         }
 
         this.dragStart = null;
       },
-      onCanvasMouseLeave(e) {
+      onCanvasMouseEnter(event) {
+        this.hovering = true;
+      },
+      onCanvasMouseLeave(event) {
         this.hovering = false;
-        this.onCanvasMouseUp(e);
       },
       onMetronome(time: number, duration: number) {
         this.progress = time;
@@ -219,10 +244,11 @@
 <template>
   <div
     class="canvas-root w-full relative h-32 my-8"
-    @mousemove="onCanvasMouseMove"
     @mousedown="onCanvasMouseDown"
-    @mouseup="onCanvasMouseUp"
+    @mouseenter="onCanvasMouseEnter"
     @mouseleave="onCanvasMouseLeave"
+    ref="canvasRoot"
+    prevent-user-select
   >
     <canvas ref="canvas" class="h-32"></canvas>
     <div
@@ -242,7 +268,10 @@
       <div
         class="spec-line-bpm"
         :style="{
-          opacity: hovering && activeSpecline.type === 'BPM' ? 1 : 0,
+          opacity:
+            (hovering || dragStart != null) && activeSpecline.type === 'BPM'
+              ? 1
+              : 0,
           left: mouseX + 'px',
           scale: dragStart != null ? '2' : '1',
         }"
@@ -261,14 +290,17 @@
       <div
         class="spec-line-offset"
         :style="{
-          opacity: hovering && activeSpecline.type === 'OFFSET' ? 1 : 0,
+          opacity:
+            (hovering || dragStart != null) && activeSpecline.type === 'OFFSET'
+              ? 1
+              : 0,
           left: mouseX + 'px',
           scale: dragStart != null ? '2' : '1',
         }"
       >
         {{
           dragStart != null && activeSpecline.type === 'OFFSET'
-            ? draggingOffset.toFixed(0)
+            ? visualOffset.toFixed(0)
             : 'MS'
         }}
         <span
@@ -276,6 +308,13 @@
           class="muted-text-light"
           >MS</span
         >
+      </div>
+      <div
+        class="scissors-backdrop"
+        :style="{ width: scissorsPosition + 'px' }"
+      ></div>
+      <div class="scissors" :style="{ left: scissorsPosition + 'px' }">
+        <IconsScissors />
       </div>
     </div>
   </div>
@@ -338,6 +377,28 @@
     padding: 0.25rem 0.5rem;
     background: white;
     color: var(--color-dark);
+  }
+
+  .scissors {
+    position: absolute;
+    top: 50%;
+    left: 100px;
+    transform: translate(calc(-100% - 1rem), -50%);
+    transform-origin: right center;
+    font-size: 0.75rem;
+    line-height: 0.75rem;
+    border-radius: 1.25rem;
+    padding: 0.25rem 0.5rem;
+    color: var(--color-dark);
+  }
+
+  .scissors-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: right center;
+    height: 100%;
+    background: var(--color-dark);
   }
 
   .muted-text-light {

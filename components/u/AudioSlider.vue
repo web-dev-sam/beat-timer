@@ -24,6 +24,7 @@
       const handlePosition = ref((props.progress / props.max) * 100);
 
       const updateValueFromPosition = (event: MouseEvent) => {
+        if (!trackRef.value) return;
         const rect = trackRef.value.getBoundingClientRect();
         const percent = ((event.clientX - rect.left) / rect.width) * 100;
         const value = (percent / 100) * props.max;
