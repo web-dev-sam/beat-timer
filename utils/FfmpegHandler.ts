@@ -1,5 +1,6 @@
 import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
 import type { FFmpeg } from '@ffmpeg/ffmpeg';
+import { songOffsetToSilencePadding } from './utils';
 
 export default class FfmpegHandler {
   ffmpeg: FFmpeg;
@@ -19,10 +20,13 @@ export default class FfmpegHandler {
 
   async download(bpm: number, offset: number) {
     const file = this.file;
-    const beginningPad = 60000 / bpm - offset;
+    const beginningPad = songOffsetToSilencePadding(bpm, offset);
     console.log("beginningPad", beginningPad) // 346.5352
-    const downloadFile = await this.padAudio(file, beginningPad);
-    downloadFile();
+    if (beginningPad >= 0) {
+      (await this.padAudio(file, beginningPad))();
+    } else {
+      (await this.trimAudio(file, -beginningPad))();
+    }
   }
 
   async padAudio(file, beginningPad = 0) {
@@ -53,6 +57,52 @@ export default class FfmpegHandler {
 
     const paddedData = this.ffmpeg.FS('readFile', paddedName);
     return () => this.downloadAudio(paddedData, paddedName);
+  }
+
+  async trimAudio(file, beginningTrim = 0, endTrim = 0) {
+    const name = file.name;
+    const trimmedName = 'song.ogg';
+    const dataArray = await fetchFile(file);
+
+    this.ffmpeg.FS('writeFile', name, dataArray);
+
+    const trimStart = beginningTrim / 1000;
+    const trimEnd = endTrim / 1000;
+    const trimDuration = (await this.getDuration(dataArray) as number) - trimStart - trimEnd;
+
+    await this.ffmpeg.run(
+      '-i',
+      name,
+      '-ss',
+      this.formatDuration(trimStart),
+      '-t',
+      this.formatDuration(trimDuration),
+      '-c:a',
+      'libvorbis',
+      trimmedName,
+    );
+
+    const trimmedData = this.ffmpeg.FS('readFile', trimmedName);
+    return () => this.downloadAudio(trimmedData, trimmedName);
+  }
+
+  getDuration(dataArray: Uint8Array) {
+    return new Promise((resolve, reject) => {
+      const hiddenAudio = document.createElement('audio');
+      const blob = new Blob([dataArray.buffer], { type: 'audio/wav' });
+      const objectUrl = URL.createObjectURL(blob);
+      hiddenAudio.src = objectUrl;
+
+      hiddenAudio.addEventListener('loadedmetadata', () => {
+        const duration = hiddenAudio.duration;
+        URL.revokeObjectURL(objectUrl);
+        resolve(duration);
+      });
+
+      hiddenAudio.addEventListener('error', () => {
+        reject(new Error('Could not load the audio file.'));
+      });
+    });
   }
 
   formatDuration(seconds) {
@@ -102,93 +152,3 @@ export default class FfmpegHandler {
     downloadLink.click();
   }
 }
-
-
-
-
-// async trimAudio(file, beginningTrim = 0, endTrim = 0) {
-
-//   const name = file.name;
-//   const trimmedName = 'trimmed_' + name;
-//   const dataArray = await fetchFile(file);
-
-//   this.ffmpeg.FS('writeFile', name, dataArray);
-
-//   const trimStart = beginningTrim;
-//   const trimEnd = endTrim;
-
-//   const duration = await this.getDuration(dataArray);
-//   const formattedDuration = this.formatDuration(duration);
-//   const trimDuration = duration - trimStart - trimEnd;
-//   const formattedTrimDuration = this.formatDuration(trimDuration);
-
-//   await this.ffmpeg.run(
-//     '-i',
-//     name,
-//     '-ss',
-//     this.formatDuration(trimStart),
-//     '-t',
-//     formattedDuration,
-//     '-c',
-//     'copy',
-//     trimmedName,
-//   );
-
-//   const trimmedData = this.ffmpeg.FS('readFile', trimmedName);
-//   return () => this.downloadAudio(trimmedData, trimmedName);
-// }
-
-// async padAudio(file, beginningPad = 0) {
-//   const name = file.name;
-//   const paddedName = 'timed_' + name;
-
-//   this.ffmpeg.FS('writeFile', name, await fetchFile(file));
-
-//   const silenceDuration = beginningPad / 1000;
-
-//   await this.ffmpeg.run(
-//     '-f',
-//     'lavfi',
-//     '-t',
-//     this.formatDuration(silenceDuration),
-//     '-i',
-//     `anullsrc=channel_layout=stereo:sample_rate=44100`,
-//     '-i',
-//     name,
-//     '-filter_complex',
-//     '[0:a]asplit=2[silence1][silence2];[silence1][1:a][silence2]concat=n=3:v=0:a=1',
-//     paddedName,
-//   );
-
-//   const paddedData = this.ffmpeg.FS('readFile', paddedName);
-//   return () => this.downloadAudio(paddedData, paddedName);
-// }
-
-// getDuration(dataArray) {
-//   return new Promise((resolve, reject) => {
-//     const hiddenAudio = document.createElement('audio');
-//     const blob = new Blob([dataArray.buffer], { type: 'audio/wav' });
-//     const objectUrl = URL.createObjectURL(blob);
-//     hiddenAudio.src = objectUrl;
-
-//     hiddenAudio.addEventListener('loadedmetadata', () => {
-//       const duration = hiddenAudio.duration;
-//       URL.revokeObjectURL(objectUrl);
-//       resolve(duration);
-//     });
-
-//     hiddenAudio.addEventListener('error', () => {
-//       reject(new Error('Could not load the audio file.'));
-//     });
-//   });
-// }
-
-// downloadAudio(data, filename) {
-//   const blob = new Blob([data.buffer], { type: 'audio/wav' });
-//   const url = URL.createObjectURL(blob);
-//   const downloadLink = document.createElement('a');
-//   downloadLink.href = url;
-//   downloadLink.download = filename;
-//   downloadLink.style.display = 'block';
-//   downloadLink.click();
-// }

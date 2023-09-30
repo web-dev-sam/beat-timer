@@ -2,6 +2,7 @@
   import debounce from 'debounce';
   import { defineComponent } from 'vue';
   import SpectogramHandler from '~~/utils/SpectogramHandler';
+  import { songOffsetToSilencePadding } from '~~/utils/utils';
 
   export default defineComponent({
     name: 'USpectogram',
@@ -41,12 +42,18 @@
     computed: {
       progressPX() {
         if (this.spectogramHandler) {
-          const asd = this.spectogramHandler.getProgressPX(
+          const progPX = this.spectogramHandler.getProgressPX(
             this.progress + 60 / this.spectogramHandler.bpm,
           );
-          return asd;
+          return progPX;
         }
         return 0;
+      },
+      visualOffset() {
+        return songOffsetToSilencePadding(
+          this.bpm,
+          this.draggingOffset,
+        ).toFixed(0);
       },
     },
     watch: {
@@ -154,23 +161,21 @@
         const interval = 60 / newBPM;
         const activeSpeclineTime = fromSpecline.time;
         const newOffset = (activeSpeclineTime % interval) * 1000;
-        const positiveNewOffset = newOffset < 0 ? 0 : newOffset;
-        this.draggingOffset = positiveNewOffset;
-        this.spectogramHandler.setOffset(positiveNewOffset);
+        this.draggingOffset = newOffset;
+        this.spectogramHandler.setOffset(newOffset);
 
-        this.$emit('bpm-offset-change', newBPM, positiveNewOffset);
-        return [newBPM, positiveNewOffset];
+        this.$emit('bpm-offset-change', newBPM, newOffset);
+        return [newBPM, newOffset];
       },
       calculateOffsetDrag(dragChange) {
         const offsetDiff = dragChange / 4;
         const interval = 60000 / this.bpm;
-        const newOffset = (this.offset - offsetDiff) % interval;
-        const positiveNewOffset = newOffset < 0 ? 0 : newOffset;
-        this.draggingOffset = positiveNewOffset;
-        this.spectogramHandler.setOffset(positiveNewOffset);
+        const newOffset = this.offset - offsetDiff;
+        this.draggingOffset = newOffset;
+        this.spectogramHandler.setOffset(newOffset);
 
-        this.$emit('bpm-offset-change', this.bpm, positiveNewOffset);
-        return positiveNewOffset;
+        this.$emit('bpm-offset-change', this.bpm, newOffset);
+        return newOffset;
       },
       onCanvasMouseDown(event) {
         this.dragStart = event.offsetX;
@@ -268,7 +273,7 @@
       >
         {{
           dragStart != null && activeSpecline.type === 'OFFSET'
-            ? (60000 / bpm - draggingOffset).toFixed(0)
+            ? visualOffset
             : 'MS'
         }}
         <span
