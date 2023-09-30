@@ -9,8 +9,6 @@
   // Detect bpm for subsection
 
   // TODAY
-  // Small: Override screen size restriction
-  // Small: Fix displayed offset
   // Small: hot starts
   // Small: spacebar start/stop song
   // Small: Hover hints
@@ -32,7 +30,6 @@
         timingOffset: 0,
         draggingOffset: 0,
         step: 0,
-        silenceAtStart: 0,
         fileExtension: '',
         downloading: false,
         audioBuffer: null,
@@ -194,7 +191,6 @@
         await this.ffmpegHandler.download(
           this.bpm,
           this.timingOffset,
-          this.silenceAtStart,
         );
         this.downloading = false;
       },
@@ -341,7 +337,7 @@
         />
         <div class="flex justify-between mx-12 mt-6">
           <h2>
-            <span class="subheading">{{ draggingOffset.toFixed(0) }}</span
+            <span class="subheading">{{ (60000 / bpm - draggingOffset).toFixed(0) }}</span
             ><span class="ml-2 muted-text">MS</span>
           </h2>
           <h1 class="heading"></h1>

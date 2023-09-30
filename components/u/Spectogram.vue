@@ -268,7 +268,7 @@
       >
         {{
           dragStart != null && activeSpecline.type === 'OFFSET'
-            ? draggingOffset.toFixed(0)
+            ? (60000 / bpm - draggingOffset).toFixed(0)
             : 'MS'
         }}
         <span
