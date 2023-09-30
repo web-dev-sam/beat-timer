@@ -3,15 +3,20 @@
   import FfmpegHandler from '~~/utils/FfmpegHandler';
   import { guess } from 'web-audio-beat-detector';
 
-  // spacebar start/stop song
-  // drag area increase to whole page
-  // output quality
   // 2x/1x other way around
-  // hover hints
   // zooming slider
-  // hot starts
-  // merging play and pause
   // moving spectogram
+  // Detect bpm for subsection
+
+  // TODAY
+  // Small: Override screen size restriction
+  // Small: Fix displayed offset
+  // Small: hot starts
+  // Small: spacebar start/stop song
+  // Small: Hover hints
+  // Small: merging play and pause
+  // Medium: drag area increase to whole page
+  // Medium: output quality
 
   export default defineComponent({
     name: 'App',
@@ -35,6 +40,7 @@
         initialSelectFileLoading: false,
         beatCloudSize: 1,
         isZoomed: false,
+        overrideCompatibleDevice: false,
       };
     },
     computed: {
@@ -68,7 +74,7 @@
         }
 
         const isSmallScreen =
-          document.body.clientWidth < 600 || document.body.clientHeight < 850;
+          document.body.clientWidth < 600 || document.body.clientHeight < 750;
         if (isSmallScreen) {
           console.warn('Small screen detected, assuming incompatible device.');
           return false;
@@ -212,12 +218,18 @@
       openHelpModal() {
         this.$refs.helpModal.open();
       },
+      ignoreCompatibility() {
+        this.overrideCompatibleDevice = true;
+      },
     },
   });
 </script>
 
 <template>
-  <div v-if="compatibleDevice" class="h-screen flex flex-col">
+  <div
+    v-if="compatibleDevice || overrideCompatibleDevice"
+    class="h-screen flex flex-col"
+  >
     <IconsBeatCloud v-if="step >= 0" :size="beatCloudSize" />
     <HeaderButtons>
       <template #left>
@@ -362,6 +374,7 @@
   </div>
   <div v-else>
     <p class="p-12 text-xl leading-10">{{ compatibleDeviceError }}</p>
+    <UButton @click="ignoreCompatibility">I understand</UButton>
   </div>
 </template>
 
