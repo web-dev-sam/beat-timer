@@ -10,7 +10,6 @@
   // Detect bpm for subsection
 
   // TODAY
-  // Small: hot starts
   // Small: spacebar start/stop song
   // Small: Hover hints
   // Small: merging play and pause

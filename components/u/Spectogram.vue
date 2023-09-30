@@ -53,7 +53,13 @@
         return songOffsetToSilencePadding(
           this.bpm,
           this.draggingOffset,
-        ).toFixed(0);
+        );
+      },
+      scissorsPosition() {
+        if (this.spectogramHandler && this.spectogramHandler.currentPage === 0) {
+          return this.spectogramHandler.sToPx(-this.visualOffset / 1000);
+        }
+        return 0;
       },
     },
     watch: {
@@ -273,7 +279,7 @@
       >
         {{
           dragStart != null && activeSpecline.type === 'OFFSET'
-            ? visualOffset
+            ? visualOffset.toFixed(0)
             : 'MS'
         }}
         <span
@@ -281,6 +287,10 @@
           class="muted-text-light"
           >MS</span
         >
+      </div>
+      <div class="scissors-backdrop" :style="{ width: scissorsPosition + 'px'}"></div>
+      <div class="scissors" :style="{ left: scissorsPosition + 'px'}">
+        <IconsScissors />
       </div>
     </div>
   </div>
@@ -343,6 +353,28 @@
     padding: 0.25rem 0.5rem;
     background: white;
     color: var(--color-dark);
+  }
+
+  .scissors {
+    position: absolute;
+    top: 50%;
+    left: 100px;
+    transform: translate(calc(-100% - 1rem), -50%);
+    transform-origin: right center;
+    font-size: 0.75rem;
+    line-height: 0.75rem;
+    border-radius: 1.25rem;
+    padding: 0.25rem 0.5rem;
+    color: var(--color-dark);
+  }
+
+  .scissors-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: right center;
+    height: 100%;
+    background: var(--color-dark);
   }
 
   .muted-text-light {

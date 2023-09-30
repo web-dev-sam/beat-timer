@@ -129,22 +129,25 @@ export default class SpectogramHandler {
     const interval = 60 / bpm;
     const currentPageLeftInS = this.currentPage * secPerVw;
     const currentPageOffsetInS = interval - (currentPageLeftInS % interval);
-    const sToPx = (s: number) => s * (this.vw / secPerVw);
     const pxToS = (px: number) => px / (this.vw / secPerVw);
-    const currentPageOffsetInPX = sToPx(currentPageOffsetInS);
-    const intervalInPX = sToPx(interval);
+    const currentPageOffsetInPX = this.sToPx(currentPageOffsetInS);
+    const intervalInPX = this.sToPx(interval);
 
     const beatLines = [];
-    let leftPX = currentPageOffsetInPX + intervalInPX * beatLines.length - sToPx(interval * 1000 - offset) / 1000;
+    let leftPX = currentPageOffsetInPX + intervalInPX * beatLines.length - this.sToPx(interval * 1000 - offset) / 1000;
     while (leftPX <= this.vw) {
       const leftS = currentPageLeftInS + pxToS(leftPX) - (interval * 1000 - offset) / 1000;
       beatLines.push({
         left: leftPX,
         time: leftS,
       });
-      leftPX = currentPageOffsetInPX + intervalInPX * beatLines.length - sToPx(interval * 1000 - offset) / 1000;
+      leftPX = currentPageOffsetInPX + intervalInPX * beatLines.length - this.sToPx(interval * 1000 - offset) / 1000;
     }
     return beatLines;
+  }
+
+  sToPx(s: number) {
+    return s * (this.vw / this.currentZoom);
   }
 
   setSegmentSize(segmentSize: number) {
