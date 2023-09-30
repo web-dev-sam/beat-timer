@@ -83,19 +83,6 @@
       },
     },
     async mounted() {
-      document.body.addEventListener('mousemove', (e) => {
-        this.mouseX = e.clientX;
-        this.onCanvasMouseMove(e);
-      });
-
-      document.body.addEventListener('mouseleave', (e) => {
-        this.onCanvasMouseUp(e);
-      });
-
-      document.body.addEventListener('mouseup', (e) => {
-        this.onCanvasMouseUp(e);
-      });
-
       this.debouncedLogBPMAndOffset = debounce(this.logBPMAndOffset, 1000);
       this.bpm = this.draggingBPM = this.initialBpm;
       this.offset = this.draggingOffset = this.initialOffset;
@@ -109,6 +96,20 @@
         },
       });
       await this.spectogramHandler.generateSpectogram();
+      this.$nextTick(() => {
+        document.body.addEventListener('mousemove', (e) => {
+          this.mouseX = e.clientX;
+          this.onCanvasMouseMove(e);
+        });
+
+        document.body.addEventListener('mouseleave', (e) => {
+          this.onCanvasMouseUp(e);
+        });
+
+        document.body.addEventListener('mouseup', (e) => {
+          this.onCanvasMouseUp(e);
+        });
+      });
     },
     methods: {
       zoomIn() {
@@ -267,7 +268,10 @@
       <div
         class="spec-line-bpm"
         :style="{
-          opacity: (hovering || dragStart != null) && activeSpecline.type === 'BPM' ? 1 : 0,
+          opacity:
+            (hovering || dragStart != null) && activeSpecline.type === 'BPM'
+              ? 1
+              : 0,
           left: mouseX + 'px',
           scale: dragStart != null ? '2' : '1',
         }"
@@ -286,7 +290,10 @@
       <div
         class="spec-line-offset"
         :style="{
-          opacity: (hovering || dragStart != null) && activeSpecline.type === 'OFFSET' ? 1 : 0,
+          opacity:
+            (hovering || dragStart != null) && activeSpecline.type === 'OFFSET'
+              ? 1
+              : 0,
           left: mouseX + 'px',
           scale: dragStart != null ? '2' : '1',
         }"

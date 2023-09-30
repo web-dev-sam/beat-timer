@@ -18,22 +18,20 @@ export default class FfmpegHandler {
     this.file = file;
   }
 
-  async download(bpm: number, offset: number) {
+  async download(bpm: number, offset: number, exportQuality: number) {
     const file = this.file;
     const beginningPad = songOffsetToSilencePadding(bpm, offset);
     console.log("beginningPad", beginningPad) // 346.5352
     if (beginningPad >= 0) {
-      (await this.padAudio(file, beginningPad))();
+      (await this.padAudio(file, beginningPad, exportQuality))();
     } else {
-      (await this.trimAudio(file, -beginningPad))();
+      (await this.trimAudio(file, -beginningPad, exportQuality))();
     }
   }
 
-  async padAudio(file, beginningPad = 0) {
+  async padAudio(file, beginningPad: number = 0, exportQuality: number = 8) {
     const name = file.name;
     const paddedName = 'song.ogg';
-    // const paddedName =
-    //   'timed_' + name.split('.').slice(0, -1).join('.') + '.ogg';
 
     this.ffmpeg.FS('writeFile', name, await fetchFile(file));
 
@@ -52,6 +50,8 @@ export default class FfmpegHandler {
       '[0:a]asplit=2[silence1][silence2];[silence1][1:a][silence2]concat=n=3:v=0:a=1',
       '-c:a',
       'libvorbis',
+      '-q:a',
+      exportQuality.toString(),
       paddedName,
     );
 
@@ -59,7 +59,7 @@ export default class FfmpegHandler {
     return () => this.downloadAudio(paddedData, paddedName);
   }
 
-  async trimAudio(file, beginningTrim = 0, endTrim = 0) {
+  async trimAudio(file, beginningTrim = 0, exportQuality = 8) {
     const name = file.name;
     const trimmedName = 'song.ogg';
     const dataArray = await fetchFile(file);
@@ -67,7 +67,7 @@ export default class FfmpegHandler {
     this.ffmpeg.FS('writeFile', name, dataArray);
 
     const trimStart = beginningTrim / 1000;
-    const trimEnd = endTrim / 1000;
+    const trimEnd = 0;
     const trimDuration = (await this.getDuration(dataArray) as number) - trimStart - trimEnd;
 
     await this.ffmpeg.run(
@@ -79,11 +79,36 @@ export default class FfmpegHandler {
       this.formatDuration(trimDuration),
       '-c:a',
       'libvorbis',
+      '-q:a',
+      exportQuality.toString(),
       trimmedName,
     );
 
     const trimmedData = this.ffmpeg.FS('readFile', trimmedName);
     return () => this.downloadAudio(trimmedData, trimmedName);
+  }
+
+  estimateFileSize(durationInSeconds: number, quality: number): number {
+    const bitrates = [64, 80, 96, 112, 128, 160, 192, 224, 256, 320];
+    const bitrate = bitrates[quality - 1];
+
+    const sizeInBits = bitrate * 1000 * durationInSeconds;
+    const sizeInBytes = sizeInBits / 8;
+    const sizeInKB = sizeInBytes / 1024;
+    const sizeInMB = sizeInKB / 1024;
+    return sizeInMB;
+  }
+
+  formatFileSize(sizeInMB: number): string {
+    if (sizeInMB < 1) {
+      const sizeInKB = sizeInMB * 1024;
+      return sizeInKB.toFixed(2) + ' KB';
+    } else if (sizeInMB < 1024) {
+      return sizeInMB.toFixed(2) + ' MB';
+    } else {
+      const sizeInGB = sizeInMB / 1024;
+      return sizeInGB.toFixed(2) + ' GB';
+    }
   }
 
   getDuration(dataArray: Uint8Array) {

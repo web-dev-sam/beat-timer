@@ -25,7 +25,9 @@
     <div class="modal p-12">
       <div class="h-18 text-right">
         <div class="modal-close">
-          <button @click="close">X</button>
+          <button @click="close">
+            <IconsClose />
+          </button>
         </div>
       </div>
       <slot></slot>

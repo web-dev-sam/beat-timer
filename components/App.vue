@@ -10,7 +10,6 @@
   // Detect bpm for subsection
 
   // TODAY
-  // Small: merging play and pause
   // Medium: output quality
 
   export default defineComponent({
@@ -35,6 +34,8 @@
         beatCloudSize: 1,
         isZoomed: false,
         overrideCompatibleDevice: false,
+        advancedSettingsOpen: false,
+        exportQuality: 8,
       };
     },
     computed: {
@@ -102,6 +103,16 @@
       },
       visualOffset() {
         return songOffsetToSilencePadding(this.bpm, this.draggingOffset);
+      },
+      estimateFileSize() {
+        if (!this.audioBuffer || !this.ffmpegHandler) {
+          return 0;
+        }
+
+        const seconds = this.audioBuffer?.duration ?? 0;
+        return this.ffmpegHandler.formatFileSize(
+          this.ffmpegHandler.estimateFileSize(seconds, this.exportQuality),
+        );
       },
     },
     watch: {
@@ -188,7 +199,11 @@
       },
       async download() {
         this.downloading = true;
-        await this.ffmpegHandler.download(this.bpm, this.timingOffset);
+        await this.ffmpegHandler.download(
+          this.bpm,
+          this.timingOffset,
+          this.exportQuality,
+        );
         this.downloading = false;
       },
       toggleZoom() {
@@ -213,6 +228,9 @@
       },
       ignoreCompatibility() {
         this.overrideCompatibleDevice = true;
+      },
+      toggleAdvancedSettings() {
+        this.advancedSettingsOpen = !this.advancedSettingsOpen;
       },
     },
   });
@@ -316,7 +334,11 @@
             ><span class="ml-2 muted-text">BPM</span>
           </h2>
           <h2 class="heading"></h2>
-          <button @click="toggleZoom" tooltip-position="left" :tooltip="isZoomed ? 'Zoom Out' : 'Zoom In'">
+          <button
+            @click="toggleZoom"
+            tooltip-position="left"
+            :tooltip="isZoomed ? 'Zoom Out' : 'Zoom In'"
+          >
             <IconsZoomIn v-show="!isZoomed" />
             <IconsZoomOut v-show="isZoomed" />
           </button>
@@ -333,7 +355,14 @@
           @bpm-offset-change="onBPMOffsetDraggingChange"
         />
         <div class="flex justify-between mx-12 mt-6" prevent-user-select>
-          <h2 tooltip-position="right" :tooltip="visualOffset > 0 ? 'Silence at the start' : 'Trimming length at start'">
+          <h2
+            tooltip-position="right"
+            :tooltip="
+              visualOffset > 0
+                ? 'Silence at the start'
+                : 'Trimming length at start'
+            "
+          >
             <span class="subheading">{{ visualOffset.toFixed(0) }}</span
             ><span class="ml-2 muted-text">MS</span>
           </h2>
@@ -351,6 +380,27 @@
         <div class="flex justify-center">
           <UButton :secondary="true" @click="goBackToTiming"> Back </UButton>
           <UButton :loading="downloading" @click="download"> Download </UButton>
+        </div>
+        <button class="muted-text !mt-12" @click="toggleAdvancedSettings">
+          Advanced <IconsDown v-if="!advancedSettingsOpen" class="ml-2 inline-block" /><IconsUp v-if="advancedSettingsOpen" class="ml-2 inline-block" />
+        </button>
+        <div v-if="advancedSettingsOpen">
+          <div class="flex justify-center gap-6 items-center muted-text">
+            <div>Export Quality</div>
+            <div class="subheading">
+              {{ exportQuality }}
+            </div>
+            <div>
+              <USlider
+                v-model="exportQuality"
+                :min="1"
+                :max="10"
+                class="!w-72"
+              />
+            </div>
+            <div tooltip-position="bottom" tooltip="Could be lower or higher based on the song.">
+            ~{{ estimateFileSize }}</div>
+          </div>
         </div>
       </template>
     </Step>
