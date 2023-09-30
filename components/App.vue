@@ -10,8 +10,6 @@
   // Detect bpm for subsection
 
   // TODAY
-  // Small: spacebar start/stop song
-  // Small: Hover hints
   // Small: merging play and pause
   // Medium: drag area increase to whole page
   // Medium: output quality
@@ -104,10 +102,7 @@
         return '';
       },
       visualOffset() {
-        return songOffsetToSilencePadding(
-          this.bpm,
-          this.draggingOffset,
-        ).toFixed(0);
+        return songOffsetToSilencePadding(this.bpm, this.draggingOffset);
       },
     },
     watch: {
@@ -232,7 +227,7 @@
     <IconsBeatCloud v-if="step >= 0" :size="beatCloudSize" />
     <HeaderButtons>
       <template #left>
-        <button @click="openHelpModal">
+        <button @click="openHelpModal" tooltip-position="right" tooltip="Help">
           <IconsHelp />
         </button>
         <UModal ref="helpModal">
@@ -322,7 +317,7 @@
             ><span class="ml-2 muted-text">BPM</span>
           </h2>
           <h2 class="heading"></h2>
-          <button @click="toggleZoom">
+          <button @click="toggleZoom" tooltip-position="left" :tooltip="isZoomed ? 'Zoom Out' : 'Zoom In'">
             <IconsZoomIn v-show="!isZoomed" />
             <IconsZoomOut v-show="isZoomed" />
           </button>
@@ -339,8 +334,8 @@
           @bpm-offset-change="onBPMOffsetDraggingChange"
         />
         <div class="flex justify-between mx-12 mt-6">
-          <h2>
-            <span class="subheading">{{ visualOffset }}</span
+          <h2 tooltip-position="right" :tooltip="visualOffset > 0 ? 'Silence at the start' : 'Trimming length at start'">
+            <span class="subheading">{{ visualOffset.toFixed(0) }}</span
             ><span class="ml-2 muted-text">MS</span>
           </h2>
           <h1 class="heading"></h1>

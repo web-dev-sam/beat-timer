@@ -220,12 +220,14 @@
             v-show="bpmMultiplier !== 2"
             :disabled="metronomeDoubleSpeedDisabled"
             @click="() => toggleMetronomeSpeed(2)"
+            tooltip-position="left" tooltip="Make the metronome twice as fast"
           >
             <IconsX2 />
           </button>
           <button
             v-show="bpmMultiplier !== 1"
             @click="() => toggleMetronomeSpeed(1)"
+            tooltip-position="left" tooltip="Make the metronome normal speed"
           >
             <IconsX1 />
           </button>
