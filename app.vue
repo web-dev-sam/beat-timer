@@ -170,4 +170,8 @@
     left: 50%;
   }
 
+  [prevent-user-select] {
+    user-select: none;
+  }
+
 </style>

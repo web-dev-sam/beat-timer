@@ -50,13 +50,13 @@
         return 0;
       },
       visualOffset() {
-        return songOffsetToSilencePadding(
-          this.bpm,
-          this.draggingOffset,
-        );
+        return songOffsetToSilencePadding(this.bpm, this.draggingOffset);
       },
       scissorsPosition() {
-        if (this.spectogramHandler && this.spectogramHandler.currentPage === 0) {
+        if (
+          this.spectogramHandler &&
+          this.spectogramHandler.currentPage === 0
+        ) {
           return this.spectogramHandler.sToPx(-this.visualOffset / 1000);
         }
         return 0;
@@ -83,6 +83,19 @@
       },
     },
     async mounted() {
+      document.body.addEventListener('mousemove', (e) => {
+        this.mouseX = e.clientX;
+        this.onCanvasMouseMove(e);
+      });
+
+      document.body.addEventListener('mouseleave', (e) => {
+        this.onCanvasMouseUp(e);
+      });
+
+      document.body.addEventListener('mouseup', (e) => {
+        this.onCanvasMouseUp(e);
+      });
+
       this.debouncedLogBPMAndOffset = debounce(this.logBPMAndOffset, 1000);
       this.bpm = this.draggingBPM = this.initialBpm;
       this.offset = this.draggingOffset = this.initialOffset;
@@ -105,20 +118,17 @@
         this.spectogramHandler.zoomOut();
       },
       onCanvasMouseMove(event) {
-        this.mouseX = event.offsetX;
-        this.hovering = true;
-
         const currentlyDragging = this.dragStart != null;
         if (!currentlyDragging) {
           const nearestSpecline = this.speclines.reduce((prev, curr) =>
-            Math.abs(curr.left - event.offsetX) <
-            Math.abs(prev.left - event.offsetX)
+            Math.abs(curr.left - event.clientX) <
+            Math.abs(prev.left - event.clientX)
               ? curr
               : prev,
           );
-
-          const movingInUpperHalf =
-            event.offsetY < event.srcElement.clientHeight / 2;
+          const canvasRect = this.$refs.canvas.getBoundingClientRect();
+          const middleOfCanvas = canvasRect.top + canvasRect.height / 2;
+          const movingInUpperHalf = event.clientY < middleOfCanvas;
           this.activeSpecline = {
             data: nearestSpecline,
             type: movingInUpperHalf ? 'BPM' : 'OFFSET',
@@ -133,7 +143,7 @@
         // Adjust BPM
         if (this.activeSpecline.type === 'BPM') {
           const [newBPM, newOffset] = this.calculateBPMDrag(
-            this.dragStart - event.offsetX,
+            this.dragStart - event.clientX,
             this.activeSpecline.data,
           );
 
@@ -143,7 +153,7 @@
         // Adjust Offset
         if (this.activeSpecline.type === 'OFFSET') {
           const newOffset = this.calculateOffsetDrag(
-            this.dragStart - event.offsetX,
+            this.dragStart - event.clientX,
           );
           this.debouncedLogBPMAndOffset(this.bpm, newOffset);
         }
@@ -175,7 +185,6 @@
       },
       calculateOffsetDrag(dragChange) {
         const offsetDiff = dragChange / 4;
-        const interval = 60000 / this.bpm;
         const newOffset = this.offset - offsetDiff;
         this.draggingOffset = newOffset;
         this.spectogramHandler.setOffset(newOffset);
@@ -184,9 +193,11 @@
         return newOffset;
       },
       onCanvasMouseDown(event) {
-        this.dragStart = event.offsetX;
+        this.dragStart = event.clientX;
+        const canvasRect = this.$refs.canvas.getBoundingClientRect();
+        const middleOfCanvas = canvasRect.top + canvasRect.height / 2;
         this.activeSpecline.type =
-          event.offsetY < event.srcElement.clientHeight / 2 ? 'BPM' : 'OFFSET';
+          event.clientY < middleOfCanvas ? 'BPM' : 'OFFSET';
         this.$emit('drag-start');
       },
       onCanvasMouseUp(event) {
@@ -198,7 +209,7 @@
           }
 
           const [newBPM, newOffset] = this.calculateBPMDrag(
-            this.dragStart - event.offsetX,
+            this.dragStart - event.clientX,
             this.activeSpecline.data,
           );
           this.bpm = newBPM;
@@ -208,16 +219,18 @@
         // Update Offset
         if (this.dragStart != null && this.activeSpecline.type === 'OFFSET') {
           const newOffset = this.calculateOffsetDrag(
-            this.dragStart - event.offsetX,
+            this.dragStart - event.clientX,
           );
           this.offset = newOffset;
         }
 
         this.dragStart = null;
       },
-      onCanvasMouseLeave(e) {
+      onCanvasMouseEnter(event) {
+        this.hovering = true;
+      },
+      onCanvasMouseLeave(event) {
         this.hovering = false;
-        this.onCanvasMouseUp(e);
       },
       onMetronome(time: number, duration: number) {
         this.progress = time;
@@ -230,10 +243,11 @@
 <template>
   <div
     class="canvas-root w-full relative h-32 my-8"
-    @mousemove="onCanvasMouseMove"
     @mousedown="onCanvasMouseDown"
-    @mouseup="onCanvasMouseUp"
+    @mouseenter="onCanvasMouseEnter"
     @mouseleave="onCanvasMouseLeave"
+    ref="canvasRoot"
+    prevent-user-select
   >
     <canvas ref="canvas" class="h-32"></canvas>
     <div
@@ -253,7 +267,7 @@
       <div
         class="spec-line-bpm"
         :style="{
-          opacity: hovering && activeSpecline.type === 'BPM' ? 1 : 0,
+          opacity: (hovering || dragStart != null) && activeSpecline.type === 'BPM' ? 1 : 0,
           left: mouseX + 'px',
           scale: dragStart != null ? '2' : '1',
         }"
@@ -272,7 +286,7 @@
       <div
         class="spec-line-offset"
         :style="{
-          opacity: hovering && activeSpecline.type === 'OFFSET' ? 1 : 0,
+          opacity: (hovering || dragStart != null) && activeSpecline.type === 'OFFSET' ? 1 : 0,
           left: mouseX + 'px',
           scale: dragStart != null ? '2' : '1',
         }"
@@ -288,8 +302,11 @@
           >MS</span
         >
       </div>
-      <div class="scissors-backdrop" :style="{ width: scissorsPosition + 'px'}"></div>
-      <div class="scissors" :style="{ left: scissorsPosition + 'px'}">
+      <div
+        class="scissors-backdrop"
+        :style="{ width: scissorsPosition + 'px' }"
+      ></div>
+      <div class="scissors" :style="{ left: scissorsPosition + 'px' }">
         <IconsScissors />
       </div>
     </div>

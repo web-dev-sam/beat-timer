@@ -11,7 +11,6 @@
 
   // TODAY
   // Small: merging play and pause
-  // Medium: drag area increase to whole page
   // Medium: output quality
 
   export default defineComponent({
@@ -311,7 +310,7 @@
         <div>
           <h1 class="heading mb-18">Align the beat.</h1>
         </div>
-        <div class="flex justify-between mx-12 items-end">
+        <div class="flex justify-between mx-12 items-end" prevent-user-select>
           <h2>
             <span class="subheading">{{ draggingBPM }}</span
             ><span class="ml-2 muted-text">BPM</span>
@@ -333,7 +332,7 @@
           @drag-start="pauseAudio"
           @bpm-offset-change="onBPMOffsetDraggingChange"
         />
-        <div class="flex justify-between mx-12 mt-6">
+        <div class="flex justify-between mx-12 mt-6" prevent-user-select>
           <h2 tooltip-position="right" :tooltip="visualOffset > 0 ? 'Silence at the start' : 'Trimming length at start'">
             <span class="subheading">{{ visualOffset.toFixed(0) }}</span
             ><span class="ml-2 muted-text">MS</span>
