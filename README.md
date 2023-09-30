@@ -1,7 +1,7 @@
 &nbsp;
 
 <p align="center">
-  <img src="https://github.com/web-dev-sam/song-timer/blob/v1.0.0/public/meta/cover.png?raw=true" alt="Demo loading..." width="50%"/>
+  <img src="https://github.com/web-dev-sam/song-timer/blob/main/public/meta/cover.png?raw=true" alt="Demo loading..." width="50%"/>
 </p>
 
 &nbsp;

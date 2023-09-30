@@ -250,7 +250,7 @@
         <UModal ref="helpModal">
           <div class="auto-flow-small text-center">
             <h2 class="heading">Song Timer</h2>
-            <p class="muted-text">v1.0.0</p>
+            <p class="muted-text">v1.1.0</p>
             <p>
               A web app to align the beat of your song to the beat of your game.
               This app is still new, and tested primarily with Beat Saber.
