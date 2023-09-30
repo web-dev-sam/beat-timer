@@ -135,13 +135,14 @@ export default class SpectogramHandler {
     const intervalInPX = sToPx(interval);
 
     const beatLines = [];
-    while (currentPageOffsetInPX + intervalInPX * beatLines.length <= this.vw) {
-      const leftPX = currentPageOffsetInPX + intervalInPX * beatLines.length;
-      const leftS = currentPageLeftInS + pxToS(leftPX);
+    let leftPX = currentPageOffsetInPX + intervalInPX * beatLines.length - sToPx(interval * 1000 - offset) / 1000;
+    while (leftPX <= this.vw) {
+      const leftS = currentPageLeftInS + pxToS(leftPX) - (interval * 1000 - offset) / 1000;
       beatLines.push({
-        left: leftPX - sToPx(interval * 1000 - offset) / 1000,
-        time: leftS - (interval * 1000 - offset) / 1000,
+        left: leftPX,
+        time: leftS,
       });
+      leftPX = currentPageOffsetInPX + intervalInPX * beatLines.length - sToPx(interval * 1000 - offset) / 1000;
     }
     return beatLines;
   }
