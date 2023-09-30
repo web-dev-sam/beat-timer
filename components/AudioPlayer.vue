@@ -122,6 +122,16 @@
       );
       this.player.loadBuffer(this.audioBuffer);
       this.player.setVolume(this.volume / 2);
+
+      document.addEventListener('keydown', (event) => {
+        if (event.code === 'Space') {
+          if (this.isPlaying) {
+            this.pause();
+          } else {
+            this.play();
+          }
+        }
+      });
     },
     methods: {
       toggleMute() {
