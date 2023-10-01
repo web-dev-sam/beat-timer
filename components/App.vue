@@ -111,7 +111,10 @@
 
         const seconds = this.audioBuffer?.duration ?? 0;
         return this.ffmpegHandler.formatFileSize(
-          this.ffmpegHandler.estimateFileSize(seconds, this.exportQuality),
+          this.ffmpegHandler.estimateFileSize(
+            seconds + songOffsetToSilencePadding(this.bpm, this.timingOffset) / 1000,
+            this.exportQuality,
+          ),
         );
       },
     },
@@ -382,7 +385,11 @@
           <UButton :loading="downloading" @click="download"> Download </UButton>
         </div>
         <button class="muted-text !mt-12" @click="toggleAdvancedSettings">
-          Advanced <IconsDown v-if="!advancedSettingsOpen" class="ml-2 inline-block" /><IconsUp v-if="advancedSettingsOpen" class="ml-2 inline-block" />
+          Advanced
+          <IconsDown
+            v-if="!advancedSettingsOpen"
+            class="ml-2 inline-block"
+          /><IconsUp v-if="advancedSettingsOpen" class="ml-2 inline-block" />
         </button>
         <div v-if="advancedSettingsOpen">
           <div class="flex justify-center gap-6 items-center muted-text">
@@ -398,8 +405,12 @@
                 class="!w-72"
               />
             </div>
-            <div tooltip-position="bottom" tooltip="Could be lower or higher based on the song.">
-            ~{{ estimateFileSize }}</div>
+            <div
+              tooltip-position="bottom"
+              tooltip="Could be lower or higher based on the song."
+            >
+              ~{{ estimateFileSize }}
+            </div>
           </div>
         </div>
       </template>
