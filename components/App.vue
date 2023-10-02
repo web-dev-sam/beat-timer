@@ -3,6 +3,7 @@
   import FfmpegHandler from '~~/utils/FfmpegHandler';
   import { guess } from 'web-audio-beat-detector';
   import { songOffsetToSilencePadding } from '~~/utils/utils';
+  import { version }  from '../package.json';
 
   // 2x/1x other way around
   // zooming slider
@@ -33,9 +34,9 @@
         initialSelectFileLoading: false,
         beatCloudSize: 1,
         isZoomed: false,
-        overrideCompatibleDevice: false,
         advancedSettingsOpen: false,
         exportQuality: 8,
+        version,
       };
     },
     computed: {
@@ -48,58 +49,6 @@
       },
       recommendedMeasures() {
         return Math.max(1, Math.min(4, Math.ceil(1000 / this.beatTime)));
-      },
-      compatibleDevice() {
-        const noWindow = typeof window === 'undefined';
-        if (noWindow) {
-          console.warn('No window object found, assuming incompatible device.');
-          return false;
-        }
-
-        const noAudioContext = !window.AudioContext;
-        if (noAudioContext) {
-          console.warn('No AudioContext found, assuming incompatible device.');
-          return false;
-        }
-
-        const isMobile = /iPad|iPhone|iPod|Android/.test(navigator.userAgent);
-        if (isMobile) {
-          console.warn('Mobile device detected, assuming incompatible device.');
-          return false;
-        }
-
-        const isSmallScreen =
-          document.body.clientWidth < 600 || document.body.clientHeight < 750;
-        if (isSmallScreen) {
-          console.warn('Small screen detected, assuming incompatible device.');
-          return false;
-        }
-
-        return true;
-      },
-      compatibleDeviceError() {
-        const noWindow = typeof window === 'undefined';
-        if (noWindow) {
-          return 'Your browser does not support this application. Please use the latest version of Chrome, Firefox or any other modern browser.';
-        }
-
-        const noAudioContext = !window.AudioContext;
-        if (noAudioContext) {
-          return 'Your browser does not support AudioContext. Please use the latest version of Chrome, Firefox or any other modern browser.';
-        }
-
-        const isMobile = /iPad|iPhone|iPod|Android/.test(navigator.userAgent);
-        if (isMobile) {
-          return 'You cannot use this application on a mobile device. Please use a desktop computer.';
-        }
-
-        const isSmallScreen =
-          document.body.clientWidth < 600 || document.body.clientHeight < 850;
-        if (isSmallScreen) {
-          return 'Your screen is too small to use this application effectively. Please make your browser window bigger and reload the page. If you are on a mobile device, please use a desktop computer.';
-        }
-
-        return '';
       },
       visualOffset() {
         return songOffsetToSilencePadding(this.bpm, this.draggingOffset);
@@ -229,9 +178,6 @@
       openHelpModal() {
         this.$refs.helpModal.open();
       },
-      ignoreCompatibility() {
-        this.overrideCompatibleDevice = true;
-      },
       toggleAdvancedSettings() {
         this.advancedSettingsOpen = !this.advancedSettingsOpen;
       },
@@ -241,7 +187,6 @@
 
 <template>
   <div
-    v-if="compatibleDevice || overrideCompatibleDevice"
     class="h-screen flex flex-col"
   >
     <IconsBeatCloud v-if="step >= 0" :size="beatCloudSize" />
@@ -253,7 +198,7 @@
         <UModal ref="helpModal">
           <div class="auto-flow-small text-center">
             <h2 class="heading">Song Timer</h2>
-            <p class="muted-text">v1.1.0</p>
+            <p class="muted-text">v{{ version }}</p>
             <p>
               A web app to align the beat of your song to the beat of your game.
               This app is still new, and tested primarily with Beat Saber.
@@ -425,10 +370,6 @@
         @metronome="onMetronome"
       />
     </FooterArea>
-  </div>
-  <div v-else>
-    <p class="p-12 text-xl leading-10">{{ compatibleDeviceError }}</p>
-    <UButton @click="ignoreCompatibility">I understand</UButton>
   </div>
 </template>
 

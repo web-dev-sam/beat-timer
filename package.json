@@ -1,7 +1,7 @@
 {
   "name": "song-timer",
   "description": "A web app to align your song's beat to your game's beat.",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "private": true,
   "scripts": {
     "dev": "nuxi dev",
