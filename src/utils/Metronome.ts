@@ -6,10 +6,10 @@ export default class Metronome {
   private interval: number
   private audioBuffer: AudioBuffer
   private offset: number
-  private metronomeNode: AudioWorkletNode
+  private metronomeNode: AudioWorkletNode | null = null
   private onBeat: () => void
   private source: AudioBufferSourceNode | null = null
-  private gainNode: GainNode
+  private gainNode: GainNode | null = null
   private player: Player
   private volume: number = 0.5
   private isPlaying: boolean
@@ -68,6 +68,10 @@ export default class Metronome {
   }
 
   private playSound() {
+    if (!this.audioBuffer || !this.context || !this.gainNode) {
+      return
+    }
+
     const time = this.calculateNextNoteTimeInSeconds()
     this.source = this.context.createBufferSource()
     this.source.buffer = this.audioBuffer
@@ -82,17 +86,25 @@ export default class Metronome {
   }
 
   public async start() {
+    if (!this.metronomeNode) {
+      return
+    }
+
     this.isPlaying = false
     this.stop()
     this.setupAudioWorkletNode()
     this.metronomeNode.connect(this.context.destination)
     this.metronomeNode.parameters
       .get('interval')
-      .setValueAtTime(this.context.sampleRate * this.interval, this.context.currentTime)
+      ?.setValueAtTime(this.context.sampleRate * this.interval, this.context.currentTime)
     this.isPlaying = true
   }
 
   public pause() {
+    if (!this.isPlaying || !this.metronomeNode || !this.gainNode) {
+      return
+    }
+
     this.metronomeNode.port.postMessage('stop')
     this.metronomeNode.disconnect()
     this.gainNode.disconnect()
@@ -104,6 +116,10 @@ export default class Metronome {
   }
 
   public stop() {
+    if (!this.metronomeNode || !this.gainNode) {
+      return
+    }
+
     this.metronomeNode.port.postMessage('stop')
     this.metronomeNode.disconnect()
     this.gainNode.disconnect()
@@ -115,12 +131,16 @@ export default class Metronome {
   }
 
   public setBpm(bpm: number) {
+    if (!this.metronomeNode) {
+      return
+    }
+
     this.bpm = bpm
     this.interval = 60 / this.bpm
     if (this.isPlaying) {
       this.metronomeNode.parameters
         .get('interval')
-        .setValueAtTime(this.context.sampleRate * this.interval, this.context.currentTime)
+        ?.setValueAtTime(this.context.sampleRate * this.interval, this.context.currentTime)
     }
   }
 
@@ -129,6 +149,10 @@ export default class Metronome {
   }
 
   public setTickVolume(volume: number) {
+    if (!this.gainNode) {
+      return
+    }
+
     this.volume = volume / 100
     this.gainNode.gain.value = this.volume
   }
