@@ -1,16 +1,46 @@
-&nbsp;
+# song-timer
 
-<p align="center">
-  <img src="https://github.com/web-dev-sam/song-timer/blob/main/public/meta/cover.png?raw=true" alt="Demo loading..." width="50%"/>
-</p>
+This template should help get you started developing with Vue 3 in Vite.
 
-&nbsp;
+## Recommended IDE Setup
 
-# Song Timer
-A web app to align your song's beat to your game's beat. This app is still new and was tested primarily with Beat Saber.
+[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
 
-## Link
-[https://song-timer.webry.com/](https://song-timer.webry.com/)
+## Type Support for `.vue` Imports in TS
 
-## What is this?
-With this app you can time your songs/maps and export them with silence at the start to align the beat. It was mainly designed for making Beatsaber maps, but it can also be used for other rythm games.
+TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
+
+If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
+
+1. Disable the built-in TypeScript Extension
+    1) Run `Extensions: Show Built-in Extensions` from VSCode's command palette
+    2) Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
+2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
+
+## Customize configuration
+
+See [Vite Configuration Reference](https://vitejs.dev/config/).
+
+## Project Setup
+
+```sh
+npm install
+```
+
+### Compile and Hot-Reload for Development
+
+```sh
+npm run dev
+```
+
+### Type-Check, Compile and Minify for Production
+
+```sh
+npm run build
+```
+
+### Lint with [ESLint](https://eslint.org/)
+
+```sh
+npm run lint
+```
