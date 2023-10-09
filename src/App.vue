@@ -41,7 +41,7 @@ const version = APP_VERSION
 // Auto send debug information on error
 
 const state = reactive<{
-  audioFile: File | null | undefined
+  audioFile: File | null
   stopped: boolean
   playing: boolean
   myBPMGuess: number
