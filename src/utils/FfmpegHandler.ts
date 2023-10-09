@@ -41,7 +41,7 @@ export default class FfmpegHandler {
     } catch (error) {
       const err = error as Error
       log('ffmpegDownloadError', err.message)
-      log('ffmpegDownloadErrorStack', err.stack ?? "")
+      log('ffmpegDownloadErrorStack', err.stack ?? '')
       console.error(error)
     }
   }
