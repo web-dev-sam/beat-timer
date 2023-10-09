@@ -1,6 +1,9 @@
 import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg'
 import type { FFmpeg } from '@ffmpeg/ffmpeg'
 import { songOffsetToSilencePadding } from './utils'
+import { useLogger } from './logger'
+
+const { log } = useLogger()
 
 export default class FfmpegHandler {
   private ffmpeg: FFmpeg
@@ -25,11 +28,21 @@ export default class FfmpegHandler {
       return
     }
 
-    const beginningPad = songOffsetToSilencePadding(bpm, offset)
-    if (beginningPad >= 0) {
-      ;(await this.padAudio(file, beginningPad, exportQuality))()
-    } else {
-      ;(await this.trimAudio(file, -beginningPad, exportQuality))()
+    try {
+      log('ffmpegDownloadBPM', bpm.toString())
+      log('ffmpegDownloadOffset', offset.toString())
+      log('ffmpegDownloadExportQuality', exportQuality.toString())
+      const beginningPad = songOffsetToSilencePadding(bpm, offset)
+      if (beginningPad >= 0) {
+        ;(await this.padAudio(file, beginningPad, exportQuality))()
+      } else {
+        ;(await this.trimAudio(file, -beginningPad, exportQuality))()
+      }
+    } catch (error) {
+      const err = error as Error
+      log('ffmpegDownloadError', err.message)
+      log('ffmpegDownloadErrorStack', err.stack ?? "")
+      console.error(error)
     }
   }
 
@@ -42,7 +55,7 @@ export default class FfmpegHandler {
     const silenceDuration = beginningPad / 1000
 
     await this.ffmpeg.run(
-      '-f',
+      '-fff',
       'lavfi',
       '-t',
       this.formatDuration(silenceDuration),
