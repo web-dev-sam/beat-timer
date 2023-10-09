@@ -23,7 +23,7 @@ import UFileInput from '@/components/u/UFileInput.vue'
 import UButton from '@/components/u/UButton.vue'
 import UModal from '@/components/u/UModal.vue'
 
-const version = '1.2.0'
+const version = APP_VERSION
 
 // Ideas:
 

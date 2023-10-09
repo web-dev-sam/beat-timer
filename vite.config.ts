@@ -21,4 +21,7 @@ export default defineConfig({
       'Cross-Origin-Opener-Policy': 'same-origin',
     },
   },
+  define: {
+    APP_VERSION: JSON.stringify(require('./package.json').version),
+  }
 })
