@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ULoader from '@/components/u/ULoader.vue';
+import ULoader from '@/components/u/ULoader.vue'
 
 // Define props and emits
 defineProps<{
@@ -10,8 +10,6 @@ const emit = defineEmits<{
   (e: 'change', $event: Event): void
 }>()
 </script>
-
-
 
 <template>
   <label

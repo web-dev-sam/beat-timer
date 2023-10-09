@@ -170,7 +170,7 @@ function toggleMetronomeSpeed(bpmMultiplier: number) {
 }
 
 defineExpose({
-  pause,
+  pause
 })
 </script>
 
@@ -210,7 +210,10 @@ defineExpose({
       </div>
     </div>
     <div class="pt-12">
-      <UAudioSlider :progress="state.songProgress" @change="(value: number) => onProgressDrag(value)" />
+      <UAudioSlider
+        :progress="state.songProgress"
+        @change="(value: number) => onProgressDrag(value)"
+      />
     </div>
   </section>
 </template>

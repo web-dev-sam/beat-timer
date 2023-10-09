@@ -1,45 +1,45 @@
-import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
-import type { FFmpeg } from '@ffmpeg/ffmpeg';
-import { songOffsetToSilencePadding } from './utils';
+import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg'
+import type { FFmpeg } from '@ffmpeg/ffmpeg'
+import { songOffsetToSilencePadding } from './utils'
 
 export default class FfmpegHandler {
-  private ffmpeg: FFmpeg;
-  private file: File | null;
+  private ffmpeg: FFmpeg
+  private file: File | null
 
   constructor() {
     this.ffmpeg = createFFmpeg({
       corePath: '/ffmpeg-core/dist/ffmpeg-core.js',
-      log: false,
-    });
-    this.file = null;
+      log: false
+    })
+    this.file = null
   }
 
   async loadAudio(file: File) {
-    this.file = file;
-    await this.ffmpeg.load();
+    this.file = file
+    await this.ffmpeg.load()
   }
 
   async download(bpm: number, offset: number, exportQuality: number) {
-    const file = this.file;
+    const file = this.file
     if (!file) {
-      return;
+      return
     }
 
-    const beginningPad = songOffsetToSilencePadding(bpm, offset);
+    const beginningPad = songOffsetToSilencePadding(bpm, offset)
     if (beginningPad >= 0) {
-      (await this.padAudio(file, beginningPad, exportQuality))();
+      ;(await this.padAudio(file, beginningPad, exportQuality))()
     } else {
-      (await this.trimAudio(file, -beginningPad, exportQuality))();
+      ;(await this.trimAudio(file, -beginningPad, exportQuality))()
     }
   }
 
   async padAudio(file: File, beginningPad: number = 0, exportQuality: number = 8) {
-    const name = file.name;
-    const paddedName = 'song.ogg';
+    const name = file.name
+    const paddedName = 'song.ogg'
 
-    this.ffmpeg.FS('writeFile', name, await fetchFile(file));
+    this.ffmpeg.FS('writeFile', name, await fetchFile(file))
 
-    const silenceDuration = beginningPad / 1000;
+    const silenceDuration = beginningPad / 1000
 
     await this.ffmpeg.run(
       '-f',
@@ -56,23 +56,23 @@ export default class FfmpegHandler {
       'libvorbis',
       '-q:a',
       exportQuality.toString(),
-      paddedName,
-    );
+      paddedName
+    )
 
-    const paddedData = this.ffmpeg.FS('readFile', paddedName);
-    return () => this.downloadAudio(paddedData, paddedName);
+    const paddedData = this.ffmpeg.FS('readFile', paddedName)
+    return () => this.downloadAudio(paddedData, paddedName)
   }
 
   async trimAudio(file: File, beginningTrim = 0, exportQuality = 8) {
-    const name = file.name;
-    const trimmedName = 'song.ogg';
-    const dataArray = await fetchFile(file);
+    const name = file.name
+    const trimmedName = 'song.ogg'
+    const dataArray = await fetchFile(file)
 
-    this.ffmpeg.FS('writeFile', name, dataArray);
+    this.ffmpeg.FS('writeFile', name, dataArray)
 
-    const trimStart = beginningTrim / 1000;
-    const trimEnd = 0;
-    const trimDuration = (await this.getDuration(dataArray) as number) - trimStart - trimEnd;
+    const trimStart = beginningTrim / 1000
+    const trimEnd = 0
+    const trimDuration = ((await this.getDuration(dataArray)) as number) - trimStart - trimEnd
 
     await this.ffmpeg.run(
       '-i',
@@ -85,104 +85,104 @@ export default class FfmpegHandler {
       'libvorbis',
       '-q:a',
       exportQuality.toString(),
-      trimmedName,
-    );
+      trimmedName
+    )
 
-    const trimmedData = this.ffmpeg.FS('readFile', trimmedName);
-    return () => this.downloadAudio(trimmedData, trimmedName);
+    const trimmedData = this.ffmpeg.FS('readFile', trimmedName)
+    return () => this.downloadAudio(trimmedData, trimmedName)
   }
 
   estimateFileSize(durationInSeconds: number, quality: number): number {
-    const bitrates = [64, 80, 96, 112, 128, 160, 192, 224, 256, 320];
-    const bitrate = bitrates[quality - 1];
+    const bitrates = [64, 80, 96, 112, 128, 160, 192, 224, 256, 320]
+    const bitrate = bitrates[quality - 1]
 
-    const sizeInBits = bitrate * 1000 * durationInSeconds;
-    const sizeInBytes = sizeInBits / 8;
-    const sizeInKB = sizeInBytes / 1024;
-    const sizeInMB = sizeInKB / 1024;
-    return sizeInMB;
+    const sizeInBits = bitrate * 1000 * durationInSeconds
+    const sizeInBytes = sizeInBits / 8
+    const sizeInKB = sizeInBytes / 1024
+    const sizeInMB = sizeInKB / 1024
+    return sizeInMB
   }
 
   formatFileSize(sizeInMB: number): string {
     if (sizeInMB < 1) {
-      const sizeInKB = sizeInMB * 1024;
-      return sizeInKB.toFixed(2) + ' KB';
+      const sizeInKB = sizeInMB * 1024
+      return sizeInKB.toFixed(2) + ' KB'
     } else if (sizeInMB < 1024) {
-      return sizeInMB.toFixed(2) + ' MB';
+      return sizeInMB.toFixed(2) + ' MB'
     } else {
-      const sizeInGB = sizeInMB / 1024;
-      return sizeInGB.toFixed(2) + ' GB';
+      const sizeInGB = sizeInMB / 1024
+      return sizeInGB.toFixed(2) + ' GB'
     }
   }
 
   getDuration(dataArray: Uint8Array) {
     return new Promise((resolve, reject) => {
-      const hiddenAudio = document.createElement('audio');
-      const blob = new Blob([dataArray.buffer], { type: 'audio/wav' });
-      const objectUrl = URL.createObjectURL(blob);
-      hiddenAudio.src = objectUrl;
+      const hiddenAudio = document.createElement('audio')
+      const blob = new Blob([dataArray.buffer], { type: 'audio/wav' })
+      const objectUrl = URL.createObjectURL(blob)
+      hiddenAudio.src = objectUrl
 
       hiddenAudio.addEventListener('loadedmetadata', () => {
-        const duration = hiddenAudio.duration;
-        URL.revokeObjectURL(objectUrl);
-        resolve(duration);
-      });
+        const duration = hiddenAudio.duration
+        URL.revokeObjectURL(objectUrl)
+        resolve(duration)
+      })
 
       hiddenAudio.addEventListener('error', () => {
-        reject(new Error('Could not load the audio file.'));
-      });
-    });
+        reject(new Error('Could not load the audio file.'))
+      })
+    })
   }
 
   formatDuration(seconds: number) {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const remainingSeconds = seconds % 60
 
-    const formattedHours = hours.toString().padStart(2, '0');
-    const formattedMinutes = minutes.toString().padStart(2, '0');
-    const formattedSeconds = remainingSeconds.toFixed(3).padStart(6, '0');
+    const formattedHours = hours.toString().padStart(2, '0')
+    const formattedMinutes = minutes.toString().padStart(2, '0')
+    const formattedSeconds = remainingSeconds.toFixed(3).padStart(6, '0')
 
-    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
+    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`
   }
 
   getAudioBuffer(): Promise<AudioBuffer> {
     return new Promise((resolve, reject) => {
       if (!this.file) {
-        reject(new Error('No file loaded.'));
-        return;
+        reject(new Error('No file loaded.'))
+        return
       }
 
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onload = function (fileEvent) {
-        const arrayBuffer = fileEvent.target?.result;
+        const arrayBuffer = fileEvent.target?.result
         new window.AudioContext()
           .decodeAudioData(arrayBuffer as ArrayBuffer)
           .then((audioBuffer) => {
-            resolve(audioBuffer);
+            resolve(audioBuffer)
           })
           .catch((error) => {
-            console.error('Error decoding audio data:', error);
-            reject(error);
-          });
-      };
+            console.error('Error decoding audio data:', error)
+            reject(error)
+          })
+      }
 
       reader.onerror = function (error) {
-        console.error('Error reading file:', error);
-        reject(error);
-      };
+        console.error('Error reading file:', error)
+        reject(error)
+      }
 
-      reader.readAsArrayBuffer(this.file);
-    });
+      reader.readAsArrayBuffer(this.file)
+    })
   }
 
   downloadAudio(data: Uint8Array, filename: string) {
-    const blob = new Blob([data.buffer], { type: 'audio/ogg' });
-    const url = URL.createObjectURL(blob);
-    const downloadLink = document.createElement('a');
-    downloadLink.href = url;
-    downloadLink.download = filename;
-    downloadLink.style.display = 'block';
-    downloadLink.click();
+    const blob = new Blob([data.buffer], { type: 'audio/ogg' })
+    const url = URL.createObjectURL(blob)
+    const downloadLink = document.createElement('a')
+    downloadLink.href = url
+    downloadLink.download = filename
+    downloadLink.style.display = 'block'
+    downloadLink.click()
   }
 }
