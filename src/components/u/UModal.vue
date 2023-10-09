@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { reactive } from 'vue'
+import { useLogger } from '@/utils/logger'
 
 import IconsClose from '@/components/icons/IconsClose.vue'
+import IconsCopy from '@/components/icons/IconsCopy.vue'
 
 const state = reactive({
   opened: false
@@ -15,6 +17,11 @@ function open() {
   state.opened = true
 }
 
+function copyDebugInformation() {
+  const { copy } = useLogger()
+  copy()
+}
+
 defineExpose({
   close,
   open
@@ -25,7 +32,12 @@ defineExpose({
   <div v-if="state.opened" class="modal-root">
     <div class="backdrop" @click="close"></div>
     <div class="modal p-12">
-      <div class="h-18 text-right">
+      <div class="flex justify-between h-18 text-right">
+        <div>
+          <button @click="copyDebugInformation">
+            <IconsCopy />
+          </button>
+        </div>
         <div class="modal-close">
           <button @click="close">
             <IconsClose />
