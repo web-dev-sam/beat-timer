@@ -55,7 +55,7 @@ export default class FfmpegHandler {
     const silenceDuration = beginningPad / 1000
 
     await this.ffmpeg.run(
-      '-fff',
+      '-f',
       'lavfi',
       '-t',
       this.formatDuration(silenceDuration),
