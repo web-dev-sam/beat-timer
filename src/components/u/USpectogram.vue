@@ -267,10 +267,20 @@ function onMetronome(time: number) {
   }
 }
 
+function changeBPM(value: number) {
+  state.bpm = value
+}
+
+function changeOffset(value: number) {
+  state.offset = value
+}
+
 defineExpose({
   zoomIn,
   zoomOut,
-  onMetronome
+  onMetronome,
+  changeBPM,
+  changeOffset
 })
 </script>
 

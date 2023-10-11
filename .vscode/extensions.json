@@ -1,8 +1,9 @@
 {
   "recommendations": [
-    "Vue.volar",
-    "Vue.vscode-typescript-vue-plugin",
+    "vue.volar",
+    "vue.vscode-typescript-vue-plugin",
     "dbaeumer.vscode-eslint",
-    "esbenp.prettier-vscode"
+    "esbenp.prettier-vscode",
+    "actboy168.tasks"
   ]
 }
