@@ -23,6 +23,7 @@ import USpectogram from '@/components/u/USpectogram.vue'
 import UFileInput from '@/components/u/UFileInput.vue'
 import UButton from '@/components/u/UButton.vue'
 import UModal from '@/components/u/UModal.vue'
+import UValueEdit from '@/components/u/UValueEdit.vue'
 
 const version = APP_VERSION
 inject()
@@ -30,18 +31,13 @@ inject()
 // Ideas:
 
 // Major:
-// zooming slider
 // moving spectogram
+// zooming slider
 
 // Minor:
-// Detect bpm for subsection
-// Auto Volume normalization
-// Analytics
 // Decimal BPM
-
-// Patch:
-// UI Scaling
-// Tips
+// Auto Volume normalization
+// Detect bpm for subsection
 
 const state = reactive<{
   audioFile: File | null
@@ -226,6 +222,16 @@ function openHelpModal() {
 function toggleAdvancedSettings() {
   state.advancedSettingsOpen = !state.advancedSettingsOpen
 }
+
+function onManualBPMEdit(value: number) {
+  onBPMChange(value)
+  spectogramRef.value?.changeBPM(value)
+}
+
+function onManualOffsetEdit(value: number) {
+  onTimingOffsetChange(60000 / state.bpm - value)
+  spectogramRef.value?.changeOffset(60000 / state.bpm - value)
+}
 </script>
 
 <template>
@@ -320,10 +326,15 @@ function toggleAdvancedSettings() {
           <h1 class="heading mb-18">Align the beat.</h1>
         </div>
         <div class="flex justify-between mx-12 items-end" prevent-user-select>
-          <h2>
-            <span class="subheading">{{ state.draggingBPM }}</span
-            ><span class="ml-2 muted-text">BPM</span>
-          </h2>
+          <div>
+            <UValueEdit
+              :value="state.draggingBPM"
+              @change="onManualBPMEdit"
+              type="BPM"
+              :reversed="false"
+              @edit-start="pauseAudio"
+            />
+          </div>
           <h2 class="heading"></h2>
           <button
             @click="toggleZoom"
@@ -346,15 +357,13 @@ function toggleAdvancedSettings() {
           @bpm-offset-change="onBPMOffsetDraggingChange"
         />
         <div class="flex justify-between mx-12 mt-6" prevent-user-select>
-          <h2
-            tooltip-position="right"
-            :tooltip="visualOffset > 0 ? 'Silence at the start' : 'Trimming length at start'"
-          >
-            <span class="subheading">{{ visualOffset.toFixed(0) }}</span
-            ><span class="ml-2 muted-text">MS</span>
-          </h2>
-          <h1 class="heading"></h1>
-          <button></button>
+          <UValueEdit
+            :value="+visualOffset.toFixed(0)"
+            @change="onManualOffsetEdit"
+            type="MS"
+            :reversed="true"
+            @edit-start="pauseAudio"
+          />
         </div>
       </template>
       <template #2>
