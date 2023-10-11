@@ -174,3 +174,26 @@ p {
 [prevent-user-select] {
   user-select: none;
 }
+
+@supports (scrollbar-color: #fff var(--color-lighter-dark)) {
+  * {
+    scrollbar-color: #fff var(--color-lighter-dark);
+    scrollbar-width: auto;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 0.5rem;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-lighter-dark);
+  border-radius: 0.5rem;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #fff;
+  border-radius: 0.5rem;
+}

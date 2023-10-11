@@ -40,9 +40,8 @@ inject()
 // Decimal BPM
 
 // Patch:
-// Debug information copy
-// Auto send debug information on error
 // UI Scaling
+// Tips
 
 const state = reactive<{
   audioFile: File | null
@@ -238,36 +237,46 @@ function toggleAdvancedSettings() {
           <IconsHelp />
         </button>
         <UModal ref="helpModalRef">
-          <div class="auto-flow-small text-center">
-            <h2 class="heading">Song Timer</h2>
-            <p class="muted-text">v{{ version }}</p>
-            <p>
+          <div class="auto-flow-small text-left">
+            <h2 class="heading">
+              Song Timer <span class="muted-text pl-2">v{{ version }}</span>
+            </h2>
+            <p class="pl-4">
               A web app to align the beat of your song to the beat of your game. This app is still
               new, and tested primarily with Beat Saber. Please report any issues you find on
               GitHub.
             </p>
+            <h3 class="subheading !mt-12 orange">Tips</h3>
+            <ol class="auto-flow-small list-decimal list-inside text-left orange pl-4">
+              <li>
+                The website will try to guess the BPM of your song but if it fails you should check
+                the exact BPM on Google.
+              </li>
+              <li>Set your BPM first and then the offset.</li>
+              <li>
+                If you have a song with BPM changes, align the beat to the BPM at the beginning.
+              </li>
+              <li>
+                If you want to trim the audio drag the offset number into the negatives while
+                aligning the beat
+              </li>
+              <li>
+                If you want to add more silence to the start just make the offset much higher.
+                1000ms = 1 second.
+              </li>
+            </ol>
             <h3 class="subheading !mt-12">How To Use</h3>
-            <ol class="auto-flow-small list-decimal list-inside text-left">
+            <ol class="auto-flow-small list-decimal list-inside text-left pl-4">
               <li>Upload your song.</li>
               <li>
-                When you see the fancy looking audio visualizer, hover over lower part of the audio
-                and drag to change the positioning a beat starts at. When you have aligned the beat,
-                hover over the upper part of the audio and drag to change the BPM.<br />
-                <i class="block mt-2 orange">
-                  Tip 1: In most cases you should search the BPM on Google and try that value... its
-                  usually correct and saves you time.</i
-                >
+                When you see the fancy looking audio visualizer, hover over the upper part of the
+                audio and drag to change the BPM. When you have aligned the BPM, hover over the
+                lower part and drag to change the positioning a beat starts at (offset).
               </li>
-              <li>
-                Click "Seems On Time" when you aligned the audio.<br />
-                <i class="block mt-2 orange">
-                  Tip 2: If you have a song with BPM changes, align the beat to the starting BPM.</i
-                >
-              </li>
-              <li>Just download your timed .ogg.</li>
+              <li>Click "Seems On Time" when you've aligned the audio.</li>
             </ol>
             <h3 class="subheading !mt-12">Support</h3>
-            <p>
+            <p class="pl-4">
               You can support me on GitHub by
               <a href="https://github.com/web-dev-sam/song-timer" target="_blank" class="orange"
                 >giving this project a star</a

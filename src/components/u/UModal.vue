@@ -34,7 +34,11 @@ defineExpose({
     <div class="modal p-12">
       <div class="flex justify-between h-18 text-right">
         <div>
-          <button @click="copyDebugInformation">
+          <button
+            @click="copyDebugInformation"
+            tooltip="Copy debug information"
+            tooltip-position="right"
+          >
             <IconsCopy />
           </button>
         </div>
@@ -44,7 +48,9 @@ defineExpose({
           </button>
         </div>
       </div>
-      <slot></slot>
+      <div class="modal-content">
+        <slot></slot>
+      </div>
     </div>
   </div>
 </template>
@@ -69,5 +75,12 @@ defineExpose({
   transform: translate(-50%, -50%);
   background-color: var(--color-dark);
   border-radius: 1.25rem;
+}
+
+.modal-content {
+  padding-right: 1.5rem;
+  max-height: 70vh;
+  overflow: hidden;
+  overflow-y: auto;
 }
 </style>
