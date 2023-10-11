@@ -35,7 +35,6 @@ inject()
 // zooming slider
 
 // Minor:
-// Decimal BPM
 // Auto Volume normalization
 // Detect bpm for subsection
 
