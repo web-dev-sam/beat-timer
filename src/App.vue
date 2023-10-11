@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { inject } from '@vercel/analytics'
 import { ref, reactive, computed, watch } from 'vue'
 
 import FfmpegHandler from '@/utils/FfmpegHandler'
@@ -24,6 +25,7 @@ import UButton from '@/components/u/UButton.vue'
 import UModal from '@/components/u/UModal.vue'
 
 const version = APP_VERSION
+inject()
 
 // Ideas:
 
@@ -35,10 +37,12 @@ const version = APP_VERSION
 // Detect bpm for subsection
 // Auto Volume normalization
 // Analytics
+// Decimal BPM
 
 // Patch:
 // Debug information copy
 // Auto send debug information on error
+// UI Scaling
 
 const state = reactive<{
   audioFile: File | null
