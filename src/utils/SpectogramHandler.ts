@@ -64,7 +64,7 @@ export default class SpectogramHandler {
   }
 
   zoomOut() {
-    this.zoom(4)
+    this.zoom(3)
   }
 
   setBPM(bpm: number) {
@@ -116,7 +116,7 @@ export default class SpectogramHandler {
     }
   }
 
-  private zoom(sPerVw: number) {
+  zoom(sPerVw: number) {
     this.currentZoom = sPerVw
 
     const scaledWidth = this.canvas.clientWidth

@@ -161,6 +161,10 @@ function zoomOut() {
   state.spectogramHandler?.zoomOut()
 }
 
+function setZoomLevel(value: number) {
+  state.spectogramHandler?.zoom(value)
+}
+
 function onCanvasMouseMove(event: MouseEvent) {
   const currentlyDragging = state.dragStart != null
   if (!currentlyDragging) {
@@ -294,7 +298,8 @@ defineExpose({
   zoomOut,
   onMetronome,
   changeBPM,
-  changeOffset
+  changeOffset,
+  setZoomLevel
 })
 </script>
 

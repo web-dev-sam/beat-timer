@@ -29,11 +29,6 @@ const version = APP_VERSION
 inject()
 
 // Ideas:
-
-// Major:
-// zooming slider
-
-// Minor:
 // Auto Volume normalization
 // Detect bpm for subsection
 
@@ -58,6 +53,7 @@ const state = reactive<{
   advancedSettingsOpen: boolean
   exportQuality: number
   ffmpegHandler: FfmpegHandler
+  zoomLevel: number
 }>({
   audioFile: null,
   stopped: true,
@@ -78,7 +74,8 @@ const state = reactive<{
   isZoomed: false,
   advancedSettingsOpen: false,
   exportQuality: 8,
-  ffmpegHandler: new FfmpegHandler()
+  ffmpegHandler: new FfmpegHandler(),
+  zoomLevel: 15
 })
 
 const estimateFileSize = computed(() => {
@@ -106,6 +103,15 @@ watch(
   () => state.timingOffset,
   (newVal) => {
     state.draggingOffset = newVal
+  }
+)
+
+watch(
+  () => state.zoomLevel,
+  (newVal) => {
+    if (spectogramRef.value) {
+      spectogramRef.value.setZoomLevel(newVal)
+    }
   }
 )
 
@@ -334,14 +340,17 @@ function onManualOffsetEdit(value: number) {
             />
           </div>
           <h2 class="heading"></h2>
-          <button
-            @click="toggleZoom"
-            tooltip-position="left"
-            :tooltip="state.isZoomed ? 'Zoom Out' : 'Zoom In'"
-          >
-            <IconsZoomIn v-show="!state.isZoomed" />
-            <IconsZoomOut v-show="state.isZoomed" />
-          </button>
+          <div class="flex items-center gap-4">
+            <USlider v-model="state.zoomLevel" :min="3" :max="15" :step="0.2" class="w-32" />
+            <button
+              @click="toggleZoom"
+              tooltip-position="left"
+              :tooltip="state.isZoomed ? 'Zoom Out' : 'Zoom In'"
+            >
+              <IconsZoomIn v-show="!state.isZoomed" />
+              <IconsZoomOut v-show="state.isZoomed" />
+            </button>
+          </div>
         </div>
         <USpectogram
           v-if="state.step > 0 && state.audioBuffer"
