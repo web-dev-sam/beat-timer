@@ -109,6 +109,20 @@ watch(
   }
 )
 
+watch(
+  () => progressPX.value,
+  (newer, old) => {
+    if (progressFilterRef.value && state.spectogramHandler) {
+      if (newer < old) {
+        progressFilterRef.value.style.transition = `left 0.05s linear`
+      } else {
+        const beatTime = 60 / state.spectogramHandler.getBPM()
+        progressFilterRef.value.style.transition = `left ${beatTime}s linear`
+      }
+    }
+  }
+)
+
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 onMounted(async () => {
   state.bpm = state.draggingBPM = props.initialBpm
