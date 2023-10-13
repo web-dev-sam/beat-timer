@@ -31,7 +31,6 @@ inject()
 // Ideas:
 
 // Major:
-// moving spectogram
 // zooming slider
 
 // Minor:
