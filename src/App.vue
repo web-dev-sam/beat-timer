@@ -49,7 +49,6 @@ const state = reactive<{
   initialExampleFileLoading: boolean
   initialSelectFileLoading: boolean
   beatCloudSize: number
-  isZoomed: boolean
   advancedSettingsOpen: boolean
   exportQuality: number
   ffmpegHandler: FfmpegHandler
@@ -71,7 +70,6 @@ const state = reactive<{
   initialExampleFileLoading: false,
   initialSelectFileLoading: false,
   beatCloudSize: 1,
-  isZoomed: false,
   advancedSettingsOpen: false,
   exportQuality: 8,
   ffmpegHandler: new FfmpegHandler(),
@@ -193,14 +191,7 @@ async function download() {
 
 const spectogramRef = ref<InstanceType<typeof USpectogram> | null>(null)
 function toggleZoom() {
-  state.isZoomed = !state.isZoomed
-  if (spectogramRef.value) {
-    if (state.isZoomed) {
-      spectogramRef.value.zoomOut()
-    } else {
-      spectogramRef.value.zoomIn()
-    }
-  }
+  state.zoomLevel = state.zoomLevel === 15 ? 3 : 15
 }
 
 function onMetronome(time: number) {
@@ -344,11 +335,11 @@ function onManualOffsetEdit(value: number) {
             <USlider v-model="state.zoomLevel" :min="3" :max="15" :step="0.2" class="w-32" />
             <button
               @click="toggleZoom"
-              tooltip-position="left"
-              :tooltip="state.isZoomed ? 'Zoom Out' : 'Zoom In'"
+              tooltip-position="top"
+              :tooltip="state.zoomLevel !== 15 ? 'Zoom Out' : 'Zoom In'"
             >
-              <IconsZoomIn v-show="!state.isZoomed" />
-              <IconsZoomOut v-show="state.isZoomed" />
+              <IconsZoomIn v-show="state.zoomLevel === 15" />
+              <IconsZoomOut v-show="state.zoomLevel !== 15" />
             </button>
           </div>
         </div>

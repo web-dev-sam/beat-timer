@@ -153,14 +153,6 @@ onMounted(async () => {
   })
 })
 
-function zoomIn() {
-  state.spectogramHandler?.zoomIn()
-}
-
-function zoomOut() {
-  state.spectogramHandler?.zoomOut()
-}
-
 function setZoomLevel(value: number) {
   state.spectogramHandler?.zoom(value)
 }
@@ -294,8 +286,6 @@ function changeOffset(value: number) {
 }
 
 defineExpose({
-  zoomIn,
-  zoomOut,
   onMetronome,
   changeBPM,
   changeOffset,
