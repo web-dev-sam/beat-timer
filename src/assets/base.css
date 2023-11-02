@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --color-muted: hsla(0, 0%, 100%, 0.45);
+  --color-muted: hsla(0, 0%, 100%, 0.33);
   --color-primary: hsl(263, 81%, 58%);
   --color-light-dark: var(--color-primary);
   --color-primary-60: hsla(263, 81%, 58%, 0.6);

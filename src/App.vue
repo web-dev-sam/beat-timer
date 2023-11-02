@@ -182,7 +182,6 @@ function onBPMChange(bpm: number) {
 }
 
 function onTimingOffsetChange(offset: number) {
-  console.log(offset)
   state.timingOffset = state.draggingOffset = offset
 }
 

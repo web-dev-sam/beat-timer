@@ -56,10 +56,7 @@ const state = reactive<{
 
 const progressPX = computed(() => {
   if (state.spectogramHandler) {
-    const progPX = state.spectogramHandler.getProgressPX(
-      state.progress + 60 / state.spectogramHandler.getBPM()
-    )
-    return progPX
+    return state.spectogramHandler.getProgressPX(state.progress)
   }
   return 0
 })
@@ -123,33 +120,6 @@ watch(
       state.draggingOffset = offset
       state.spectogramHandler?.setOffset(offset)
       emit('offset-change', offset)
-    }
-  }
-)
-
-const progressTileRef = ref<HTMLDivElement | null>(null)
-watch(
-  () => state.beatlines,
-  () => {
-    if (state.spectogramHandler) {
-      const beatTime = 60 / state.spectogramHandler.getBPM()
-      if (progressTileRef.value) {
-        progressTileRef.value.style.transition = `left ${beatTime}s linear`
-      }
-    }
-  }
-)
-
-watch(
-  () => progressPX.value,
-  (newer, old) => {
-    if (progressTileRef.value && state.spectogramHandler) {
-      if (newer < old) {
-        progressTileRef.value.style.transition = `left 0.05s linear`
-      } else {
-        const beatTime = 60 / state.spectogramHandler.getBPM()
-        progressTileRef.value.style.transition = `left ${beatTime}s linear`
-      }
     }
   }
 )
@@ -379,8 +349,7 @@ defineExpose({
       <img ref="canvasImg" :src="state.spectogramDataURL" class="!h-32 max-w-none !w-auto" />
       <div class="absolute top-0 left-0 h-32">
         <div
-          ref="progressTileRef"
-          class="progress-tile absolute top-0"
+          class="progress-tile absolute top-0 muted-text"
           :style="{ left: progressPX + 'px' }"
         ></div>
       </div>
@@ -398,8 +367,6 @@ defineExpose({
           class="beat-line h-32"
           :style="{
             left: (state.activeBeatline.data?.left ?? '-100') + 'px',
-            scale: `1 calc(1 + 1 / 30)`,
-            translate: `0 calc(${state.activeBeatline.type === 'BPM' ? '-' : ''}8rem / 30)`,
             opacity: 0.5
           }"
         ></div>
