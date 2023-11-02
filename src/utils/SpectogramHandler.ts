@@ -1,6 +1,11 @@
 import FFT from 'fft.js'
 import { hslToRgb } from './utils'
 
+export type BeatLine = {
+  left: number
+  time: number
+}
+
 export default class SpectogramHandler {
   private segmentSize: number
   private segmentOverlap: number
@@ -159,7 +164,7 @@ export default class SpectogramHandler {
 
   secToPx = (sec: number) => sec * (this.vw / this.currentZoom)
   pxToSec = (px: number) => px / (this.vw / this.currentZoom)
-  getBeatLines(bpm: number, offset: number): { left: number }[] {
+  getBeatLines(bpm: number, offset: number): BeatLine[] {
     const interval = 60 / bpm
     const intervalInPX = this.secToPx(interval)
     const offsetInPX = this.secToPx(offset / 1000)

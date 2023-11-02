@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive, computed, watch, ref, onMounted, nextTick } from 'vue'
-import SpectogramHandler from '@/utils/SpectogramHandler'
+import SpectogramHandler, { type BeatLine } from '@/utils/SpectogramHandler'
 import { songOffsetToSilencePadding } from '@/utils/utils'
 
 const props = defineProps<{
@@ -20,10 +20,10 @@ const emit = defineEmits<{
 
 const state = reactive<{
   spectogramHandler: SpectogramHandler | null
-  beatlines: { left: number; time: number }[]
+  beatlines: BeatLine[]
   activeBeatline: {
     type: 'BPM' | 'OFFSET'
-    data: { left: number; time: number } | null
+    data: BeatLine | null
   }
   dragStart: number | null
   hovering: boolean | null
@@ -93,6 +93,16 @@ const hoverSec = computed(() => {
   }
 
   return Math.round(state.spectogramHandler.pxToSec(state.mouseX - newStartPosition.value) * 1000)
+})
+
+const hoverBeat = computed(() => {
+  if (!state.spectogramHandler) {
+    return 0
+  }
+
+  return Math.round(
+    state.spectogramHandler.pxToSec(state.mouseX - newStartPosition.value) / (60 / state.bpm!)
+  )
 })
 
 watch(
@@ -394,13 +404,22 @@ defineExpose({
           }"
         ></div>
         <div
-          class="beat-line-bpm"
+          class="beat-line-time"
           :style="{
             opacity: state.hovering || state.dragStart != null ? 1 : 0,
             left: state.mouseX + 'px'
           }"
         >
           {{ formatMS(hoverSec) }}
+        </div>
+        <div
+          class="beat-line-beat"
+          :style="{
+            opacity: state.hovering || state.dragStart != null ? 1 : 0,
+            left: state.mouseX + 'px'
+          }"
+        >
+          {{ hoverBeat }}
         </div>
       </div>
     </div>
@@ -481,7 +500,7 @@ defineExpose({
   backface-visibility: hidden;
 }
 
-.beat-line-bpm {
+.beat-line-time {
   position: absolute;
   top: 0;
   left: 0;
@@ -495,7 +514,7 @@ defineExpose({
   color: var(--color-dark);
 }
 
-.beat-line-offset {
+.beat-line-beat {
   position: absolute;
   bottom: 0;
   left: 0;
