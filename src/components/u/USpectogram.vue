@@ -3,12 +3,11 @@ import { reactive, computed, watch, ref, onMounted, nextTick } from 'vue'
 import SpectogramHandler from '@/utils/SpectogramHandler'
 import { songOffsetToSilencePadding } from '@/utils/utils'
 
-import IconsScissors from '@/components/icons/IconsScissors.vue'
-
 const props = defineProps<{
   audioBuffer: AudioBuffer
   initialBpm: number
   initialOffset: number
+  beatLightOpacity: number
 }>()
 
 const emit = defineEmits<{
@@ -16,12 +15,13 @@ const emit = defineEmits<{
   (e: 'offset-change', offset: number): void
   (e: 'drag-start'): void
   (e: 'bpm-offset-change', bpm: number, offset: number): void
+  (e: 'active-beatline-change', type: 'BPM' | 'OFFSET'): void
 }>()
 
 const state = reactive<{
   spectogramHandler: SpectogramHandler | null
-  speclines: { left: number; time: number }[]
-  activeSpecline: {
+  beatlines: { left: number; time: number }[]
+  activeBeatline: {
     type: 'BPM' | 'OFFSET'
     data: { left: number; time: number } | null
   }
@@ -33,10 +33,12 @@ const state = reactive<{
   draggingBPM: number
   draggingOffset: number
   mouseX: number
+  spectogramDataURL: string
+  dragTarget: 'new-start' | 'beat-line' | null
 }>({
   spectogramHandler: null,
-  speclines: [],
-  activeSpecline: {
+  beatlines: [],
+  activeBeatline: {
     type: 'BPM',
     data: null
   },
@@ -47,7 +49,9 @@ const state = reactive<{
   progress: 0,
   draggingBPM: 0,
   draggingOffset: 0,
-  mouseX: 0
+  mouseX: 0,
+  spectogramDataURL: '',
+  dragTarget: null
 })
 
 const progressPX = computed(() => {
@@ -67,11 +71,28 @@ const visualOffset = computed(() => {
   return 0
 })
 
-const scissorsPosition = computed(() => {
-  if (state.spectogramHandler && state.spectogramHandler.getCurrentPage() === 0) {
-    return state.spectogramHandler.sToPx(-visualOffset.value / 1000)
+const startPosition = computed(() => {
+  if (!state.spectogramHandler) {
+    return -100
   }
-  return 0
+
+  return state.spectogramHandler.getStartPosition(0)
+})
+
+const newStartPosition = computed(() => {
+  if (!state.spectogramHandler) {
+    return -100
+  }
+
+  return state.spectogramHandler.getStartPosition(-visualOffset.value)
+})
+
+const hoverSec = computed(() => {
+  if (!state.spectogramHandler) {
+    return 0
+  }
+
+  return Math.round(state.spectogramHandler.pxToSec(state.mouseX - newStartPosition.value) * 1000)
 })
 
 watch(
@@ -96,14 +117,14 @@ watch(
   }
 )
 
-const progressFilterRef = ref<HTMLDivElement | null>(null)
+const progressTileRef = ref<HTMLDivElement | null>(null)
 watch(
-  () => state.speclines,
+  () => state.beatlines,
   () => {
     if (state.spectogramHandler) {
       const beatTime = 60 / state.spectogramHandler.getBPM()
-      if (progressFilterRef.value) {
-        progressFilterRef.value.style.transition = `left ${beatTime}s linear`
+      if (progressTileRef.value) {
+        progressTileRef.value.style.transition = `left ${beatTime}s linear`
       }
     }
   }
@@ -112,31 +133,42 @@ watch(
 watch(
   () => progressPX.value,
   (newer, old) => {
-    if (progressFilterRef.value && state.spectogramHandler) {
+    if (progressTileRef.value && state.spectogramHandler) {
       if (newer < old) {
-        progressFilterRef.value.style.transition = `left 0.05s linear`
+        progressTileRef.value.style.transition = `left 0.05s linear`
       } else {
         const beatTime = 60 / state.spectogramHandler.getBPM()
-        progressFilterRef.value.style.transition = `left ${beatTime}s linear`
+        progressTileRef.value.style.transition = `left ${beatTime}s linear`
       }
     }
   }
 )
 
+watch(
+  () => state.activeBeatline,
+  () => {
+    emit('active-beatline-change', state.activeBeatline.type)
+  }
+)
+
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+const canvasImg = ref<HTMLDivElement | null>(null)
 onMounted(async () => {
   state.bpm = state.draggingBPM = props.initialBpm
   state.offset = state.draggingOffset = props.initialOffset
   state.spectogramHandler = new SpectogramHandler({
     audioBuffer: props.audioBuffer,
     canvas: canvasRef.value!,
+    canvasImg: canvasImg.value!,
     bpm: props.initialBpm,
     offset: props.initialOffset,
-    onSpeclineUpdate: (speclines) => {
-      state.speclines = speclines
+    onBeatlineUpdate: (beatlines) => {
+      state.beatlines = beatlines
     }
   })
   await state.spectogramHandler.generateSpectogram()
+  state.spectogramDataURL = state.spectogramHandler.canvasToTransparentImage()
+
   nextTick(() => {
     document.body.addEventListener('mousemove', (e) => {
       state.mouseX = e.clientX
@@ -160,45 +192,47 @@ function setZoomLevel(value: number) {
 function onCanvasMouseMove(event: MouseEvent) {
   const currentlyDragging = state.dragStart != null
   if (!currentlyDragging) {
-    const nearestSpecline = state.speclines.reduce((prev, curr) =>
+    const nearestBeatline = state.beatlines.reduce((prev, curr) =>
       Math.abs(curr.left - event.clientX) < Math.abs(prev.left - event.clientX) ? curr : prev
     )
-    const canvasRect = canvasRef.value?.getBoundingClientRect()
+    const canvasRect = canvasImg.value?.getBoundingClientRect()
     if (!canvasRect) {
       return
     }
 
     const middleOfCanvas = canvasRect.top + canvasRect.height / 2
     const movingInUpperHalf = event.clientY < middleOfCanvas
-    state.activeSpecline = {
-      data: nearestSpecline,
+    state.activeBeatline = {
+      data: nearestBeatline,
       type: movingInUpperHalf ? 'BPM' : 'OFFSET'
     }
     return
   }
 
   if (
-    state.activeSpecline == null ||
-    state.activeSpecline.data == null ||
-    state.dragStart == null
+    state.activeBeatline == null ||
+    state.activeBeatline.data == null ||
+    state.dragStart == null ||
+    state.dragTarget == null
   ) {
     return
   }
 
   // Adjust BPM
-  if (state.activeSpecline.type === 'BPM') {
-    updateOnBPMDrag(state.dragStart - event.clientX, state.activeSpecline.data)
+  if (state.activeBeatline.type === 'BPM') {
+    updateOnBPMDrag(state.dragStart - event.clientX, state.activeBeatline.data)
   }
 
   // Adjust Offset
-  if (state.activeSpecline.type === 'OFFSET') {
-    updateOnOffsetDrag(state.dragStart - event.clientX)
+  if (state.activeBeatline.type === 'OFFSET') {
+    const updater = state.dragTarget === 'new-start' ? updateOnOffsetDragNormal : updateOnOffsetDrag
+    updater(state.dragStart - event.clientX)
   }
 
-  state.speclines = [...state.speclines]
+  state.beatlines = [...state.beatlines]
 }
 
-function updateOnBPMDrag(dragChange: number, fromSpecline: { time: number }) {
+function updateOnBPMDrag(dragChange: number, fromBeatline: { time: number }) {
   const snapPrecision = 1
   const bpmDiff = dragChange / 40
   const newBPM = Math.round((state.bpm! + bpmDiff) / snapPrecision) * snapPrecision
@@ -206,8 +240,9 @@ function updateOnBPMDrag(dragChange: number, fromSpecline: { time: number }) {
   state.spectogramHandler!.setBPM(newBPM)
 
   const interval = 60 / newBPM
-  const activeSpeclineTime = fromSpecline.time
-  const newOffset = (activeSpeclineTime % interval) * 1000
+  const activeBeatlineTime = fromBeatline.time
+  const newOffset = (activeBeatlineTime % interval) * 1000
+
   state.draggingOffset = newOffset
   state.spectogramHandler!.setOffset(newOffset)
 
@@ -225,41 +260,62 @@ function updateOnOffsetDrag(dragChange: number) {
   return newOffset
 }
 
+function updateOnOffsetDragNormal(dragChange: number) {
+  const offsetDiff = state.spectogramHandler?.pxToSec(dragChange) ?? 0
+  const newOffset = state.offset! - offsetDiff * 1000
+  state.draggingOffset = newOffset
+  state.spectogramHandler!.setOffset(newOffset)
+
+  emit('bpm-offset-change', state.bpm!, newOffset)
+  return newOffset
+}
+
 function onCanvasMouseDown(event: MouseEvent) {
   state.dragStart = event.clientX
-  const canvasRect = canvasRef.value?.getBoundingClientRect()
+  state.dragTarget = 'beat-line'
+  const canvasRect = canvasImg.value?.getBoundingClientRect()
   if (!canvasRect) {
     return
   }
 
   const middleOfCanvas = canvasRect.top + canvasRect.height / 2
-  state.activeSpecline.type = event.clientY < middleOfCanvas ? 'BPM' : 'OFFSET'
+  state.activeBeatline.type = event.clientY < middleOfCanvas ? 'BPM' : 'OFFSET'
+  emit('drag-start')
+}
+
+function onNewStartMouseDown(event: MouseEvent) {
+  state.dragStart = event.clientX
+  state.dragTarget = 'new-start'
+  state.activeBeatline.type = 'OFFSET'
   emit('drag-start')
 }
 
 function onCanvasMouseUp(event: MouseEvent) {
   // Update BPM
-  if (state.dragStart != null && state.activeSpecline.type === 'BPM') {
-    if (state.activeSpecline == null || state.activeSpecline.data == null) {
+  if (state.dragStart != null && state.activeBeatline.type === 'BPM') {
+    if (state.activeBeatline == null || state.activeBeatline.data == null) {
       state.dragStart = null
+      state.dragTarget = null
       return
     }
 
     const [newBPM, newOffset] = updateOnBPMDrag(
       state.dragStart - event.clientX,
-      state.activeSpecline.data
+      state.activeBeatline.data
     )
     state.bpm = newBPM
     state.offset = newOffset
   }
 
   // Update Offset
-  if (state.dragStart != null && state.activeSpecline.type === 'OFFSET') {
-    const newOffset = updateOnOffsetDrag(state.dragStart - event.clientX)
+  if (state.dragStart != null && state.activeBeatline.type === 'OFFSET') {
+    const updater = state.dragTarget === 'new-start' ? updateOnOffsetDragNormal : updateOnOffsetDrag
+    const newOffset = updater(state.dragStart - event.clientX)
     state.offset = newOffset
   }
 
   state.dragStart = null
+  state.dragTarget = null
 }
 
 function onCanvasMouseEnter() {
@@ -270,10 +326,10 @@ function onCanvasMouseLeave() {
   state.hovering = false
 }
 
-function onMetronome(time: number) {
+function onMetronome(time: number, seeked: boolean = false) {
   state.progress = time
   if (state.spectogramHandler) {
-    state.spectogramHandler.updateTime(time)
+    state.spectogramHandler.updateTime(time, seeked ? 0.5 : 0)
   }
 }
 
@@ -285,6 +341,13 @@ function changeOffset(value: number) {
   state.offset = value
 }
 
+function formatMS(ms: number) {
+  if (Math.abs(ms) < 1000) {
+    return `${ms}ms`
+  }
+  return `${(ms / 1000).toFixed(1)}s`
+}
+
 defineExpose({
   onMetronome,
   changeBPM,
@@ -294,84 +357,71 @@ defineExpose({
 </script>
 
 <template>
-  <div
-    class="canvas-root w-full relative h-32 my-8"
-    @mousedown="onCanvasMouseDown"
-    @mouseenter="onCanvasMouseEnter"
-    @mouseleave="onCanvasMouseLeave"
-    prevent-user-select
-  >
-    <canvas ref="canvasRef" class="h-32"></canvas>
+  <div class="relative">
     <div
-      ref="progressFilterRef"
-      class="progress-filter absolute h-32 top-0 w-full"
-      :style="{ left: progressPX + 'px' }"
-    ></div>
-    <div class="spec-line-wrapper absolute h-32 top-0 w-full">
-      <div
-        v-for="(specline, index) in state.speclines"
-        :key="index"
-        class="spec-line h-32"
-        :style="{
-          left: specline.left + 'px'
-        }"
-      ></div>
-      <div
-        class="spec-line-bpm"
-        :style="{
-          opacity:
-            (state.hovering || state.dragStart != null) && state.activeSpecline.type === 'BPM'
-              ? 1
-              : 0,
-          left: state.mouseX + 'px',
-          scale: state.dragStart != null ? '2' : '1'
-        }"
-      >
-        {{
-          state.dragStart != null && state.activeSpecline.type === 'BPM' ? state.draggingBPM : 'BPM'
-        }}
-        <span
-          v-if="state.dragStart != null && state.activeSpecline.type === 'BPM'"
-          class="muted-text-light"
-          >BPM</span
+      class="canvas-root w-full relative h-32 my-8"
+      @mousedown="onCanvasMouseDown"
+      @mouseenter="onCanvasMouseEnter"
+      @mouseleave="onCanvasMouseLeave"
+      prevent-user-select
+    >
+      <canvas ref="canvasRef" class="h-32 hidden"></canvas>
+      <img ref="canvasImg" :src="state.spectogramDataURL" class="!h-32 max-w-none !w-auto" />
+      <div class="absolute top-0 left-0 h-32">
+        <div
+          ref="progressTileRef"
+          class="progress-tile absolute top-0"
+          :style="{ left: progressPX + 'px' }"
+        ></div>
+      </div>
+      <div class="beat-line-wrapper absolute h-32 top-0 w-full">
+        <div
+          v-for="(beatline, index) in state.beatlines"
+          :key="index"
+          class="beat-line h-32"
+          :style="{
+            left: beatline.left + 'px',
+            scale: `1 ${1 + (props.beatLightOpacity - 0.1) * 5}`
+          }"
+        ></div>
+        <div
+          class="beat-line h-32"
+          :style="{
+            left: (state.activeBeatline.data?.left ?? '-100') + 'px',
+            scale: `1 calc(1 + 1 / 30)`,
+            translate: `0 calc(${state.activeBeatline.type === 'BPM' ? '-' : ''}8rem / 30)`,
+            opacity: 0.5
+          }"
+        ></div>
+        <div
+          class="beat-line-bpm"
+          :style="{
+            opacity: state.hovering || state.dragStart != null ? 1 : 0,
+            left: state.mouseX + 'px'
+          }"
         >
+          {{ formatMS(hoverSec) }}
+        </div>
       </div>
-      <div
-        class="spec-line-offset"
-        :style="{
-          opacity:
-            (state.hovering || state.dragStart != null) && state.activeSpecline.type === 'OFFSET'
-              ? 1
-              : 0,
-          left: state.mouseX + 'px',
-          scale: state.dragStart != null ? '2' : '1'
-        }"
-      >
-        {{
-          state.dragStart != null && state.activeSpecline.type === 'OFFSET'
-            ? visualOffset.toFixed(0)
-            : 'MS'
-        }}
-        <span
-          v-if="state.dragStart != null && state.activeSpecline.type === 'OFFSET'"
-          class="muted-text-light"
-          >MS</span
-        >
-      </div>
-      <div class="scissors-backdrop" :style="{ width: scissorsPosition + 'px' }"></div>
-      <div class="scissors" :style="{ left: scissorsPosition + 'px' }">
-        <IconsScissors />
-      </div>
+    </div>
+    <div class="start-tile bottom-0 muted-text" :style="{ left: startPosition + 'px' }">
+      <div class="up-tile top-0"></div>
+      <div></div>
+    </div>
+    <div
+      class="start-tile bottom-0 select-none"
+      tooltip-position="bottom"
+      tooltip="Exported song will start here"
+      :style="{ left: newStartPosition + 'px' }"
+      @mousedown="onNewStartMouseDown"
+    >
+      <div class="up-tile top-0"></div>
+      <div>New Start</div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.progress-filter {
-  background-color: #04122f20;
-  backdrop-filter: saturate(18%);
-}
-
 .canvas-root:hover {
   cursor: move;
   cursor: grab;
@@ -384,20 +434,54 @@ defineExpose({
   user-select: none;
 }
 
-.spec-line-wrapper {
+.progress-tile {
+  transform: translate(-50%, -1.2rem) rotate(45deg);
+  position: absolute;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 1rem 1rem;
+  border-color: transparent transparent currentColor transparent;
+}
+
+.up-tile {
+  width: 0;
+  height: 0;
+  transform: rotate(45deg);
+  border-style: solid;
+  border-width: 1rem 1rem 0 0;
+  border-color: currentColor transparent transparent transparent;
+}
+
+.start-tile {
+  position: absolute;
+  transform: translate(-50%, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: max-content;
+  cursor: move;
+  cursor: grab;
+  cursor: -moz-grab;
+  cursor: -webkit-grab;
+}
+
+.beat-line-wrapper {
   font-weight: 900;
 }
 
-.spec-line {
-  --w: 2px;
+.beat-line {
+  --w: 1px;
   position: absolute;
-  bottom: 0;
-  background: #ffffff30;
+  top: 0;
+  background: var(--color-muted);
   width: var(--w);
-  transform: translateX(calc(-1 * var(--w) / 2));
+  transform: translateX(calc(-1px * var(--w) / 2)) translateZ(0);
+  backface-visibility: hidden;
 }
 
-.spec-line-bpm {
+.beat-line-bpm {
   position: absolute;
   top: 0;
   left: 0;
@@ -411,7 +495,7 @@ defineExpose({
   color: var(--color-dark);
 }
 
-.spec-line-offset {
+.beat-line-offset {
   position: absolute;
   bottom: 0;
   left: 0;
@@ -423,28 +507,6 @@ defineExpose({
   padding: 0.25rem 0.5rem;
   background: white;
   color: var(--color-dark);
-}
-
-.scissors {
-  position: absolute;
-  top: 50%;
-  left: 100px;
-  transform: translate(calc(-100% - 1rem), -50%);
-  transform-origin: right center;
-  font-size: 0.75rem;
-  line-height: 0.75rem;
-  border-radius: 1.25rem;
-  padding: 0.25rem 0.5rem;
-  color: var(--color-dark);
-}
-
-.scissors-backdrop {
-  position: absolute;
-  top: 0;
-  left: 0;
-  transform-origin: right center;
-  height: 100%;
-  background: var(--color-dark);
 }
 
 .muted-text-light {

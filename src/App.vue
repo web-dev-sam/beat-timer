@@ -11,7 +11,6 @@ import IconsUp from '@/components/icons/IconsUp.vue'
 import IconsDown from '@/components/icons/IconsDown.vue'
 import IconsZoomOut from '@/components/icons/IconsZoomOut.vue'
 import IconsZoomIn from '@/components/icons/IconsZoomIn.vue'
-import IconsBeatCloud from '@/components/icons/IconsBeatCloud.vue'
 
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import FooterArea from '@/components/FooterArea.vue'
@@ -29,8 +28,22 @@ const version = APP_VERSION
 inject()
 
 // Ideas:
+// Copied message on bug click (maybe redirection to new github issue with debug information as default)
 // Auto Volume normalization
 // Detect bpm for subsection
+// Scroll for zooming
+
+// todo release
+// test everything functionally
+// drag n drop
+// mobile optimization
+// generate directly into image (remove canvas)
+// 2x icon
+// new logos
+// readme
+// github sponsor
+// SEO/Meta
+// beatlines calculation at UI level
 
 const state = reactive<{
   audioFile: File | null
@@ -48,11 +61,12 @@ const state = reactive<{
   audioBuffer: AudioBuffer | null
   initialExampleFileLoading: boolean
   initialSelectFileLoading: boolean
-  beatCloudSize: number
+  beatLightOpacity: number
   advancedSettingsOpen: boolean
   exportQuality: number
   ffmpegHandler: FfmpegHandler
   zoomLevel: number
+  activeModifier: 'BPM' | 'OFFSET'
 }>({
   audioFile: null,
   stopped: true,
@@ -69,11 +83,12 @@ const state = reactive<{
   audioBuffer: null,
   initialExampleFileLoading: false,
   initialSelectFileLoading: false,
-  beatCloudSize: 1,
+  beatLightOpacity: 0.1,
   advancedSettingsOpen: false,
   exportQuality: 8,
   ffmpegHandler: new FfmpegHandler(),
-  zoomLevel: 15
+  zoomLevel: 15,
+  activeModifier: 'BPM'
 })
 
 const estimateFileSize = computed(() => {
@@ -117,6 +132,7 @@ const visualOffset = computed(() => {
   return songOffsetToSilencePadding(state.bpm, state.draggingOffset)
 })
 
+const userPrefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 async function onFileChange(event: Event) {
   event.preventDefault()
   const input = event.target as HTMLInputElement
@@ -166,12 +182,17 @@ function onBPMChange(bpm: number) {
 }
 
 function onTimingOffsetChange(offset: number) {
+  console.log(offset)
   state.timingOffset = state.draggingOffset = offset
 }
 
 function onBPMOffsetDraggingChange(bpm: number, offset: number) {
   state.draggingBPM = bpm
   state.draggingOffset = offset
+}
+
+function onActiveBeatlineChange(type: 'BPM' | 'OFFSET') {
+  state.activeModifier = type
 }
 
 function goToDownloadStep() {
@@ -195,9 +216,31 @@ function toggleZoom() {
 }
 
 function onMetronome(time: number) {
-  state.beatCloudSize = state.beatCloudSize > 1 ? 0.8 : 1.2
+  state.beatLightOpacity = state.beatLightOpacity !== 0.1 ? 0.1 : 0.12
   if (spectogramRef.value) {
     spectogramRef.value.onMetronome(time)
+  }
+
+  const totalDiff = 0.2 - 0.1
+  const interval = 60000 / state.bpm
+  const animInterval = 50
+  const animDiff = totalDiff / (interval / animInterval)
+
+  const fadeOut = () => {
+    state.beatLightOpacity -= animDiff
+    if (state.beatLightOpacity > 0.1) {
+      setTimeout(fadeOut, animInterval)
+    } else {
+      state.beatLightOpacity = 0.1
+    }
+  }
+
+  setTimeout(fadeOut, 50)
+}
+
+function onSeek(time: number) {
+  if (spectogramRef.value) {
+    spectogramRef.value.onMetronome(time, true)
   }
 }
 
@@ -230,205 +273,232 @@ function onManualOffsetEdit(value: number) {
 </script>
 
 <template>
-  <div class="h-screen flex flex-col">
-    <IconsBeatCloud v-if="state.step >= 0" :size="state.beatCloudSize" />
-    <HeaderButtons>
-      <template #left>
-        <button @click="openHelpModal" tooltip-position="right" tooltip="Help">
-          <IconsHelp />
-        </button>
-        <UModal ref="helpModalRef">
-          <div class="auto-flow-small text-left">
-            <h2 class="heading">
-              Song Timer <span class="muted-text pl-2">v{{ version }}</span>
-            </h2>
-            <p class="pl-4">
-              A web app to align the beat of your song to the beat of your game. This app is still
-              new, and tested primarily with Beat Saber. Please report any issues you find on
-              GitHub.
-            </p>
-            <h3 class="subheading !mt-12 orange">Tips</h3>
-            <ol class="auto-flow-small list-decimal list-inside text-left orange pl-4">
-              <li>
-                The website will try to guess the BPM of your song but if it fails you should check
-                the exact BPM on Google.
-              </li>
-              <li>Set your BPM first and then the offset.</li>
-              <li>
-                If you have a song with BPM changes, align the beat to the BPM at the beginning.
-              </li>
-              <li>
-                If you want to trim the audio drag the offset number into the negatives while
-                aligning the beat
-              </li>
-              <li>
-                If you want to add more silence to the start just make the offset much higher.
-                1000ms = 1 second.
-              </li>
-            </ol>
-            <h3 class="subheading !mt-12">How To Use</h3>
-            <ol class="auto-flow-small list-decimal list-inside text-left pl-4">
-              <li>Upload your song.</li>
-              <li>
-                When you see the fancy looking audio visualizer, hover over the upper part of the
-                audio and drag to change the BPM. When you have aligned the BPM, hover over the
-                lower part and drag to change the positioning a beat starts at (offset).
-              </li>
-              <li>Click "Seems On Time" when you've aligned the audio.</li>
-            </ol>
-            <h3 class="subheading !mt-12">Support</h3>
-            <p class="pl-4">
-              You can support me on GitHub by
-              <a href="https://github.com/web-dev-sam/song-timer" target="_blank" class="orange"
-                >giving this project a star</a
-              >. I would really appreciate it!
-            </p>
-            <p class="!mt-12">
-              Made with &#129505; by
-              <a href="https://github.com/web-dev-sam" target="_blank" class="author"
-                >Samuel Braun</a
-              >.
-            </p>
-          </div>
-        </UModal>
-      </template>
-      <template #center></template>
-      <template #right>
-        <UButton
-          v-if="state.step === 0"
-          :loading="state.initialExampleFileLoading"
-          @click="loadExampleFile"
-        >
-          Use Example
-        </UButton>
-        <UButton v-if="state.step === 1" class="mb-0 mr-0" @click="goToDownloadStep">
-          Seems On Time
-        </UButton>
-      </template>
-    </HeaderButtons>
-    <Step :step="state.step">
-      <template #0>
-        <h1 class="heading">Upload your song.</h1>
-        <p class="muted-text mb-6">
-          You can drag and drop your song here, or click to select a file.
-        </p>
-        <UFileInput :loading="state.initialSelectFileLoading" @change="onFileChange">
-          Select file
-        </UFileInput>
-      </template>
-      <template #1>
-        <div>
-          <h1 class="heading mb-18">Align the beat.</h1>
-        </div>
-        <div class="flex justify-between mx-12 items-end" prevent-user-select>
+  <div>
+    <div class="h-screen flex flex-col">
+      <HeaderButtons>
+        <template #left>
+          <button @click="openHelpModal" tooltip-position="right" tooltip="Help" class="muted-text">
+            <IconsHelp class="muted-text" />
+          </button>
+          <UModal ref="helpModalRef">
+            <div class="auto-flow-small text-left">
+              <h2 class="h2">
+                Song Timer <span class="muted-text p pl-2">v{{ version }}</span>
+              </h2>
+              <p>
+                A web app to align the beat of your song to the beat of your game. This app is still
+                new, and tested primarily with Beat Saber. Please report any issues you find on
+                GitHub.
+              </p>
+              <h3 class="h3 !mt-12">Tips</h3>
+              <ol class="auto-flow-small list-decimal list-inside text-left">
+                <li>
+                  The website will try to guess the BPM of your song but if it fails you should
+                  check the exact BPM on Google.
+                </li>
+                <li>Set your BPM first and then the offset.</li>
+                <li>
+                  If you have a song with BPM changes, align the beat to the BPM at the beginning.
+                </li>
+                <li>
+                  If you want to trim the audio drag the offset number into the negatives while
+                  aligning the beat
+                </li>
+                <li>
+                  If you want to add more silence to the start just make the offset much higher.
+                  1000ms = 1 second.
+                </li>
+              </ol>
+              <h3 class="h3 !mt-12">How To Use</h3>
+              <ol class="auto-flow-small list-decimal list-inside text-left">
+                <li>Import your song.</li>
+                <li>
+                  When you see the fancy looking audio visualizer, hover over the upper part of the
+                  audio and drag to change the BPM. When you have aligned the BPM, hover over the
+                  lower part and drag to change the positioning a beat starts at (offset).
+                </li>
+                <li>Click "Seems On Time" when you've aligned the audio.</li>
+              </ol>
+              <h3 class="h3 !mt-12">Support</h3>
+              <p>
+                You can support me on GitHub by
+                <a href="https://github.com/web-dev-sam/song-timer" target="_blank" class="purple"
+                  >giving this project a star</a
+                >. I would really appreciate it!
+              </p>
+              <p class="!mt-12">
+                Made with &#129505; by
+                <a href="https://github.com/web-dev-sam" target="_blank" class="author"
+                  >Samuel Braun</a
+                >.
+              </p>
+            </div>
+          </UModal>
+        </template>
+        <template #center></template>
+        <template #right>
+          <UButton
+            v-if="state.step === 0"
+            :loading="state.initialExampleFileLoading"
+            @click="loadExampleFile"
+            class="btn-secondary"
+          >
+            Use Example
+          </UButton>
+          <UButton v-if="state.step === 1" class="mb-0 mr-0" @click="goToDownloadStep">
+            Seems On Time
+          </UButton>
+        </template>
+      </HeaderButtons>
+      <Step :step="state.step">
+        <template #0>
+          <h1 class="h2">Import your song.</h1>
+          <p class="muted-text mb-6">
+            You can drag and drop your song here, or click to select a file.
+          </p>
+          <UFileInput :loading="state.initialSelectFileLoading" @change="onFileChange">
+            Select file
+          </UFileInput>
+        </template>
+        <template #1>
           <div>
+            <h1 class="h2 mb-18">Align the beat.</h1>
+          </div>
+          <div class="flex justify-between mx-12 items-end" prevent-user-select>
+            <div>
+              <UValueEdit
+                :invisible="state.activeModifier !== 'BPM'"
+                :value="state.draggingBPM"
+                @change="onManualBPMEdit"
+                type="BPM"
+                :reversed="false"
+                @edit-start="pauseAudio"
+              />
+            </div>
+            <h2 class="h2"></h2>
+            <div class="flex items-center gap-4">
+              <USlider v-model="state.zoomLevel" :min="3" :max="15" :step="0.2" class="w-32" />
+              <button
+                @click="toggleZoom"
+                tooltip-position="top"
+                :tooltip="state.zoomLevel !== 15 ? 'Zoom Out' : 'Zoom In'"
+              >
+                <IconsZoomIn v-show="state.zoomLevel === 15" />
+                <IconsZoomOut v-show="state.zoomLevel !== 15" />
+              </button>
+            </div>
+          </div>
+          <USpectogram
+            v-if="state.step > 0 && state.audioBuffer"
+            ref="spectogramRef"
+            :audio-buffer="state.audioBuffer"
+            :initial-offset="state.timingOffset"
+            :initial-bpm="state.bpm"
+            :beatLightOpacity="state.beatLightOpacity"
+            @bpm-change="onBPMChange"
+            @offset-change="onTimingOffsetChange"
+            @drag-start="pauseAudio"
+            @bpm-offset-change="onBPMOffsetDraggingChange"
+            @active-beatline-change="onActiveBeatlineChange"
+          />
+          <div class="flex justify-between mx-12 mt-6" prevent-user-select>
             <UValueEdit
-              :value="state.draggingBPM"
-              @change="onManualBPMEdit"
-              type="BPM"
-              :reversed="false"
+              :invisible="state.activeModifier !== 'OFFSET'"
+              :value="+visualOffset.toFixed(0)"
+              @change="onManualOffsetEdit"
+              type="MS"
+              :reversed="true"
               @edit-start="pauseAudio"
             />
           </div>
-          <h2 class="heading"></h2>
-          <div class="flex items-center gap-4">
-            <USlider v-model="state.zoomLevel" :min="3" :max="15" :step="0.2" class="w-32" />
-            <button
-              @click="toggleZoom"
-              tooltip-position="top"
-              :tooltip="state.zoomLevel !== 15 ? 'Zoom Out' : 'Zoom In'"
-            >
-              <IconsZoomIn v-show="state.zoomLevel === 15" />
-              <IconsZoomOut v-show="state.zoomLevel !== 15" />
-            </button>
+        </template>
+        <template #2>
+          <h1 class="h2">Export</h1>
+          <p class="muted-text mb-6">
+            You have made it! You can now export your song. If you want to convert it to another
+            format, you can use
+            <a href="https://convertio.co/" target="_blank">this converter</a>.
+          </p>
+          <div class="flex justify-center gap-4">
+            <UButton :secondary="true" @click="goBackToTiming"> Back </UButton>
+            <UButton :loading="state.downloading" @click="download"> Export </UButton>
           </div>
-        </div>
-        <USpectogram
-          v-if="state.step > 0 && state.audioBuffer"
-          ref="spectogramRef"
+          <button class="!mt-12" @click="toggleAdvancedSettings">
+            <IconsDown
+              v-if="!state.advancedSettingsOpen"
+              class="inline-block mr-1"
+              style="--icon-size: 16px"
+            />
+            <IconsUp
+              v-if="state.advancedSettingsOpen"
+              class="inline-block mr-1"
+              style="--icon-size: 16px"
+            />
+            <span class="inline-block">Advanced</span>
+          </button>
+          <div v-if="state.advancedSettingsOpen">
+            <div class="flex justify-center gap-4 items-center">
+              <div>Export Quality</div>
+              <div class="h3">
+                {{ state.exportQuality }}
+              </div>
+              <div>
+                <USlider v-model="state.exportQuality" :min="1" :max="10" class="!w-72" />
+              </div>
+              <div tooltip-position="bottom" tooltip="Could be lower or higher based on the song.">
+                ~{{ estimateFileSize }}
+              </div>
+            </div>
+          </div>
+        </template>
+      </Step>
+      <FooterArea>
+        <AudioPlayer
+          v-if="state.step === 1 && state.audioBuffer"
+          ref="audioPlayerRef"
+          :bpm="state.bpm"
           :audio-buffer="state.audioBuffer"
-          :initial-offset="state.timingOffset"
-          :initial-bpm="state.bpm"
-          @bpm-change="onBPMChange"
-          @offset-change="onTimingOffsetChange"
-          @drag-start="pauseAudio"
-          @bpm-offset-change="onBPMOffsetDraggingChange"
+          :timing-offset="state.timingOffset"
+          @metronome="onMetronome"
+          @seek="onSeek"
         />
-        <div class="flex justify-between mx-12 mt-6" prevent-user-select>
-          <UValueEdit
-            :value="+visualOffset.toFixed(0)"
-            @change="onManualOffsetEdit"
-            type="MS"
-            :reversed="true"
-            @edit-start="pauseAudio"
-          />
-        </div>
-      </template>
-      <template #2>
-        <h1 class="heading">Download</h1>
-        <p class="muted-text mb-6">
-          You have made it! You can now download your song. If you want to convert it to another
-          format, you can use
-          <a href="https://convertio.co/" target="_blank">this converter</a>.
-        </p>
-        <div class="flex justify-center">
-          <UButton :secondary="true" @click="goBackToTiming"> Back </UButton>
-          <UButton :loading="state.downloading" @click="download"> Download </UButton>
-        </div>
-        <button class="muted-text !mt-12" @click="toggleAdvancedSettings">
-          Advanced
-          <IconsDown v-if="!state.advancedSettingsOpen" class="ml-2 inline-block" /><IconsUp
-            v-if="state.advancedSettingsOpen"
-            class="ml-2 inline-block"
-          />
-        </button>
-        <div v-if="state.advancedSettingsOpen">
-          <div class="flex justify-center gap-6 items-center muted-text">
-            <div>Export Quality</div>
-            <div class="subheading">
-              {{ state.exportQuality }}
-            </div>
-            <div>
-              <USlider v-model="state.exportQuality" :min="1" :max="10" class="!w-72" />
-            </div>
-            <div tooltip-position="bottom" tooltip="Could be lower or higher based on the song.">
-              ~{{ estimateFileSize }}
-            </div>
-          </div>
-        </div>
-      </template>
-    </Step>
-    <FooterArea>
-      <AudioPlayer
-        v-if="state.step === 1 && state.audioBuffer"
-        ref="audioPlayerRef"
-        :bpm="state.bpm"
-        :audio-buffer="state.audioBuffer"
-        :timing-offset="state.timingOffset"
-        @metronome="onMetronome"
-      />
-    </FooterArea>
+      </FooterArea>
+    </div>
+    <div
+      class="absolute bg-primary light"
+      :style="{ opacity: userPrefersReducedMotion ? 0.1 : state.beatLightOpacity }"
+    ></div>
+    <div class="absolute light-cover"></div>
   </div>
 </template>
 
 <style scoped>
-a {
-  text-decoration: underline;
-  text-decoration: underline wavy;
-  color: white;
+.light {
+  z-index: -1;
+  top: 0;
+  left: -25vw;
+  width: 150vw;
+  height: 150vw;
+  background: radial-gradient(circle, var(--color-primary), var(--color-dark));
 }
 
-.orange {
-  color: #fd7d44;
+.light-cover {
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100lvh;
+  background: var(--color-dark);
+  opacity: 1;
+  animation: fadeInLight 3s ease-in-out forwards;
+  pointer-events: none;
 }
 
-.author {
-  color: #fd7d44;
-  text-decoration: none;
-}
-
-.author:hover {
-  text-decoration: underline;
-  text-decoration: underline wavy;
+@keyframes fadeInLight {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 </style>

@@ -28,15 +28,16 @@ export default class FfmpegHandler {
       return
     }
 
+    const paddingDuration = songOffsetToSilencePadding(bpm, offset)
+
     try {
       log('ffmpegDownloadBPM', bpm.toString())
-      log('ffmpegDownloadOffset', offset.toString())
+      log('ffmpegDownloadPaddingDuration', paddingDuration.toString())
       log('ffmpegDownloadExportQuality', exportQuality.toString())
-      const beginningPad = songOffsetToSilencePadding(bpm, offset)
-      if (beginningPad >= 0) {
-        ;(await this.padAudio(file, beginningPad, exportQuality))()
+      if (paddingDuration >= 0) {
+        ;(await this.padAudio(file, paddingDuration, exportQuality))()
       } else {
-        ;(await this.trimAudio(file, -beginningPad, exportQuality))()
+        ;(await this.trimAudio(file, -paddingDuration, exportQuality))()
       }
     } catch (error) {
       const err = error as Error

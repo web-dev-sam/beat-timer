@@ -65,7 +65,7 @@ function toggleMetronomeSpeed(n: number) {
 
 <style scoped>
 [disabled] {
-  opacity: 0.2;
+  opacity: 0;
   pointer-events: none;
 }
 </style>

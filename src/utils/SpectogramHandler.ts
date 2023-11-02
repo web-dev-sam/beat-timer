@@ -6,28 +6,33 @@ export default class SpectogramHandler {
   private segmentOverlap: number
   private audioBuffer: AudioBuffer
   private canvas: HTMLCanvasElement
+  private canvasImg: HTMLDivElement
   private canvasContext: CanvasRenderingContext2D
   private sampleRate: number
   private hzFilter: number
   private durationInMS: number
   private currentZoom: number
   private vw: number
-  private onSpeclineUpdate: (speclines: any[]) => void
+  private onBeatlineUpdate: (beatlines: any[]) => void
   private bpm: number
   private offset: number
-  private currentPage: number
   private scale: number
+  private time: number
+  private a: number
+  private b: number
 
   constructor({
     audioBuffer,
     canvas,
-    onSpeclineUpdate,
+    canvasImg,
+    onBeatlineUpdate,
     bpm,
     offset
   }: {
     audioBuffer: AudioBuffer
     canvas: HTMLCanvasElement
-    onSpeclineUpdate: (speclines: any[]) => void
+    canvasImg: HTMLDivElement
+    onBeatlineUpdate: (beatlines: any[]) => void
     bpm: number
     offset: number
   }) {
@@ -36,14 +41,18 @@ export default class SpectogramHandler {
     this.hzFilter = 4000
     this.audioBuffer = audioBuffer
     this.canvas = canvas
+    this.canvasImg = canvasImg
     this.canvasContext = this.canvas.getContext('2d')!
     this.sampleRate = audioBuffer.sampleRate
+
     this.durationInMS = audioBuffer.duration * 1000
     this.currentZoom = 15
-    this.currentPage = 0
+    this.time = 0
+    this.a = 0
+    this.b = 1
     this.scale = 1
     this.vw = document.documentElement.clientWidth
-    this.onSpeclineUpdate = onSpeclineUpdate
+    this.onBeatlineUpdate = onBeatlineUpdate
     this.bpm = bpm
     this.offset = offset
 
@@ -53,10 +62,6 @@ export default class SpectogramHandler {
 
   getBPM() {
     return this.bpm
-  }
-
-  getCurrentPage() {
-    return this.currentPage
   }
 
   zoomIn() {
@@ -75,28 +80,59 @@ export default class SpectogramHandler {
     this.onBPMOrOffsetChange(this.bpm, offset)
   }
 
-  updateTime(time: number) {
-    const secPerPage = this.currentZoom
-    const currentPage = Math.floor(time / secPerPage)
-    if (this.currentPage === currentPage) {
-      return
+  getWindowIfCursorAt(time: number, position: number, zoom: number) {
+    const normalizedWidth = this.canvas.width * (this.canvasImg.clientHeight / this.canvas.height)
+
+    const virtualWindowWidth = normalizedWidth * ((zoom * 1000) / this.durationInMS)
+    const cursorAbsolutePosition = normalizedWidth * ((time * 1000) / this.durationInMS)
+
+    const newScale = this.vw / virtualWindowWidth
+    const a = (cursorAbsolutePosition - position * virtualWindowWidth) * newScale
+    const b = (cursorAbsolutePosition + (1 - position) * virtualWindowWidth) * newScale
+
+    return {
+      a,
+      b,
+      scale: newScale
     }
+  }
 
-    this.currentPage = currentPage
+  jumpToCursor(time: number, position: number, zoom: number) {
+    const { a, b, scale } = this.getWindowIfCursorAt(time, position, zoom)
+    this.updateWindow(a, b, scale)
+  }
 
-    const leftEdgePx = this.currentPage * this.vw
-    this.canvas.style.transition = 'transform 0.2s ease-in-out'
-    this.canvas.style.transform = `translateX(-${leftEdgePx}px) scaleX(${this.scale})`
+  updateWindow(a: number, b: number, scale: number) {
+    this.scale = scale
+    this.a = a
+    this.b = b
+
+    this.canvas.style.transform = `translateX(${-1 * this.a}px) scaleX(${this.scale})`
     this.canvas.style.transformOrigin = 'left'
+    this.canvasImg.style.transform = `translateX(${-1 * this.a}px) scaleX(${this.scale})`
+    this.canvasImg.style.transformOrigin = 'left'
 
-    this.onSpeclineUpdate(this.getSpecLines(this.bpm, this.offset))
+    this.onBeatlineUpdate(this.getBeatLines(this.bpm, this.offset))
+  }
+
+  updateTime(time: number, position: number = 0) {
+    this.time = time
+
+    const {
+      a: newA,
+      b: newB,
+      scale
+    } = this.getWindowIfCursorAt(this.time, position, this.currentZoom)
+
+    if (newA > this.b || newB < this.a) {
+      this.updateWindow(newA, newB, scale)
+    }
   }
 
   getProgressPX(time: number) {
-    const secPerPage = this.currentZoom
-    const timeInPage = time - this.currentPage * secPerPage
-    const pxPerS = this.vw / secPerPage
-    return timeInPage * pxPerS
+    const normalizedWidth = this.canvas.width * (this.canvasImg.clientHeight / this.canvas.height)
+    const cursorAbsolutePosition = normalizedWidth * ((time * 1000) / this.durationInMS)
+    return cursorAbsolutePosition * this.scale - this.a
   }
 
   onBPMOrOffsetChange(bpm: number, offset: number) {
@@ -112,54 +148,45 @@ export default class SpectogramHandler {
     }
 
     if (prevBPM !== bpm || prevOffset !== offset) {
-      this.onSpeclineUpdate(this.getSpecLines(this.bpm, this.offset))
+      this.onBeatlineUpdate(this.getBeatLines(this.bpm, this.offset))
     }
   }
 
   zoom(sPerVw: number) {
     this.currentZoom = sPerVw
-
-    const scaledWidth = this.canvas.clientWidth
-    const currentPxPerS = (scaledWidth * 1000) / this.durationInMS
-    const currentPxPerTimeframe = currentPxPerS * this.currentZoom
-    const scale = this.vw / currentPxPerTimeframe
-    this.scale = scale
-    this.canvas.style.transform = `scaleX(${scale})`
-    this.canvas.style.transformOrigin = 'left'
-
-    this.onSpeclineUpdate(this.getSpecLines(this.bpm, this.offset))
+    this.jumpToCursor(this.time, 0.5, this.currentZoom)
   }
 
-  getSpecLines(bpm: number, offset: number): { left: number; time: number }[] {
-    const secPerVw = this.currentZoom
+  secToPx = (sec: number) => sec * (this.vw / this.currentZoom)
+  pxToSec = (px: number) => px / (this.vw / this.currentZoom)
+  getBeatLines(bpm: number, offset: number): { left: number }[] {
     const interval = 60 / bpm
-    const currentPageLeftInS = this.currentPage * secPerVw
-    const currentPageOffsetInS = interval - (currentPageLeftInS % interval)
-    const pxToS = (px: number) => px / (this.vw / secPerVw)
-    const currentPageOffsetInPX = this.sToPx(currentPageOffsetInS)
-    const intervalInPX = this.sToPx(interval)
+    const intervalInPX = this.secToPx(interval)
+    const offsetInPX = this.secToPx(offset / 1000)
+    const beatOffsetOutsideWindow = this.a % intervalInPX
+    const beatOffsetInsideWindow = intervalInPX - beatOffsetOutsideWindow
+    const totalBeatOffsetInPX = beatOffsetInsideWindow + offsetInPX
 
     const beatLines = []
-    let leftPX =
-      currentPageOffsetInPX +
-      intervalInPX * beatLines.length -
-      this.sToPx(interval * 1000 - offset) / 1000
-    while (leftPX <= this.vw) {
-      const leftS = currentPageLeftInS + pxToS(leftPX) - (interval * 1000 - offset) / 1000
+    let left = totalBeatOffsetInPX
+    while (left <= this.vw) {
       beatLines.push({
-        left: leftPX,
-        time: leftS
+        left,
+        time: this.pxToSec(this.a + left)
       })
-      leftPX =
-        currentPageOffsetInPX +
-        intervalInPX * beatLines.length -
-        this.sToPx(interval * 1000 - offset) / 1000
+      left += intervalInPX
     }
     return beatLines
   }
 
-  sToPx(s: number) {
-    return s * (this.vw / this.currentZoom)
+  getStartPosition(trimDuration: number) {
+    const normalizedWidth = this.canvas.width * (this.canvasImg.clientHeight / this.canvas.height)
+    const trimDurationInPX = normalizedWidth * (trimDuration / this.durationInMS) * this.scale
+    return trimDurationInPX - this.a
+  }
+
+  getPositionSec(positionPX: number) {
+    return this.pxToSec(this.a + positionPX) + this.offset / 1000
   }
 
   setSegmentSize(segmentSize: number) {
@@ -223,6 +250,7 @@ export default class SpectogramHandler {
     const height = this.canvas.height
     const imageData = this.canvasContext.createImageData(width, height)
     const uint8ClampedData = imageData.data
+    const colorMap = [...Array(256).keys()].map(this.getColorFromIntensity)
 
     let idx = 0
     for (let y = height - 1; y >= 0; y--) {
@@ -232,8 +260,8 @@ export default class SpectogramHandler {
         }
 
         const magnitude = spectrogram[x][y]
-        const intensity = Math.min(255, magnitude * 4)
-        const [red, green, blue] = this.getColorFromIntensity(intensity)
+        const intensity = Math.min(255, Math.floor(magnitude * 4))
+        const [red, green, blue] = colorMap[intensity] || [0, 0, 0]
 
         uint8ClampedData[idx++] = red
         uint8ClampedData[idx++] = green
@@ -255,10 +283,32 @@ export default class SpectogramHandler {
     this.canvasContext.putImageData(imageData, 0, 0)
   }
 
+  public canvasToTransparentImage(): string {
+    const imageData = this.canvasContext.getImageData(0, 0, this.canvas.width, this.canvas.height)
+    const data = imageData.data
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i]
+      const g = data[i + 1]
+      const b = data[i + 2]
+
+      if (r === 0 && g === 0 && b === 0) {
+        data[i + 3] = 0
+      }
+    }
+
+    this.canvasContext.putImageData(imageData, 0, 0)
+    return this.canvas.toDataURL()
+  }
+
   private getColorFromIntensity(intensity: number) {
-    const hue = (1 - intensity / 255) * (220 / 360)
+    if (intensity < 8) {
+      return [0, 0, 0]
+    }
+
+    const hue = ((1 - (0.2 * intensity) / 255) * (220 / 360) + 0.18) % 1
     const saturation = 0.85
-    const lightness = (intensity * 0.9) / 255 + 0.1
+    const lightness = (intensity * 0.9) / 255
     return hslToRgb(hue, saturation, lightness)
   }
 }
