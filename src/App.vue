@@ -34,7 +34,7 @@ inject()
 // Scroll for zooming
 
 // todo release
-// test everything functionally
+// beatlines calculation at UI level
 // drag n drop
 // mobile optimization
 // generate directly into image (remove canvas)
@@ -43,7 +43,8 @@ inject()
 // readme
 // github sponsor
 // SEO/Meta
-// beatlines calculation at UI level
+// test everything functionally
+// release notes
 
 const state = reactive<{
   audioFile: File | null

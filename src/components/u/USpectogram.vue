@@ -463,7 +463,7 @@ defineExpose({
   top: 0;
   background: var(--color-muted);
   width: var(--w);
-  transform: translateX(calc(-1px * var(--w) / 2)) translateZ(0);
+  transform: translateX(calc(-1 * var(--w) / 2)) translateZ(0);
   backface-visibility: hidden;
 }
 
@@ -473,12 +473,13 @@ defineExpose({
   left: 0;
   transform: translate(-50%, calc(-100% - 1rem));
   transform-origin: left top;
-  font-size: 0.75rem;
-  line-height: 0.75rem;
+  font-size: 1rem;
+  line-height: 1rem;
   border-radius: 1.25rem;
   padding: 0.25rem 0.5rem;
   background: white;
   color: var(--color-dark);
+  z-index: 1;
 }
 
 .beat-line-beat {
@@ -487,12 +488,13 @@ defineExpose({
   left: 0;
   transform: translate(-50%, calc(100% + 1rem));
   transform-origin: left bottom;
-  font-size: 0.75rem;
-  line-height: 0.75rem;
+  font-size: 1rem;
+  line-height: 1rem;
   border-radius: 1.25rem;
   padding: 0.25rem 0.5rem;
   background: white;
   color: var(--color-dark);
+  z-index: 1;
 }
 
 .muted-text-light {
