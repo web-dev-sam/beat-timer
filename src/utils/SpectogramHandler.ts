@@ -1,4 +1,3 @@
-import FFT from 'fft.js'
 import { hslToRgb } from './utils'
 
 export type BeatLine = {
@@ -25,6 +24,7 @@ export default class SpectogramHandler {
   private time: number
   private a: number
   private b: number
+  private workers: Worker[]
 
   constructor({
     audioBuffer,
@@ -49,6 +49,7 @@ export default class SpectogramHandler {
     this.canvasImg = canvasImg
     this.canvasContext = this.canvas.getContext('2d')!
     this.sampleRate = audioBuffer.sampleRate
+    this.workers = this.initWorkers()
 
     this.durationInMS = audioBuffer.duration * 1000
     this.currentZoom = 15
@@ -63,6 +64,12 @@ export default class SpectogramHandler {
 
     const height = Math.floor((this.hzFilter * this.segmentSize) / this.sampleRate)
     this.canvas.height = height
+  }
+
+  initWorkers() {
+    return new Array(Math.max(Math.min(navigator.hardwareConcurrency || 4, 12), 4))
+      .fill(null)
+      .map(() => new Worker('js/fffWorker.js'))
   }
 
   getBPM() {
@@ -203,66 +210,78 @@ export default class SpectogramHandler {
     this.segmentOverlap = segmentOverlap
   }
 
-  async generateSpectogram() {
-    if (!this.canvasContext) return
-
-    const fft = new FFT(this.segmentSize)
-    const subsectionData = this.audioBuffer.getChannelData(0)
-    const numSegments = Math.floor(
-      (subsectionData.length - this.segmentOverlap) / (this.segmentSize - this.segmentOverlap)
-    )
-
-    this.canvas.width = numSegments
-    this.zoom(this.currentZoom)
-
-    const width = this.canvas.width
-    const height = this.canvas.height
-    const imageData = this.canvasContext.createImageData(width, height)
-    const uint8ClampedData = imageData.data
-    const colorMap = [...Array(256).keys()].map(this.getColorFromIntensity)
-
-    for (let i = 0; i < numSegments; i++) {
-      const startIdx = i * (this.segmentSize - this.segmentOverlap)
-      const segment = subsectionData.slice(startIdx, startIdx + this.segmentSize)
-
-      // Windowing using Hanning window
-      const windowedSegment = segment.map((sample, index) => {
-        const windowValue = 0.5 * (1 - Math.cos((2 * Math.PI * index) / (this.segmentSize - 1)))
-        return sample * windowValue
-      })
-
-      const complexSegment = fft.toComplexArray(windowedSegment, undefined)
-      const magnitudes = fft.createComplexArray()
-      fft.transform(magnitudes, complexSegment)
-
-      // Convert the complex values to magnitudes and generate pixel data
-      for (let j = 0; j < height; j++) {
-        const real = magnitudes[j * 2]
-        const imag = magnitudes[j * 2 + 1]
-        const magnitude = Math.sqrt(real * real + imag * imag)
-        const intensity = Math.min(255, Math.floor(magnitude * 4))
-        const [red, green, blue] = colorMap[intensity] || [0, 0, 0]
-        const pixelIndex = (j * width + i) * 4
-
-        uint8ClampedData[pixelIndex] = red
-        uint8ClampedData[pixelIndex + 1] = green
-        uint8ClampedData[pixelIndex + 2] = blue
-        uint8ClampedData[pixelIndex + 3] = 255 // alpha
-
-        // const songLength = this.audioBuffer.duration;
-        // const pointsPerS = width / songLength;
-        // uint8ClampedData[idx++] =
-        //   Math.floor(x / pointsPerS) % 2 === 0 ? 0 : 225;
-        // uint8ClampedData[idx++] =
-        //   Math.floor(x / pointsPerS) % 2 === 0 ? 0 : 225;
-        // uint8ClampedData[idx++] =
-        //   Math.floor(x / pointsPerS) % 2 === 0 ? 0 : 225;
-        // uint8ClampedData[idx++] = 255;
+  generateSpectogram() {
+    return new Promise((resolve) => {
+      if (!this.canvasContext || !this.audioBuffer) {
+        resolve(null)
+        return
       }
-    }
 
-    this.canvasContext.putImageData(imageData, 0, 0)
-    return this.canvasToTransparentImage()
+      const fftSize = this.segmentSize
+      const subsectionData = this.audioBuffer.getChannelData(0)
+      const numSegments = Math.floor(
+        (subsectionData.length - this.segmentOverlap) / (fftSize - this.segmentOverlap)
+      )
+
+      this.canvas.width = numSegments
+      this.zoom(this.currentZoom)
+
+      const width = this.canvas.width
+      const height = this.canvas.height
+      const imageData = this.canvasContext.createImageData(width, height)
+      const colorMap = [...Array(256).keys()].map(this.getColorFromIntensity)
+
+      let segmentsProcessed = 0
+
+      // Helper function to dispatch work to a worker
+      const dispatchWork = (worker: Worker, segmentIndex: number) => {
+        const startIdx = segmentIndex * (fftSize - this.segmentOverlap)
+        const segment = subsectionData.slice(startIdx, startIdx + fftSize)
+        if (subsectionData.length > startIdx + fftSize) {
+          worker.postMessage({
+            segment,
+            height,
+            segmentIndex: segmentIndex // send the index to keep track in the worker
+          })
+        }
+      }
+
+      // Setup workers and initial message posting
+      for (const [i, worker] of this.workers.entries()) {
+        worker.onmessage = (e) => {
+          const { result, segmentIndex } = e.data
+
+          // Process the `result` array to extract and use magnitudes
+          for (let j = 0; j < result.length; j++) {
+            const y = height - 1 - j
+            const intensity = result[j]
+            const [red, green, blue] = colorMap[intensity] || [0, 0, 0]
+            const idx = (y * width + segmentIndex) * 4
+
+            imageData.data[idx] = red
+            imageData.data[idx + 1] = green
+            imageData.data[idx + 2] = blue
+            imageData.data[idx + 3] = 255
+          }
+
+          segmentsProcessed++
+          if (segmentsProcessed === numSegments) {
+            this.canvasContext.putImageData(imageData, 0, 0)
+            new Promise(() => {
+              this.workers.forEach((w) => w.terminate())
+              this.workers = this.initWorkers()
+            })
+            resolve(this.canvas.toDataURL())
+          } else {
+            dispatchWork(worker, segmentIndex + this.workers.length)
+          }
+        }
+        // Dispatch initial work
+        if (i < numSegments) {
+          dispatchWork(worker, i)
+        }
+      }
+    })
   }
 
   public canvasToTransparentImage(): string {
