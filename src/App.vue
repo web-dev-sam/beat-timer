@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { inject } from '@vercel/analytics'
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 
 import FfmpegHandler from '@/utils/FfmpegHandler'
 import { guess } from 'web-audio-beat-detector'
@@ -34,7 +34,6 @@ inject()
 // Scroll for zooming
 
 // todo release
-// beatlines calculation at UI level
 // drag n drop
 // mobile optimization
 // generate directly into image (remove canvas)
@@ -68,6 +67,7 @@ const state = reactive<{
   ffmpegHandler: FfmpegHandler
   zoomLevel: number
   activeModifier: 'BPM' | 'OFFSET'
+  isDragOver: boolean
 }>({
   audioFile: null,
   stopped: true,
@@ -89,7 +89,8 @@ const state = reactive<{
   exportQuality: 8,
   ffmpegHandler: new FfmpegHandler(),
   zoomLevel: 15,
-  activeModifier: 'BPM'
+  activeModifier: 'BPM',
+  isDragOver: false
 })
 
 const estimateFileSize = computed(() => {
@@ -104,6 +105,18 @@ const estimateFileSize = computed(() => {
       state.exportQuality
     )
   )
+})
+
+onMounted(() => {
+  ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
+    document.body.addEventListener(eventName, preventDefaults)
+  })
+})
+
+onUnmounted(() => {
+  ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
+    document.body.removeEventListener(eventName, preventDefaults)
+  })
 })
 
 watch(
@@ -270,11 +283,51 @@ function onManualOffsetEdit(value: number) {
   onTimingOffsetChange(60000 / state.bpm - value)
   spectogramRef.value?.changeOffset(60000 / state.bpm - value)
 }
+
+function handleDragEnter(_: DragEvent) {
+  _.preventDefault()
+  state.isDragOver = true
+}
+
+function handleDragLeave(_: DragEvent) {
+  _.preventDefault()
+  state.isDragOver = false
+}
+
+async function handleDrop(event: DragEvent) {
+  state.isDragOver = false
+  const files = Array.from(event.dataTransfer?.files ?? [])
+  if (files.length === 0) return
+
+  const file = files[0]
+  if (!file.type.startsWith('audio/')) return
+
+  state.initialSelectFileLoading = true
+  await loadAudioFile(file)
+  state.initialSelectFileLoading = false
+}
+
+function preventDefaults(e: Event) {
+  e.preventDefault()
+}
 </script>
 
 <template>
-  <div>
-    <div class="h-screen flex flex-col">
+  <div
+    class="bg-purple-28 h-screen transition-all"
+    :style="{
+      padding: state.isDragOver ? '0.5rem' : '0'
+    }"
+  >
+    <div
+      class="h-full flex flex-col bg-dark transition-all"
+      :style="{
+        'border-radius': state.isDragOver ? '0.5rem' : '0'
+      }"
+      @dragenter.prevent="handleDragEnter"
+      @dragleave.prevent="handleDragLeave"
+      @drop.prevent="handleDrop"
+    >
       <HeaderButtons>
         <template #left>
           <button @click="openHelpModal" tooltip-position="right" tooltip="Help" class="muted-text">
@@ -356,9 +409,11 @@ function onManualOffsetEdit(value: number) {
           <p class="muted-text mb-6">
             You can drag and drop your song here, or click to select a file.
           </p>
-          <UFileInput :loading="state.initialSelectFileLoading" @change="onFileChange">
-            Select file
-          </UFileInput>
+          <div>
+            <UFileInput :loading="state.initialSelectFileLoading" @change="onFileChange">
+              Select file
+            </UFileInput>
+          </div>
         </template>
         <template #1>
           <div>

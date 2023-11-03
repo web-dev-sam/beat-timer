@@ -12,7 +12,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="btn file-input-btn glow mr-2 mb-2 px-5 py-2.5">
+  <div class="btn file-input-btn glow px-5 py-2.5">
     <label
       for="file-input"
       class="text-white focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm bg-purple-600 hover:bg-purple-700 focus:ring-purple-800 cursor-pointer"
@@ -32,6 +32,6 @@ const emit = defineEmits<{
 
 <style scoped>
 .file-input-btn {
-  display: inline-block;
+  display: inline-flex;
 }
 </style>

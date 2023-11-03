@@ -5,7 +5,9 @@ module.exports = {
   theme: {
     colors: {
       primary: '#8a5df4',
-      purple: '#8a5df4'
+      purple: '#8a5df4',
+      'purple-28': 'hsl(264, 58%, 16%)',
+      dark: '#010101'
     },
     fontFamily: {
       sans: ['Kanit', '-apple-system', 'sans-serif']
