@@ -172,7 +172,7 @@ export default class SpectogramHandler {
     const beatOffsetInsideWindow = intervalInPX - beatOffsetOutsideWindow
     const totalBeatOffsetInPX = beatOffsetInsideWindow + offsetInPX
 
-    const beatLines = []
+    const beatLines = [] as BeatLine[]
     const leftBeatShift = Math.ceil(totalBeatOffsetInPX / intervalInPX) * intervalInPX
     let left = totalBeatOffsetInPX - leftBeatShift
     while (left <= this.vw) {
