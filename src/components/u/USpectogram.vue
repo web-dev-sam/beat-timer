@@ -146,8 +146,11 @@ onMounted(async () => {
       state.beatlines = beatlines
     }
   })
+
+  console.time('time')
   await state.spectogramHandler.generateSpectogram()
   state.spectogramDataURL = state.spectogramHandler.canvasToTransparentImage()
+  console.timeEnd('time')
 
   nextTick(() => {
     document.body.addEventListener('mousemove', (e) => {

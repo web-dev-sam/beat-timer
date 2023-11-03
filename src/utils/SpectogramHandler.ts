@@ -212,7 +212,15 @@ export default class SpectogramHandler {
       (subsectionData.length - this.segmentOverlap) / (this.segmentSize - this.segmentOverlap)
     )
 
-    const spectrogram = []
+    this.canvas.width = numSegments
+    this.zoom(this.currentZoom)
+
+    const width = this.canvas.width
+    const height = this.canvas.height
+    const imageData = this.canvasContext.createImageData(width, height)
+    const uint8ClampedData = imageData.data
+    const colorMap = [...Array(256).keys()].map(this.getColorFromIntensity)
+
     for (let i = 0; i < numSegments; i++) {
       const startIdx = i * (this.segmentSize - this.segmentOverlap)
       const segment = subsectionData.slice(startIdx, startIdx + this.segmentSize)
@@ -227,52 +235,19 @@ export default class SpectogramHandler {
       const magnitudes = fft.createComplexArray()
       fft.transform(magnitudes, complexSegment)
 
-      // Convert the complex values to magnitudes
-      const magnitudeArray = Array.from(
-        {
-          length: magnitudes.length / 2
-        },
-        (_, index) => {
-          const real = magnitudes[index * 2]
-          const imag = magnitudes[index * 2 + 1]
-          return Math.sqrt(real * real + imag * imag)
-        }
-      )
-      const binsUnderHzFilter = Math.floor(
-        (this.hzFilter * this.segmentSize) / this.audioBuffer.sampleRate
-      )
-      spectrogram.push(magnitudeArray.slice(0, binsUnderHzFilter))
-    }
-
-    this.renderSpectogram(spectrogram)
-  }
-
-  private renderSpectogram(spectrogram: number[][]) {
-    if (!this.canvasContext) return
-    this.canvas.width = spectrogram.length
-    this.zoom(this.currentZoom)
-
-    const width = this.canvas.width
-    const height = this.canvas.height
-    const imageData = this.canvasContext.createImageData(width, height)
-    const uint8ClampedData = imageData.data
-    const colorMap = [...Array(256).keys()].map(this.getColorFromIntensity)
-
-    let idx = 0
-    for (let y = height - 1; y >= 0; y--) {
-      for (let x = 0; x < width; x++) {
-        if (spectrogram[x] == null || spectrogram[x][y] == null) {
-          continue
-        }
-
-        const magnitude = spectrogram[x][y]
+      // Convert the complex values to magnitudes and generate pixel data
+      for (let j = 0; j < height; j++) {
+        const real = magnitudes[j * 2]
+        const imag = magnitudes[j * 2 + 1]
+        const magnitude = Math.sqrt(real * real + imag * imag)
         const intensity = Math.min(255, Math.floor(magnitude * 4))
         const [red, green, blue] = colorMap[intensity] || [0, 0, 0]
+        const pixelIndex = (j * width + i) * 4
 
-        uint8ClampedData[idx++] = red
-        uint8ClampedData[idx++] = green
-        uint8ClampedData[idx++] = blue
-        uint8ClampedData[idx++] = 255
+        uint8ClampedData[pixelIndex] = red
+        uint8ClampedData[pixelIndex + 1] = green
+        uint8ClampedData[pixelIndex + 2] = blue
+        uint8ClampedData[pixelIndex + 3] = 255 // alpha
 
         // const songLength = this.audioBuffer.duration;
         // const pointsPerS = width / songLength;
@@ -287,6 +262,7 @@ export default class SpectogramHandler {
     }
 
     this.canvasContext.putImageData(imageData, 0, 0)
+    return this.canvasToTransparentImage()
   }
 
   public canvasToTransparentImage(): string {

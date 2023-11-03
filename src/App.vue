@@ -34,8 +34,6 @@ inject()
 // Scroll for zooming
 
 // todo release
-// drag n drop
-// mobile optimization
 // generate directly into image (remove canvas)
 // 2x icon
 // new logos
@@ -43,6 +41,7 @@ inject()
 // github sponsor
 // SEO/Meta
 // test everything functionally
+// mobile case
 // release notes
 
 const state = reactive<{
