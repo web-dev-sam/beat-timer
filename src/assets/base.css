@@ -4,15 +4,15 @@
 
 :root {
   --color-muted: hsla(0, 0%, 100%, 0.33);
-  --color-primary: hsl(263, 81%, 58%);
+  --color-primary: hsl(263, 100%, 58%);
   --color-light-dark: var(--color-primary);
-  --color-primary-60: hsla(263, 81%, 58%, 0.6);
-  --color-primary-40: hsla(263, 81%, 58%, 0.4);
-  --color-primary-28: hsla(263, 81%, 58%, 0.22);
+  --color-primary-60: hsla(263, 100%, 58%, 0.6);
+  --color-primary-40: hsla(263, 100%, 58%, 0.4);
+  --color-primary-28: hsla(263, 100%, 58%, 0.22);
   --color-primary-28-opaque: hsl(264, 58%, 16%);
-  --color-primary-34: hsla(263, 81%, 58%, 0.26);
-  --color-orange: hsl(22, 81%, 55%);
-  --color-orange-muted: hsla(22, 81%, 55%, 0.75);
+  --color-primary-34: hsla(263, 100%, 58%, 0.26);
+  --color-orange: hsl(22, 100%, 55%);
+  --color-orange-muted: hsla(22, 100%, 55%, 0.75);
   --color-dark: rgb(1, 1, 1);
 
   --body-bg: var(--color-dark);

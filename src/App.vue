@@ -34,7 +34,6 @@ inject()
 // Scroll for zooming
 
 // todo release
-// generate directly into image (remove canvas)
 // 2x icon
 // new logos
 // readme
