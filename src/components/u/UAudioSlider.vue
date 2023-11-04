@@ -31,17 +31,24 @@ function updateValueFromPosition(event: MouseEvent) {
   emit('change', Math.round(value))
 }
 
-function startDragging(event: MouseEvent) {
-  isDragging.value = true
-  document.addEventListener('mousemove', updateValueFromPosition)
-  document.addEventListener('mouseup', stopDragging)
-  updateValueFromPosition(event)
+function updateVisibleValueFromPosition(event: MouseEvent) {
+  if (!trackRef.value) return
+  const rect = trackRef.value.getBoundingClientRect()
+  const percent = ((event.clientX - rect.left) / rect.width) * 100
+  handlePosition.value = Math.max(0, Math.min(100, percent))
 }
 
-function stopDragging() {
+function startDragging() {
+  isDragging.value = true
+  document.addEventListener('mousemove', updateVisibleValueFromPosition)
+  document.addEventListener('mouseup', stopDragging)
+}
+
+function stopDragging(event: MouseEvent) {
   isDragging.value = false
-  document.removeEventListener('mousemove', updateValueFromPosition)
+  document.removeEventListener('mousemove', updateVisibleValueFromPosition)
   document.removeEventListener('mouseup', stopDragging)
+  updateValueFromPosition(event)
 }
 
 watch(
@@ -78,19 +85,14 @@ defineExpose({
 
 <style scoped>
 .track-line {
-  background: var(--color-lighter-dark);
+  background: var(--color-primary-28);
 }
 
 .thumb {
-  display: none;
-  box-shadow: 0 0 0 1px var(--color-lighter-dark);
+  background: white;
 }
 
-.track-line:hover .thumb {
-  display: block;
-}
-
-.track-line:hover .progressed-track {
-  background: rgba(37, 99, 235, var(--tw-bg-opacity));
+.progressed-track {
+  background: var(--color-primary);
 }
 </style>

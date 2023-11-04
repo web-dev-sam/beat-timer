@@ -19,6 +19,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'metronome', time: number, duration: number): void
+  (e: 'seek', time: number): void
 }>()
 
 const state = reactive({
@@ -158,6 +159,7 @@ function onProgressDrag(value: number) {
     state.songProgress = value
     const targetTime = (state.songProgress / 100) * player.value.getDuration()
     player.value.setCurrentTime(targetTime)
+    emit('seek', player.value.getCurrentTime())
   }
   metronome.value?.start()
   state.isPlaying = true
@@ -181,8 +183,10 @@ defineExpose({
         <div class="track__sliderleft mb-6">
           <USlider v-model="state.volume" :min="0" :max="200" class="w-32" />
         </div>
-        <button @click="toggleMute">
-          <IconsSpeaker />
+        <button @click="toggleMute" class="text-left">
+          <span tooltip-position="right" tooltip="Help" class="inline-block">
+            <IconsSpeaker />
+          </span>
         </button>
       </div>
       <div class="flex-1"></div>
@@ -204,7 +208,9 @@ defineExpose({
         </div>
         <div class="flex gap-6">
           <button @click="toggleMetronome">
-            <IconsMetronome />
+            <span tooltip-position="left" tooltip="Help" class="inline-block">
+              <IconsMetronome />
+            </span>
           </button>
         </div>
       </div>

@@ -32,7 +32,7 @@ defineExpose({
   <div v-if="state.opened" class="modal-root">
     <div class="backdrop" @click="close"></div>
     <div class="modal p-12">
-      <div class="flex justify-between h-18 text-right">
+      <div class="flex justify-between h-18 text-right mb-4">
         <div>
           <button
             @click="copyDebugInformation"
@@ -63,7 +63,8 @@ defineExpose({
   z-index: 100;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: rgba(0, 0, 0, 0.01);
+  backdrop-filter: blur(5px);
 }
 
 .modal {
@@ -73,7 +74,7 @@ defineExpose({
   width: clamp(500px, 80vw, 900px);
   z-index: 101;
   transform: translate(-50%, -50%);
-  background-color: var(--color-dark);
+  background-color: var(--color-primary-28-opaque);
   border-radius: 1.25rem;
 }
 

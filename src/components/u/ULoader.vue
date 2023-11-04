@@ -6,7 +6,7 @@
 
 <style scoped>
 .loader {
-  border: 2px solid #f3f3f3;
+  border: 2px solid currentColor;
   border-top: 2px solid transparent;
   border-radius: 50%;
   margin: 3px;

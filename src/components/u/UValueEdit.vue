@@ -7,6 +7,7 @@ const props = defineProps<{
   value: number
   type: 'BPM' | 'MS'
   reversed: boolean
+  invisible: boolean
 }>()
 
 const emit = defineEmits<{
@@ -60,23 +61,24 @@ function onEditClick() {
 </script>
 
 <template>
-  <div class="value-edit-wrapper text-left">
+  <div class="value-edit-wrapper text-left" :class="invisible ? 'invisiblyat' : ''">
     <div class="flex align-start gap-4" :class="reversed ? 'flex-col-reverse' : 'flex-col'">
       <button @click="onEditClick"><IconsPen /></button>
       <div>
         <div class="relative">
           <h2>
-            <span class="subheading">{{ value }}</span>
+            <span class="h3">{{ value }}</span>
             <span class="ml-2 muted-text">{{ type }}</span>
           </h2>
           <input
             type="text"
+            class="mt-1"
             v-model.number="state.innerValue"
             @keypress="isNumber($event)"
             @keyup.enter="save(state.innerValue)"
             v-show="state.edit"
           />
-          <kbd v-show="state.edit">Enter</kbd>
+          <kbd v-show="state.edit" class="mt-1">Enter</kbd>
         </div>
       </div>
     </div>
@@ -84,6 +86,11 @@ function onEditClick() {
 </template>
 
 <style scoped>
+.invisiblyat {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .value-edit-wrapper {
   width: 30ch;
 }
@@ -95,7 +102,7 @@ input[type='text'] {
   padding: 0.5rem 1rem;
   font-size: 1.75rem;
   font-weight: 900;
-  background: var(--color-lighter-dark);
+  background: var(--color-primary-28-opaque);
   padding-right: 3rem;
   top: -0.5rem;
   left: -1rem;
