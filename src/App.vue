@@ -35,10 +35,7 @@ inject()
 
 // todo release
 // 2x icon
-// readme
 // github sponsor
-// test everything functionally
-// mobile case
 // release notes
 
 const state = reactive<{
