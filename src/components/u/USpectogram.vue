@@ -133,7 +133,7 @@ watch(
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const canvasImg = ref<HTMLDivElement | null>(null)
-onMounted(() => {
+onMounted(async () => {
   state.bpm = state.draggingBPM = props.initialBpm
   state.offset = state.draggingOffset = props.initialOffset
   state.spectogramHandler = new SpectogramHandler({
@@ -147,28 +147,22 @@ onMounted(() => {
     }
   })
 
-  state.spectogramHandler.generateSpectogram().then(
-    () => {
-      state.spectogramDataURL = state.spectogramHandler!.canvasToTransparentImage()
-      nextTick(() => {
-        document.body.addEventListener('mousemove', (e) => {
-          state.mouseX = e.clientX
-          onCanvasMouseMove(e)
-        })
+  await state.spectogramHandler.generateSpectogram()
+  state.spectogramDataURL = state.spectogramHandler.canvasToTransparentImage()
+  nextTick(() => {
+    document.body.addEventListener('mousemove', (e) => {
+      state.mouseX = e.clientX
+      onCanvasMouseMove(e)
+    })
 
-        document.body.addEventListener('mouseleave', (e) => {
-          onCanvasMouseUp(e)
-        })
+    document.body.addEventListener('mouseleave', (e) => {
+      onCanvasMouseUp(e)
+    })
 
-        document.body.addEventListener('mouseup', (e) => {
-          onCanvasMouseUp(e)
-        })
-      })
-    },
-    (err) => {
-      console.error(err)
-    }
-  )
+    document.body.addEventListener('mouseup', (e) => {
+      onCanvasMouseUp(e)
+    })
+  })
 })
 
 function setZoomLevel(value: number) {
