@@ -35,10 +35,8 @@ inject()
 
 // todo release
 // 2x icon
-// new logos
 // readme
 // github sponsor
-// SEO/Meta
 // test everything functionally
 // mobile case
 // release notes
@@ -334,7 +332,7 @@ function preventDefaults(e: Event) {
           <UModal ref="helpModalRef">
             <div class="auto-flow-small text-left">
               <h2 class="h2">
-                Song Timer <span class="muted-text p pl-2">v{{ version }}</span>
+                Beat Timer <span class="muted-text p pl-2">v{{ version }}</span>
               </h2>
               <p>
                 A web app to align the beat of your song to the beat of your game. This app is still
@@ -373,7 +371,7 @@ function preventDefaults(e: Event) {
               <h3 class="h3 !mt-12">Support</h3>
               <p>
                 You can support me on GitHub by
-                <a href="https://github.com/web-dev-sam/song-timer" target="_blank" class="purple"
+                <a href="https://github.com/web-dev-sam/beat-timer" target="_blank" class="purple"
                   >giving this project a star</a
                 >. I would really appreciate it!
               </p>
