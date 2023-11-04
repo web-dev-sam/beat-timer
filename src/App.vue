@@ -33,8 +33,8 @@ inject()
 // Detect bpm for subsection
 // Scroll for zooming
 
-// todo release
-// release notes
+// Improvements:
+// Copy -> click -> Copied
 
 const state = reactive<{
   audioFile: File | null
