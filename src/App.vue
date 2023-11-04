@@ -34,8 +34,6 @@ inject()
 // Scroll for zooming
 
 // todo release
-// 2x icon
-// github sponsor
 // release notes
 
 const state = reactive<{
