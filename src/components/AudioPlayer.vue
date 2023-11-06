@@ -31,7 +31,7 @@ const state = reactive({
     ? Number(localStorage.getItem('metronomeTickVolume'))
     : 100,
   songProgress: 0,
-  bpmMultiplier: 1
+  bpmMultiplier: 1,
 })
 
 const metronome = ref<Metronome>()
@@ -40,7 +40,7 @@ const player = ref<Player>()
 onMounted(async function () {
   const audioContext = new AudioContext()
   const metronomeTickBuffer = await audioContext.decodeAudioData(
-    await (await fetch('/audios/metronome.mp3')).arrayBuffer()
+    await (await fetch('/audios/metronome.mp3')).arrayBuffer(),
   )
   await audioContext.audioWorklet.addModule('/js/metronome-processor.js')
   player.value = new Player(audioContext, stop)
@@ -56,7 +56,7 @@ onMounted(async function () {
         emit('metronome', player.value.getCurrentTime(), player.value.getDuration())
         state.songProgress = (player.value.getCurrentTime() / player.value.getDuration()) * 100
       }
-    }
+    },
   )
   player.value.loadBuffer(props.audioBuffer)
   player.value.setVolume(state.volume / 2)
@@ -72,14 +72,14 @@ watch(
   () => props.bpm,
   () => {
     metronome.value?.setBpm(props.bpm)
-  }
+  },
 )
 
 watch(
   () => props.timingOffset,
   () => {
     metronome.value?.setOffset(props.timingOffset / 1000)
-  }
+  },
 )
 
 watch(
@@ -90,7 +90,7 @@ watch(
     if (state.volume > 0) {
       localStorage.setItem('volume', state.volume.toString())
     }
-  }
+  },
 )
 
 watch(
@@ -100,7 +100,7 @@ watch(
     if (state.metronomeTickVolume > 0) {
       localStorage.setItem('metronomeTickVolume', state.metronomeTickVolume.toString())
     }
-  }
+  },
 )
 
 watch(
@@ -111,7 +111,7 @@ watch(
     }
 
     metronome.value?.setBpm(props.bpm * state.bpmMultiplier)
-  }
+  },
 )
 
 function toggleMute() {
@@ -172,13 +172,13 @@ function toggleMetronomeSpeed(bpmMultiplier: number) {
 }
 
 defineExpose({
-  pause
+  pause,
 })
 </script>
 
 <template>
   <section class="track flex flex-col">
-    <div class="track__controls flex justify-between items-end gap-3">
+    <div class="track__controls flex items-end justify-between gap-3">
       <div class="track__volume flex flex-col">
         <div class="track__sliderleft mb-6">
           <USlider v-model="state.volume" :min="0" :max="200" class="w-32" />

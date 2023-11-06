@@ -6,7 +6,7 @@ import IconsClose from '@/components/icons/IconsClose.vue'
 import IconsCopy from '@/components/icons/IconsCopy.vue'
 
 const state = reactive({
-  opened: false
+  opened: false,
 })
 
 function close() {
@@ -24,7 +24,7 @@ function copyDebugInformation() {
 
 defineExpose({
   close,
-  open
+  open,
 })
 </script>
 
@@ -32,7 +32,7 @@ defineExpose({
   <div v-if="state.opened" class="modal-root">
     <div class="backdrop" @click="close"></div>
     <div class="modal p-12">
-      <div class="flex justify-between h-18 text-right mb-4">
+      <div class="h-18 mb-4 flex justify-between text-right">
         <div>
           <button
             @click="copyDebugInformation"

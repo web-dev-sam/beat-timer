@@ -24,7 +24,7 @@ const globalDebugInformation: Record<string, string> = {
       name = 'IE'
     }
     return name
-  })()
+  })(),
 }
 
 export function useLogger() {
@@ -38,6 +38,6 @@ export function useLogger() {
 
   return {
     log,
-    copy
+    copy,
   }
 }

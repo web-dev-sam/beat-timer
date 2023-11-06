@@ -12,10 +12,10 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="btn file-input-btn glow px-5 py-2.5">
+  <div class="btn px-5 py-2.5">
     <label
       for="file-input"
-      class="text-white focus:ring-4 focus:ring-purple-300 font-medium rounded-lg text-sm bg-purple-600 hover:bg-purple-700 focus:ring-purple-800 cursor-pointer"
+      class="focus:ring-purple-300 bg-purple-600 hover:bg-purple-700 focus:ring-purple-800 cursor-pointer rounded-lg text-sm font-medium text-white focus:ring-4"
     >
       <slot v-if="!loading"></slot>
       <ULoader v-else />
@@ -30,8 +30,4 @@ const emit = defineEmits<{
   </div>
 </template>
 
-<style scoped>
-.file-input-btn {
-  display: inline-flex;
-}
-</style>
+<style scoped></style>

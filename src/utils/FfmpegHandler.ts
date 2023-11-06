@@ -12,7 +12,7 @@ export default class FfmpegHandler {
   constructor() {
     this.ffmpeg = createFFmpeg({
       corePath: '/ffmpeg-core/dist/ffmpeg-core.js',
-      log: false
+      log: false,
     })
     this.file = null
   }
@@ -70,7 +70,7 @@ export default class FfmpegHandler {
       'libvorbis',
       '-q:a',
       exportQuality.toString(),
-      paddedName
+      paddedName,
     )
 
     const paddedData = this.ffmpeg.FS('readFile', paddedName)
@@ -99,7 +99,7 @@ export default class FfmpegHandler {
       'libvorbis',
       '-q:a',
       exportQuality.toString(),
-      trimmedName
+      trimmedName,
     )
 
     const trimmedData = this.ffmpeg.FS('readFile', trimmedName)

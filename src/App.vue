@@ -52,7 +52,6 @@ const state = reactive<{
   audioBuffer: AudioBuffer | null
   initialExampleFileLoading: boolean
   initialSelectFileLoading: boolean
-  beatLightOpacity: number
   advancedSettingsOpen: boolean
   exportQuality: number
   ffmpegHandler: FfmpegHandler
@@ -75,13 +74,12 @@ const state = reactive<{
   audioBuffer: null,
   initialExampleFileLoading: false,
   initialSelectFileLoading: false,
-  beatLightOpacity: 0.1,
   advancedSettingsOpen: false,
   exportQuality: 8,
   ffmpegHandler: new FfmpegHandler(),
   zoomLevel: 15,
   activeModifier: 'BPM',
-  isDragOver: false
+  isDragOver: false,
 })
 
 const estimateFileSize = computed(() => {
@@ -93,8 +91,8 @@ const estimateFileSize = computed(() => {
   return state.ffmpegHandler.formatFileSize(
     state.ffmpegHandler.estimateFileSize(
       seconds + songOffsetToSilencePadding(state.bpm, state.timingOffset) / 1000,
-      state.exportQuality
-    )
+      state.exportQuality,
+    ),
   )
 })
 
@@ -114,14 +112,14 @@ watch(
   () => state.bpm,
   (newVal) => {
     state.draggingBPM = newVal
-  }
+  },
 )
 
 watch(
   () => state.timingOffset,
   (newVal) => {
     state.draggingOffset = newVal
-  }
+  },
 )
 
 watch(
@@ -130,14 +128,13 @@ watch(
     if (spectogramRef.value) {
       spectogramRef.value.setZoomLevel(newVal)
     }
-  }
+  },
 )
 
 const visualOffset = computed(() => {
   return songOffsetToSilencePadding(state.bpm, state.draggingOffset)
 })
 
-const userPrefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 async function onFileChange(event: Event) {
   event.preventDefault()
   const input = event.target as HTMLInputElement
@@ -157,8 +154,8 @@ function loadExampleFile() {
     .then(async (blob) => {
       await loadAudioFile(
         new File([blob], 'sample.mp3', {
-          type: 'audio/mp3'
-        })
+          type: 'audio/mp3',
+        }),
       )
       state.initialExampleFileLoading = false
     })
@@ -220,26 +217,9 @@ function toggleZoom() {
 }
 
 function onMetronome(time: number) {
-  state.beatLightOpacity = state.beatLightOpacity !== 0.1 ? 0.1 : 0.12
   if (spectogramRef.value) {
     spectogramRef.value.onMetronome(time)
   }
-
-  const totalDiff = 0.2 - 0.1
-  const interval = 60000 / state.bpm
-  const animInterval = 50
-  const animDiff = totalDiff / (interval / animInterval)
-
-  const fadeOut = () => {
-    state.beatLightOpacity -= animDiff
-    if (state.beatLightOpacity > 0.1) {
-      setTimeout(fadeOut, animInterval)
-    } else {
-      state.beatLightOpacity = 0.1
-    }
-  }
-
-  setTimeout(fadeOut, 50)
 }
 
 function onSeek(time: number) {
@@ -305,15 +285,15 @@ function preventDefaults(e: Event) {
 
 <template>
   <div
-    class="bg-purple-28 h-screen transition-all"
+    class="h-screen bg-purple-28 transition-all"
     :style="{
-      padding: state.isDragOver ? '0.5rem' : '0'
+      padding: state.isDragOver ? '0.5rem' : '0',
     }"
   >
     <div
-      class="h-full flex flex-col bg-dark transition-all"
+      class="flex h-full flex-col bg-dark transition-all"
       :style="{
-        'border-radius': state.isDragOver ? '0.5rem' : '0'
+        'border-radius': state.isDragOver ? '0.5rem' : '0',
       }"
       @dragenter.prevent="handleDragEnter"
       @dragleave.prevent="handleDragLeave"
@@ -321,13 +301,13 @@ function preventDefaults(e: Event) {
     >
       <HeaderButtons>
         <template #left>
-          <button @click="openHelpModal" tooltip-position="right" tooltip="Help" class="muted-text">
-            <IconsHelp class="muted-text" />
+          <button @click="openHelpModal" tooltip-position="right" tooltip="Help" class="text-muted">
+            <IconsHelp class="text-muted" />
           </button>
           <UModal ref="helpModalRef">
             <div class="auto-flow-small text-left">
               <h2 class="h2">
-                Beat Timer <span class="muted-text p pl-2">v{{ version }}</span>
+                Beat Timer <span class="p pl-2 text-muted">v{{ version }}</span>
               </h2>
               <p>
                 A web app to align the beat of your song to the beat of your game. This app is still
@@ -335,7 +315,7 @@ function preventDefaults(e: Event) {
                 GitHub.
               </p>
               <h3 class="h3 !mt-12">Tips</h3>
-              <ol class="auto-flow-small list-decimal list-inside text-left">
+              <ol class="auto-flow-small list-inside list-decimal text-left">
                 <li>
                   The website will try to guess the BPM of your song but if it fails you should
                   check the exact BPM on Google.
@@ -354,7 +334,7 @@ function preventDefaults(e: Event) {
                 </li>
               </ol>
               <h3 class="h3 !mt-12">How To Use</h3>
-              <ol class="auto-flow-small list-decimal list-inside text-left">
+              <ol class="auto-flow-small list-inside list-decimal text-left">
                 <li>Import your song.</li>
                 <li>
                   When you see the fancy looking audio visualizer, hover over the upper part of the
@@ -396,21 +376,23 @@ function preventDefaults(e: Event) {
       </HeaderButtons>
       <Step :step="state.step">
         <template #0>
-          <h1 class="h2">Import your song.</h1>
-          <p class="muted-text mb-6">
-            You can drag and drop your song here, or click to select a file.
-          </p>
-          <div>
-            <UFileInput :loading="state.initialSelectFileLoading" @change="onFileChange">
-              Select file
-            </UFileInput>
+          <div class="flex flex-col gap-8">
+            <h1 class="h2">Import your song.</h1>
+            <p class="text-muted">
+              You can drag and drop your song here, or click to select a file.
+            </p>
+            <div class="mb-12 mt-2">
+              <UFileInput :loading="state.initialSelectFileLoading" @change="onFileChange">
+                Select file
+              </UFileInput>
+            </div>
           </div>
         </template>
         <template #1>
           <div>
             <h1 class="h2 mb-18">Align the beat.</h1>
           </div>
-          <div class="flex justify-between mx-12 items-end" prevent-user-select>
+          <div class="mx-6 flex items-end justify-between md:mx-12" prevent-user-select>
             <div>
               <UValueEdit
                 :invisible="state.activeModifier !== 'BPM'"
@@ -447,7 +429,7 @@ function preventDefaults(e: Event) {
             @bpm-offset-change="onBPMOffsetDraggingChange"
             @active-beatline-change="onActiveBeatlineChange"
           />
-          <div class="flex justify-between mx-12 mt-6" prevent-user-select>
+          <div class="mx-12 mt-6 flex justify-between" prevent-user-select>
             <UValueEdit
               :invisible="state.activeModifier !== 'OFFSET'"
               :value="+visualOffset.toFixed(0)"
@@ -460,7 +442,7 @@ function preventDefaults(e: Event) {
         </template>
         <template #2>
           <h1 class="h2">Export</h1>
-          <p class="muted-text mb-6">
+          <p class="mb-6 text-muted">
             You have made it! You can now export your song. If you want to convert it to another
             format, you can use
             <a href="https://convertio.co/" target="_blank">this converter</a>.
@@ -472,18 +454,18 @@ function preventDefaults(e: Event) {
           <button class="!mt-12" @click="toggleAdvancedSettings">
             <IconsDown
               v-if="!state.advancedSettingsOpen"
-              class="inline-block mr-1"
+              class="mr-1 inline-block"
               style="--icon-size: 16px"
             />
             <IconsUp
               v-if="state.advancedSettingsOpen"
-              class="inline-block mr-1"
+              class="mr-1 inline-block"
               style="--icon-size: 16px"
             />
             <span class="inline-block">Advanced</span>
           </button>
           <div v-if="state.advancedSettingsOpen">
-            <div class="flex justify-center gap-4 items-center">
+            <div class="flex items-center justify-center gap-4">
               <div>Export Quality</div>
               <div class="h3">
                 {{ state.exportQuality }}
@@ -511,32 +493,21 @@ function preventDefaults(e: Event) {
       </FooterArea>
     </div>
     <div
-      class="absolute bg-primary light"
-      :style="{ opacity: userPrefersReducedMotion ? 0.1 : state.beatLightOpacity }"
+      class="light pointer-events-none absolute left-0 top-0 z-10 h-[100vh] w-[100vw] bg-primary opacity-20"
     ></div>
-    <div class="absolute light-cover"></div>
+    <div
+      class="light-cover pointer-events-none absolute top-0 z-20 h-screen w-screen bg-dark opacity-100"
+    ></div>
   </div>
 </template>
 
 <style scoped>
 .light {
-  z-index: -1;
-  top: 0;
-  left: -25vw;
-  width: 150vw;
-  height: 150vw;
-  background: radial-gradient(circle, var(--color-primary), var(--color-dark));
+  background: radial-gradient(circle at 50% 120%, var(--color-primary) 0%, var(--color-dark) 66%);
 }
 
 .light-cover {
-  top: 0;
-  width: 100vw;
-  height: 100vh;
-  height: 100lvh;
-  background: var(--color-dark);
-  opacity: 1;
   animation: fadeInLight 3s ease-in-out forwards;
-  pointer-events: none;
 }
 
 @keyframes fadeInLight {

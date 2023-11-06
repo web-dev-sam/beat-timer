@@ -10,8 +10,8 @@ const props = withDefaults(
   {
     progress: 0,
     min: 0,
-    max: 100
-  }
+    max: 100,
+  },
 )
 
 const emit = defineEmits<{
@@ -55,44 +55,32 @@ watch(
   () => props.progress,
   () => {
     handlePosition.value = props.progress
-  }
+  },
 )
 
 defineExpose({
   handlePosition,
   trackRef,
   startDragging,
-  updateValueFromPosition
+  updateValueFromPosition,
 })
 </script>
 
 <template>
   <div
     ref="trackRef"
-    class="track-line w-full h-2 rounded-lg relative cursor-pointer"
+    class="relative h-2 w-full cursor-pointer rounded-lg bg-purple-28"
     @mousedown="startDragging"
   >
     <div
-      class="progressed-track h-2 bg-white rounded-lg absolute left-0"
+      class="absolute left-0 h-2 rounded-lg bg-white"
       :style="{ width: `${handlePosition}%` }"
     ></div>
     <div
-      class="thumb w-4 h-4 bg-white rounded-full absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2"
+      class="thumb absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-white"
       :style="{ left: `${handlePosition}%` }"
     ></div>
   </div>
 </template>
 
-<style scoped>
-.track-line {
-  background: var(--color-primary-28);
-}
-
-.thumb {
-  background: white;
-}
-
-.progressed-track {
-  background: var(--color-primary);
-}
-</style>
+<style scoped></style>

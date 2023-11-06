@@ -21,7 +21,7 @@ export default class Metronome {
     offset: number,
     volume: number,
     player: Player,
-    onBeat: () => void
+    onBeat: () => void,
   ) {
     this.context = context
     this.bpm = bpm

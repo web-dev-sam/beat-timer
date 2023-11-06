@@ -21,7 +21,7 @@ const emit = defineEmits<{
 }>()
 
 const state = reactive({
-  bpmMultiplier: 1
+  bpmMultiplier: 1,
 })
 
 const metronomeDoubleSpeedDisabled = computed(() => {

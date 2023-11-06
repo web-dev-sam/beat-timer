@@ -9,8 +9,8 @@ withDefaults(
   {
     min: 0,
     max: 100,
-    step: 1
-  }
+    step: 1,
+  },
 )
 
 const emit = defineEmits<{
@@ -22,7 +22,7 @@ const emit = defineEmits<{
 <template>
   <input
     type="range"
-    class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+    class="bg-gray-200 dark:bg-gray-700 h-2 w-full cursor-pointer appearance-none rounded-lg"
     :min="min"
     :max="max"
     :step="step"

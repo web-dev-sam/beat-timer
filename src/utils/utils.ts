@@ -48,7 +48,7 @@ type AnyFunction = (...args: any[]) => any
 export function benchmark<T extends AnyFunction>(
   _: Object,
   propertyKey: string,
-  descriptor: TypedPropertyDescriptor<T>
+  descriptor: TypedPropertyDescriptor<T>,
 ): TypedPropertyDescriptor<T> {
   const originalMethod = descriptor.value // Save the original method for later use
 
@@ -71,7 +71,7 @@ export function benchmark<T extends AnyFunction>(
             .catch((error: any) => {
               const end = performance.now()
               console.error(
-                `Async execution time for ${propertyKey} (errored): ${end - start} milliseconds`
+                `Async execution time for ${propertyKey} (errored): ${end - start} milliseconds`,
               )
               throw error // Rethrow the error after logging
             })
