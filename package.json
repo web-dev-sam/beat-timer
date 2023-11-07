@@ -19,7 +19,6 @@
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.11.6",
     "@vercel/analytics": "^1.1.0",
-    "fft.js": "^4.0.4",
     "vue": "^3.3.4",
     "web-audio-beat-detector": "^8.1.54"
   },
