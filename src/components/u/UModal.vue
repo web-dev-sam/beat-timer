@@ -34,11 +34,7 @@ defineExpose({
     <div class="modal p-12">
       <div class="h-18 mb-4 flex justify-between text-right">
         <div>
-          <button
-            @click="copyDebugInformation"
-            tooltip="Copy debug information"
-            tooltip-position="right"
-          >
+          <button @click="copyDebugInformation" tooltip="Report a bug" tooltip-position="right">
             <IconsCopy />
           </button>
         </div>

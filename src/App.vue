@@ -28,11 +28,8 @@ const version = APP_VERSION
 inject()
 
 // v2.1
-// Copied message on bug click (maybe redirection to new github issue with debug information as default)
 // settings on own page instead of modal
-// readme dev setup & for user
-// Copy -> click -> Copied
-// A little more mobile friendly
+// A little more mobile friendly (custom slider)
 
 // v2.2
 // proper vue state management (performance)
