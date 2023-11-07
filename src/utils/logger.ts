@@ -1,3 +1,5 @@
+import { openGitHubIssue } from './utils'
+
 const globalDebugInformation: Record<string, string> = {
   version: APP_VERSION,
   userAgent: navigator.userAgent,
@@ -33,7 +35,7 @@ export function useLogger() {
   }
 
   const copy = () => {
-    navigator.clipboard.writeText(JSON.stringify(globalDebugInformation))
+    openGitHubIssue(globalDebugInformation)
   }
 
   return {
