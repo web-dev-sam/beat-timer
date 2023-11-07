@@ -7,7 +7,6 @@ const props = defineProps<{
   audioBuffer: AudioBuffer
   initialBpm: number
   initialOffset: number
-  beatLightOpacity: number
 }>()
 
 const emit = defineEmits<{
@@ -360,7 +359,7 @@ defineExpose({
           class="beat-line h-32"
           :style="{
             left: beatline.left + 'px',
-            scale: `1 ${1 + (props.beatLightOpacity - 0.1) * 5}`,
+            scale: `1 1.05`,
           }"
         ></div>
         <div

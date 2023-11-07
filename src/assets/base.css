@@ -150,7 +150,7 @@ a:hover {
 }
 
 .btn {
-  @apply inline-flex cursor-pointer items-center justify-center rounded border-none bg-primary fill-current px-8 py-4 text-sm font-medium text-white ring-purple-28 hover:ring-4;
+  @apply inline-flex cursor-pointer items-center justify-center rounded border-none bg-primary fill-current px-6 py-3 text-sm font-medium text-white ring-purple-28 hover:ring-4;
 }
 
 .btn-secondary {
