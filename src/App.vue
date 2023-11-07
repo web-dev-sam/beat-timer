@@ -27,14 +27,24 @@ import UValueEdit from '@/components/u/UValueEdit.vue'
 const version = APP_VERSION
 inject()
 
-// Ideas:
+// v2.1
 // Copied message on bug click (maybe redirection to new github issue with debug information as default)
+// settings on own page instead of modal
+// readme dev setup & for user
+// Copy -> click -> Copied
+// A little more mobile friendly
+
+// v2.2
+// proper vue state management (performance)
+// show only when everything loaded (step 1 -> 2)
+
+// v2.3
+// Scroll for zooming
+// e2e/unit tests
+
+// v2.4
 // Auto Volume normalization
 // Detect bpm for subsection
-// Scroll for zooming
-
-// Improvements:
-// Copy -> click -> Copied
 
 const state = reactive<{
   audioFile: File | null
@@ -422,7 +432,6 @@ function preventDefaults(e: Event) {
             :audio-buffer="state.audioBuffer"
             :initial-offset="state.timingOffset"
             :initial-bpm="state.bpm"
-            :beatLightOpacity="state.beatLightOpacity"
             @bpm-change="onBPMChange"
             @offset-change="onTimingOffsetChange"
             @drag-start="pauseAudio"
