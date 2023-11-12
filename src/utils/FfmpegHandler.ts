@@ -108,7 +108,7 @@ export default class FfmpegHandler {
 
   estimateFileSize(durationInSeconds: number, quality: number): number {
     const bitrates = [64, 80, 96, 112, 128, 160, 192, 224, 256, 320]
-    const bitrate = bitrates[quality - 1]
+    const bitrate = bitrates[Math.round(quality) - 1]
 
     const sizeInBits = bitrate * 1000 * durationInSeconds
     const sizeInBytes = sizeInBits / 8

@@ -480,10 +480,18 @@ function preventDefaults(e: Event) {
             <div class="flex items-center justify-center gap-4">
               <div>Export Quality</div>
               <div class="h3">
-                {{ state.exportQuality }}
+                {{ state.exportQuality.toFixed(0) }}
               </div>
               <div>
-                <URange v-model="state.exportQuality" :min="1" :max="10" class="!w-72" />
+                <URange
+                  v-model="state.exportQuality"
+                  :min="1"
+                  :max="10"
+                  :step="1"
+                  :show-steps="true"
+                  :snap="true"
+                  class="!w-72"
+                />
               </div>
               <div tooltip-position="bottom" tooltip="Could be lower or higher based on the song.">
                 ~{{ estimateFileSize }}
