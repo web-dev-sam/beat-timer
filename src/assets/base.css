@@ -91,7 +91,7 @@ a {
   text-decoration: none;
 }
 
-.muted-text a {
+.text-muted a {
   color: var(--color-orange-muted);
   text-decoration: none;
 }
@@ -102,36 +102,31 @@ a:hover {
 }
 
 .h1 {
-  font-size: 3.052rem;
+  @apply text-5xl;
   font-family: var(--font-stack-primary);
   text-rendering: geometricPrecision;
 }
 
 .h2 {
-  font-size: 2.441rem;
+  @apply text-4xl;
   font-family: var(--font-stack-primary);
   text-rendering: geometricPrecision;
 }
 
 .h3 {
-  font-size: 1.953rem;
+  @apply text-3xl;
   font-family: var(--font-stack-primary);
   text-rendering: geometricPrecision;
 }
 
 .p {
-  font-size: 1rem;
+  @apply text-base;
   font-family: var(--font-stack-secondary);
-  text-rendering: geometricPrecision;
+  text-rendering: optimizeLegibility;
 }
 
-.muted-text {
-  color: var(--color-muted);
+.text-muted {
   --icon-fill: var(--color-muted);
-}
-
-.bg-primary {
-  background: var(--color-primary);
 }
 
 .auto-flow-big > * + * {
@@ -139,11 +134,11 @@ a:hover {
 }
 
 .auto-flow-small > * + * {
-  margin-top: 1rem;
+  @apply mt-4;
 }
 
 .container {
-  margin: 0 auto;
+  @apply mx-auto my-0;
 }
 
 .glow {
@@ -155,96 +150,49 @@ a:hover {
 }
 
 .btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1em 2em;
-  border-radius: 0.5em;
-  line-height: 1.5em;
-  font-size: 0.875em;
-  font-weight: 500;
-  border: none;
-  cursor: pointer;
-  background-color: var(--color-primary);
-  transition: background-color 0.2s ease-in-out;
-  border-radius: var(--border-radius);
-  transition: box-shadow 0.2s ease-in-out;
+  @apply inline-flex cursor-pointer items-center justify-center rounded border-none bg-primary fill-current px-6 py-3 text-sm font-medium text-white ring-purple-28 hover:ring-4;
 }
 
 .btn-secondary {
-  background-color: var(--color-primary-28);
-  box-shadow: none;
-  color: white;
-  fill: currentColor;
-}
-
-.btn-secondary:hover {
-  box-shadow: none;
-  color: white;
-  background-color: var(--color-primary-34);
-}
-
-[class*='rotate-'] {
-  transform-origin: bottom bottom;
-  transform: rotate(var(--tw-rotate, 0deg));
-}
-
-p {
-  line-height: 2;
+  @apply bg-gray-900 hover:bg-gray-800 hover:ring-0;
 }
 
 [tooltip] {
-  position: relative;
+  @apply relative;
 }
 
 [tooltip]::after {
   content: attr(tooltip);
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 400;
-  color: var(--color-muted);
-  pointer-events: none;
-  width: max-content;
-  opacity: 0;
-  transition: opacity 0.1s ease-in-out;
+  @apply pointer-events-none absolute left-1/2 top-full w-max -translate-x-1/2 transform rounded px-4 py-2 text-sm text-muted opacity-0;
 }
 
 [tooltip]:hover::after {
-  opacity: 1;
+  @apply opacity-100;
 }
 
 [tooltip-position='left']::after {
   transform: translate(calc(-100% - 1rem), -1rem);
-  top: 50%;
-  left: 0;
+  @apply left-0 top-1/2;
 }
 
 [tooltip-position='right']::after {
-  transform: translate(0.5rem, -1rem);
-  top: 50%;
-  left: 100%;
+  @apply left-full top-1/2 -translate-y-4 translate-x-2 transform;
 }
 
 [tooltip-position='top']::after {
-  transform: translate(-50%, -1rem);
-  top: auto;
-  bottom: 100%;
-  left: 50%;
+  @apply bottom-full left-1/2 top-auto -translate-x-1/2 -translate-y-4 transform;
 }
 
 [tooltip-position='bottom']::after {
-  transform: translateX(-50%);
-  top: 100%;
-  left: 50%;
+  @apply left-1/2 top-full -translate-x-1/2 transform;
 }
 
 [prevent-user-select] {
-  user-select: none;
+  @apply select-none;
+}
+
+.h-screen {
+  height: 100lvh;
 }
 
 @supports (scrollbar-color: white var(--color-primary-28)) {
@@ -255,17 +203,13 @@ p {
 }
 
 ::-webkit-scrollbar {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 0.5rem;
+  @apply h-2 w-2 rounded;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-primary-28);
-  border-radius: 0.5rem;
+  @apply rounded bg-purple-28;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: white;
-  border-radius: 0.5rem;
+  @apply rounded bg-white;
 }

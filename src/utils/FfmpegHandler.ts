@@ -12,7 +12,7 @@ export default class FfmpegHandler {
   constructor() {
     this.ffmpeg = createFFmpeg({
       corePath: '/ffmpeg-core/dist/ffmpeg-core.js',
-      log: false
+      log: false,
     })
     this.file = null
   }
@@ -70,7 +70,7 @@ export default class FfmpegHandler {
       'libvorbis',
       '-q:a',
       exportQuality.toString(),
-      paddedName
+      paddedName,
     )
 
     const paddedData = this.ffmpeg.FS('readFile', paddedName)
@@ -99,7 +99,7 @@ export default class FfmpegHandler {
       'libvorbis',
       '-q:a',
       exportQuality.toString(),
-      trimmedName
+      trimmedName,
     )
 
     const trimmedData = this.ffmpeg.FS('readFile', trimmedName)
@@ -108,7 +108,7 @@ export default class FfmpegHandler {
 
   estimateFileSize(durationInSeconds: number, quality: number): number {
     const bitrates = [64, 80, 96, 112, 128, 160, 192, 224, 256, 320]
-    const bitrate = bitrates[quality - 1]
+    const bitrate = bitrates[Math.round(quality) - 1]
 
     const sizeInBits = bitrate * 1000 * durationInSeconds
     const sizeInBytes = sizeInBits / 8

@@ -1,7 +1,7 @@
 <script setup lang="ts"></script>
 
 <template>
-  <div class="flex justify-between p-12">
+  <div class="flex justify-between p-6 md:p-12">
     <slot name="left"></slot>
     <slot name="center"></slot>
     <slot name="right"></slot>

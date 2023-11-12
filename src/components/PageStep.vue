@@ -5,7 +5,7 @@ defineProps<{
 </script>
 
 <template>
-  <main class="flex flex-col flex-1 align-center justify-center">
+  <main class="align-center flex flex-1 flex-col justify-center">
     <div class="auto-flow-small step-0" :class="step === 0 ? 'main-shown' : 'main-hidden'">
       <slot name="0"></slot>
     </div>

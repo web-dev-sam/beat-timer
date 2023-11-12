@@ -20,14 +20,14 @@ const state = reactive<{
   edit: boolean
 }>({
   innerValue: props.value,
-  edit: false
+  edit: false,
 })
 
 watch(
   () => props.value,
   (val) => {
     state.innerValue = val
-  }
+  },
 )
 
 function save(value: number) {
@@ -62,13 +62,13 @@ function onEditClick() {
 
 <template>
   <div class="value-edit-wrapper text-left" :class="invisible ? 'invisiblyat' : ''">
-    <div class="flex align-start gap-4" :class="reversed ? 'flex-col-reverse' : 'flex-col'">
+    <div class="align-start flex gap-4" :class="reversed ? 'flex-col-reverse' : 'flex-col'">
       <button @click="onEditClick"><IconsPen /></button>
       <div>
         <div class="relative">
           <h2>
-            <span class="h3">{{ value }}</span>
-            <span class="ml-2 muted-text">{{ type }}</span>
+            <span class="h3 text-xl">{{ value }}</span>
+            <span class="ml-2 text-muted">{{ type }}</span>
           </h2>
           <input
             type="text"

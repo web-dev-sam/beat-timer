@@ -8,8 +8,8 @@ withDefaults(
   }>(),
   {
     loading: false,
-    secondary: false
-  }
+    secondary: false,
+  },
 )
 
 const emit = defineEmits<{
@@ -21,7 +21,7 @@ const emit = defineEmits<{
   <button
     :disabled="loading"
     @click="emit('click')"
-    class="btn glow"
+    class="btn"
     :class="{ 'btn-secondary': secondary }"
   >
     <slot v-if="!loading"></slot>

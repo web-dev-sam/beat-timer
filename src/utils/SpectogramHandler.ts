@@ -32,7 +32,7 @@ export default class SpectogramHandler {
     canvasImg,
     onBeatlineUpdate,
     bpm,
-    offset
+    offset,
   }: {
     audioBuffer: AudioBuffer
     canvas: HTMLCanvasElement
@@ -105,7 +105,7 @@ export default class SpectogramHandler {
     return {
       a,
       b,
-      scale: newScale
+      scale: newScale,
     }
   }
 
@@ -133,7 +133,7 @@ export default class SpectogramHandler {
     const {
       a: newA,
       b: newB,
-      scale
+      scale,
     } = this.getWindowIfCursorAt(this.time, position, this.currentZoom)
 
     if (newA > this.b || newB < this.a) {
@@ -185,7 +185,7 @@ export default class SpectogramHandler {
     while (left <= this.vw) {
       beatLines.push({
         left,
-        time: this.pxToSec(this.a + left)
+        time: this.pxToSec(this.a + left),
       })
       left += intervalInPX
     }
@@ -220,7 +220,7 @@ export default class SpectogramHandler {
       const fftSize = this.segmentSize
       const subsectionData = this.audioBuffer.getChannelData(0)
       const numSegments = Math.floor(
-        (subsectionData.length - this.segmentOverlap) / (fftSize - this.segmentOverlap)
+        (subsectionData.length - this.segmentOverlap) / (fftSize - this.segmentOverlap),
       )
 
       this.canvas.width = numSegments
@@ -241,7 +241,7 @@ export default class SpectogramHandler {
           worker.postMessage({
             segment,
             height,
-            segmentIndex: segmentIndex // send the index to keep track in the worker
+            segmentIndex: segmentIndex, // send the index to keep track in the worker
           })
         }
       }

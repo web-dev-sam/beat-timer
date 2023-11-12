@@ -1,16 +1,14 @@
-/**
- * Converts an HSL color value to RGB. Conversion formula
- * adapted from https://en.wikipedia.org/wiki/HSL_color_space.
- * Assumes h, s, and l are contained in the set [0, 1] and
- * returns r, g, and b in the set [0, 255].
- *
- * @param h The hue
- * @param s The saturation
- * @param l The lightness
- * @returns {number[]}
- */
 export function hslToRgb(h: number, s: number, l: number): number[] {
   let r, g, b
+
+  function hueToRgb(p: number, q: number, t: number): number {
+    if (t < 0) t += 1
+    if (t > 1) t -= 1
+    if (t < 1 / 6) return p + (q - p) * 6 * t
+    if (t < 1 / 2) return q
+    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
+    return p
+  }
 
   if (s === 0) {
     r = g = b = l // achromatic
@@ -25,30 +23,14 @@ export function hslToRgb(h: number, s: number, l: number): number[] {
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)]
 }
 
-/**
- *
- * @param p
- * @param q
- * @param t
- */
-function hueToRgb(p: number, q: number, t: number): number {
-  if (t < 0) t += 1
-  if (t > 1) t -= 1
-  if (t < 1 / 6) return p + (q - p) * 6 * t
-  if (t < 1 / 2) return q
-  if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6
-  return p
-}
-
 export function songOffsetToSilencePadding(bpm: number, offset: number) {
   return 60000 / bpm - offset
 }
 
-type AnyFunction = (...args: any[]) => any
-export function benchmark<T extends AnyFunction>(
+export function benchmark<T extends (...args: any[]) => any>(
   _: Object,
   propertyKey: string,
-  descriptor: TypedPropertyDescriptor<T>
+  descriptor: TypedPropertyDescriptor<T>,
 ): TypedPropertyDescriptor<T> {
   const originalMethod = descriptor.value // Save the original method for later use
 
@@ -71,7 +53,7 @@ export function benchmark<T extends AnyFunction>(
             .catch((error: any) => {
               const end = performance.now()
               console.error(
-                `Async execution time for ${propertyKey} (errored): ${end - start} milliseconds`
+                `Async execution time for ${propertyKey} (errored): ${end - start} milliseconds`,
               )
               throw error // Rethrow the error after logging
             })
@@ -90,4 +72,18 @@ export function benchmark<T extends AnyFunction>(
   }
 
   return descriptor
+}
+
+export function openGitHubIssue(debugInfo: Record<string, string>) {
+  let issueBody = `# Bug Description \n\n\n\n\n\n\n## Debugging Information\n`
+  issueBody += `| Key       | Value         |\n|-----------|---------------|\n`
+
+  for (const [key, value] of Object.entries(debugInfo)) {
+    issueBody += `| ${key} | ${value} |\n`
+  }
+
+  const githubIssueUrl = `https://github.com/web-dev-sam/beat-timer/issues/new?body=${encodeURIComponent(
+    issueBody,
+  )}`
+  window.open(githubIssueUrl, '_blank')
 }

@@ -7,7 +7,6 @@ const props = defineProps<{
   audioBuffer: AudioBuffer
   initialBpm: number
   initialOffset: number
-  beatLightOpacity: number
 }>()
 
 const emit = defineEmits<{
@@ -40,7 +39,7 @@ const state = reactive<{
   beatlines: [],
   activeBeatline: {
     type: 'BPM',
-    data: null
+    data: null,
   },
   dragStart: null,
   hovering: null,
@@ -51,7 +50,7 @@ const state = reactive<{
   draggingOffset: 0,
   mouseX: 0,
   spectogramDataURL: '',
-  dragTarget: null
+  dragTarget: null,
 })
 
 const progressPX = computed(() => {
@@ -98,7 +97,7 @@ const hoverBeat = computed(() => {
   }
 
   return Math.round(
-    state.spectogramHandler.pxToSec(state.mouseX - newStartPosition.value) / (60 / state.bpm!)
+    state.spectogramHandler.pxToSec(state.mouseX - newStartPosition.value) / (60 / state.bpm!),
   )
 })
 
@@ -110,7 +109,7 @@ watch(
       state.spectogramHandler?.setBPM(bpm)
       emit('bpm-change', bpm)
     }
-  }
+  },
 )
 
 watch(
@@ -121,14 +120,14 @@ watch(
       state.spectogramHandler?.setOffset(offset)
       emit('offset-change', offset)
     }
-  }
+  },
 )
 
 watch(
   () => state.activeBeatline,
   () => {
     emit('active-beatline-change', state.activeBeatline.type)
-  }
+  },
 )
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -144,7 +143,7 @@ onMounted(async () => {
     offset: props.initialOffset,
     onBeatlineUpdate: (beatlines) => {
       state.beatlines = beatlines
-    }
+    },
   })
 
   await state.spectogramHandler.generateSpectogram()
@@ -173,7 +172,7 @@ function onCanvasMouseMove(event: MouseEvent) {
   const currentlyDragging = state.dragStart != null
   if (!currentlyDragging) {
     const nearestBeatline = state.beatlines.reduce((prev, curr) =>
-      Math.abs(curr.left - event.clientX) < Math.abs(prev.left - event.clientX) ? curr : prev
+      Math.abs(curr.left - event.clientX) < Math.abs(prev.left - event.clientX) ? curr : prev,
     )
     const canvasRect = canvasImg.value?.getBoundingClientRect()
     if (!canvasRect) {
@@ -184,7 +183,7 @@ function onCanvasMouseMove(event: MouseEvent) {
     const movingInUpperHalf = event.clientY < middleOfCanvas
     state.activeBeatline = {
       data: nearestBeatline,
-      type: movingInUpperHalf ? 'BPM' : 'OFFSET'
+      type: movingInUpperHalf ? 'BPM' : 'OFFSET',
     }
     return
   }
@@ -281,7 +280,7 @@ function onCanvasMouseUp(event: MouseEvent) {
 
     const [newBPM, newOffset] = updateOnBPMDrag(
       state.dragStart - event.clientX,
-      state.activeBeatline.data
+      state.activeBeatline.data,
     )
     state.bpm = newBPM
     state.offset = newOffset
@@ -332,49 +331,49 @@ defineExpose({
   onMetronome,
   changeBPM,
   changeOffset,
-  setZoomLevel
+  setZoomLevel,
 })
 </script>
 
 <template>
   <div class="relative">
     <div
-      class="canvas-root w-full relative h-32 my-8"
+      class="canvas-root relative my-8 h-32 w-full"
       @mousedown="onCanvasMouseDown"
       @mouseenter="onCanvasMouseEnter"
       @mouseleave="onCanvasMouseLeave"
       prevent-user-select
     >
-      <canvas ref="canvasRef" class="h-32 hidden"></canvas>
-      <img ref="canvasImg" :src="state.spectogramDataURL" class="!h-32 max-w-none !w-auto" />
-      <div class="absolute top-0 left-0 h-32">
+      <canvas ref="canvasRef" class="hidden h-32"></canvas>
+      <img ref="canvasImg" :src="state.spectogramDataURL" class="!h-32 !w-auto max-w-none" />
+      <div class="absolute left-0 top-0 h-32">
         <div
-          class="progress-tile absolute top-0 muted-text"
+          class="progress-tile absolute top-0 text-muted"
           :style="{ left: progressPX + 'px' }"
         ></div>
       </div>
-      <div class="beat-line-wrapper absolute h-32 top-0 w-full">
+      <div class="beat-line-wrapper absolute top-0 h-32 w-full">
         <div
           v-for="(beatline, index) in state.beatlines"
           :key="index"
           class="beat-line h-32"
           :style="{
             left: beatline.left + 'px',
-            scale: `1 ${1 + (props.beatLightOpacity - 0.1) * 5}`
+            scale: `1 1.05`,
           }"
         ></div>
         <div
           class="beat-line h-32"
           :style="{
             left: (state.activeBeatline.data?.left ?? '-100') + 'px',
-            opacity: 0.5
+            opacity: 0.5,
           }"
         ></div>
         <div
           class="beat-line-time"
           :style="{
             opacity: state.hovering || state.dragStart != null ? 1 : 0,
-            left: state.mouseX + 'px'
+            left: state.mouseX + 'px',
           }"
         >
           {{ formatMS(hoverSec) }}
@@ -383,14 +382,14 @@ defineExpose({
           class="beat-line-beat"
           :style="{
             opacity: state.hovering || state.dragStart != null ? 1 : 0,
-            left: state.mouseX + 'px'
+            left: state.mouseX + 'px',
           }"
         >
           {{ hoverBeat }}
         </div>
       </div>
     </div>
-    <div class="start-tile bottom-0 muted-text" :style="{ left: startPosition + 'px' }">
+    <div class="start-tile bottom-0 text-muted" :style="{ left: startPosition + 'px' }">
       <div class="up-tile top-0"></div>
       <div></div>
     </div>
@@ -495,10 +494,5 @@ defineExpose({
   background: white;
   color: var(--color-dark);
   z-index: 1;
-}
-
-.muted-text-light {
-  font-size: 0.5rem;
-  opacity: 0.5;
 }
 </style>

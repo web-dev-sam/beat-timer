@@ -6,8 +6,7 @@ import Player from '@/utils/Player'
 import AudioPlayerBasicControls from '@/components/AudioPlayerBasicControls.vue'
 import IconsMetronome from '@/components/icons/IconsMetronome.vue'
 import IconsSpeaker from '@/components/icons/IconsSpeaker.vue'
-import USlider from '@/components/u/USlider.vue'
-import UAudioSlider from '@/components/u/UAudioSlider.vue'
+import URange from '@/components/u/URange.vue'
 
 const MAX_METRONOME_BPM = 400
 
@@ -31,7 +30,7 @@ const state = reactive({
     ? Number(localStorage.getItem('metronomeTickVolume'))
     : 100,
   songProgress: 0,
-  bpmMultiplier: 1
+  bpmMultiplier: 1,
 })
 
 const metronome = ref<Metronome>()
@@ -40,7 +39,7 @@ const player = ref<Player>()
 onMounted(async function () {
   const audioContext = new AudioContext()
   const metronomeTickBuffer = await audioContext.decodeAudioData(
-    await (await fetch('/audios/metronome.mp3')).arrayBuffer()
+    await (await fetch('/audios/metronome.mp3')).arrayBuffer(),
   )
   await audioContext.audioWorklet.addModule('/js/metronome-processor.js')
   player.value = new Player(audioContext, stop)
@@ -56,7 +55,7 @@ onMounted(async function () {
         emit('metronome', player.value.getCurrentTime(), player.value.getDuration())
         state.songProgress = (player.value.getCurrentTime() / player.value.getDuration()) * 100
       }
-    }
+    },
   )
   player.value.loadBuffer(props.audioBuffer)
   player.value.setVolume(state.volume / 2)
@@ -72,14 +71,14 @@ watch(
   () => props.bpm,
   () => {
     metronome.value?.setBpm(props.bpm)
-  }
+  },
 )
 
 watch(
   () => props.timingOffset,
   () => {
     metronome.value?.setOffset(props.timingOffset / 1000)
-  }
+  },
 )
 
 watch(
@@ -90,7 +89,7 @@ watch(
     if (state.volume > 0) {
       localStorage.setItem('volume', state.volume.toString())
     }
-  }
+  },
 )
 
 watch(
@@ -100,7 +99,7 @@ watch(
     if (state.metronomeTickVolume > 0) {
       localStorage.setItem('metronomeTickVolume', state.metronomeTickVolume.toString())
     }
-  }
+  },
 )
 
 watch(
@@ -111,7 +110,7 @@ watch(
     }
 
     metronome.value?.setBpm(props.bpm * state.bpmMultiplier)
-  }
+  },
 )
 
 function toggleMute() {
@@ -172,19 +171,19 @@ function toggleMetronomeSpeed(bpmMultiplier: number) {
 }
 
 defineExpose({
-  pause
+  pause,
 })
 </script>
 
 <template>
   <section class="track flex flex-col">
-    <div class="track__controls flex justify-between items-end gap-3">
+    <div class="track__controls flex items-end justify-between gap-3">
       <div class="track__volume flex flex-col">
-        <div class="track__sliderleft mb-6">
-          <USlider v-model="state.volume" :min="0" :max="200" class="w-32" />
+        <div class="mb-6 flex items-center justify-center">
+          <URange v-model="state.volume" :min="0" :max="200" :vertical="true" class="h-32" />
         </div>
         <button @click="toggleMute" class="text-left">
-          <span tooltip-position="right" tooltip="Help" class="inline-block">
+          <span tooltip-position="right" tooltip="Volume" class="inline-block">
             <IconsSpeaker />
           </span>
         </button>
@@ -202,13 +201,19 @@ defineExpose({
         />
       </div>
       <div class="flex-1"></div>
-      <div class="track__metronome-volume flex flex-col items-end">
-        <div class="track__sliderright mb-6">
-          <USlider v-model="state.metronomeTickVolume" :min="0" :max="200" class="w-32" />
+      <div class="track__metronome-volume">
+        <div class="mb-6 flex items-center justify-center">
+          <URange
+            v-model="state.metronomeTickVolume"
+            :min="0"
+            :max="200"
+            :vertical="true"
+            class="h-32"
+          />
         </div>
         <div class="flex gap-6">
           <button @click="toggleMetronome">
-            <span tooltip-position="left" tooltip="Help" class="inline-block">
+            <span tooltip-position="left" tooltip="Metronome volume" class="inline-block">
               <IconsMetronome />
             </span>
           </button>
@@ -216,8 +221,11 @@ defineExpose({
       </div>
     </div>
     <div class="pt-12">
-      <UAudioSlider
-        :progress="state.songProgress"
+      <URange
+        :min="0"
+        :max="100"
+        :immediate="false"
+        v-model="state.songProgress"
         @change="(value: number) => onProgressDrag(value)"
       />
     </div>
@@ -225,16 +233,6 @@ defineExpose({
 </template>
 
 <style scoped>
-.track__sliderleft {
-  transform-origin: bottom left;
-  transform: translate(1rem) rotate(270deg);
-}
-
-.track__sliderright {
-  transform-origin: bottom left;
-  transform: translate(calc(100% - 0.5rem)) rotate(270deg);
-}
-
 [disabled] {
   opacity: 0.2;
   pointer-events: none;

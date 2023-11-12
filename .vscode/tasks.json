@@ -10,5 +10,14 @@
                 "color": "terminal.ansiCyan"
             }
         },
+        {
+            "label": "Dev",
+            "type": "shell",
+            "command": "npm run dev",
+            "icon": {
+                "id": "play",
+                "color": "terminal.ansiGreen"
+            }
+        }
     ]
 }

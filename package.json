@@ -1,6 +1,6 @@
 {
   "name": "beat-timer",
-  "version": "2.0",
+  "version": "2.1",
   "author": {
     "name": "Samuel Braun",
     "url": "https://www.webry.com/about/"
@@ -19,7 +19,6 @@
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.11.6",
     "@vercel/analytics": "^1.1.0",
-    "fft.js": "^4.0.4",
     "vue": "^3.3.4",
     "web-audio-beat-detector": "^8.1.54"
   },
@@ -38,6 +37,7 @@
     "npm-run-all2": "^6.0.6",
     "postcss": "^8.4.31",
     "prettier": "^3.0.3",
+    "prettier-plugin-tailwindcss": "^0.5.6",
     "tailwindcss": "^3.3.3",
     "typescript": "~5.2.0",
     "vite": "^4.4.9",
