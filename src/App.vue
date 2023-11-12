@@ -412,24 +412,6 @@ function preventDefaults(e: Event) {
               />
             </div>
             <h2 class="h2"></h2>
-            <div class="flex items-center gap-4">
-              <URange
-                v-model="state.zoomLevel"
-                :min="3"
-                :max="15"
-                :vertical="false"
-                :reverse="true"
-                class="w-32"
-              />
-              <button
-                @click="toggleZoom"
-                tooltip-position="top"
-                :tooltip="state.zoomLevel !== 15 ? 'Zoom Out' : 'Zoom In'"
-              >
-                <IconsZoomIn v-show="state.zoomLevel === 15" />
-                <IconsZoomOut v-show="state.zoomLevel !== 15" />
-              </button>
-            </div>
           </div>
           <USpectogram
             v-if="state.step > 0 && state.audioBuffer"
@@ -452,6 +434,24 @@ function preventDefaults(e: Event) {
               :reversed="true"
               @edit-start="pauseAudio"
             />
+            <div class="flex items-center gap-4">
+              <URange
+                v-model="state.zoomLevel"
+                :min="3"
+                :max="15"
+                :vertical="false"
+                :reverse="true"
+                class="w-32"
+              />
+              <button
+                @click="toggleZoom"
+                tooltip-position="top"
+                :tooltip="state.zoomLevel !== 15 ? 'Zoom Out' : 'Zoom In'"
+              >
+                <IconsZoomIn v-show="state.zoomLevel === 15" />
+                <IconsZoomOut v-show="state.zoomLevel !== 15" />
+              </button>
+            </div>
           </div>
         </template>
         <template #2>
