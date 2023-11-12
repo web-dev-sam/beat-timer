@@ -279,6 +279,7 @@ async function handleDrop(event: DragEvent) {
 
   const file = files[0]
   if (!file.type.startsWith('audio/')) return
+  if (state.step !== 0) return
 
   state.initialSelectFileLoading = true
   await loadAudioFile(file)
@@ -294,7 +295,7 @@ function preventDefaults(e: Event) {
   <div
     class="h-screen bg-purple-28 transition-all"
     :style="{
-      padding: state.isDragOver ? '0.5rem' : '0',
+      padding: state.isDragOver && state.step === 0 ? '0.5rem' : '0',
     }"
   >
     <div
