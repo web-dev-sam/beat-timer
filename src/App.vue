@@ -27,12 +27,10 @@ import URange from '@/components/u/URange.vue'
 const version = APP_VERSION
 inject()
 
-// v2.1
-// A little more mobile friendly (custom slider)
-// settings on own page instead of modal
-
 // v2.2
+// settings on own page instead of modal
 // proper vue state management (performance)
+// remove @apply rules
 // show only when everything loaded (step 1 -> 2)
 
 // v2.3
