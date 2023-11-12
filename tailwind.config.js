@@ -10,6 +10,7 @@ module.exports = {
       dark: '#010101',
       'gray-900': '#161616',
       'gray-800': '#2c2c2c',
+      'gray-700': '#3f3f3f',
       white: '#fff',
       current: 'currentColor',
       muted: 'hsla(0, 0%, 100%, 0.33)',

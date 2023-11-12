@@ -17,19 +17,19 @@ import FooterArea from '@/components/FooterArea.vue'
 import HeaderButtons from '@/components/HeaderButtons.vue'
 import Step from '@/components/PageStep.vue'
 
-import USlider from '@/components/u/USlider.vue'
 import USpectogram from '@/components/u/USpectogram.vue'
 import UFileInput from '@/components/u/UFileInput.vue'
 import UButton from '@/components/u/UButton.vue'
 import UModal from '@/components/u/UModal.vue'
 import UValueEdit from '@/components/u/UValueEdit.vue'
+import URange from '@/components/u/URange.vue'
 
 const version = APP_VERSION
 inject()
 
 // v2.1
-// settings on own page instead of modal
 // A little more mobile friendly (custom slider)
+// settings on own page instead of modal
 
 // v2.2
 // proper vue state management (performance)
@@ -412,7 +412,14 @@ function preventDefaults(e: Event) {
             </div>
             <h2 class="h2"></h2>
             <div class="flex items-center gap-4">
-              <USlider v-model="state.zoomLevel" :min="3" :max="15" :step="0.2" class="w-32" />
+              <URange
+                v-model="state.zoomLevel"
+                :min="3"
+                :max="15"
+                :vertical="false"
+                :reverse="true"
+                class="w-32"
+              />
               <button
                 @click="toggleZoom"
                 tooltip-position="top"
@@ -477,7 +484,7 @@ function preventDefaults(e: Event) {
                 {{ state.exportQuality }}
               </div>
               <div>
-                <USlider v-model="state.exportQuality" :min="1" :max="10" class="!w-72" />
+                <URange v-model="state.exportQuality" :min="1" :max="10" class="!w-72" />
               </div>
               <div tooltip-position="bottom" tooltip="Could be lower or higher based on the song.">
                 ~{{ estimateFileSize }}
