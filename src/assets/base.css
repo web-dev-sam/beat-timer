@@ -184,13 +184,9 @@ a:hover {
   height: 100lvh;
 }
 
-.min-h-screen {
-  min-height: 100vh;
-}
-
-@supports (scrollbar-color: white var(--color-primary-28)) {
+@supports (scrollbar-color: var(--color-primary) var(--color-dark)) {
   * {
-    scrollbar-color: white var(--color-primary-28);
+    scrollbar-color: var(--color-primary) var(--color-dark);
     scrollbar-width: auto;
   }
 }

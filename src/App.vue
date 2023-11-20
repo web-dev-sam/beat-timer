@@ -306,7 +306,7 @@ function preventDefaults(e: Event) {
           </button>
           <div
             v-if="state.helpPageVisible"
-            class="auto-flow-small fixed left-0 top-0 z-10 min-h-screen min-w-full bg-dark text-center"
+            class="auto-flow-small fixed left-0 top-0 z-10 h-screen min-w-full overflow-y-auto bg-dark p-4 text-center"
           >
             <button
               @click="state.helpPageVisible = false"
