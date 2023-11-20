@@ -164,6 +164,7 @@ async function onFileChange(event: Event) {
 
   state.startedManualLoading = true
   await loadAudioFile(input.files[0])
+  state.audioLoaded = true
 }
 
 function loadExampleFile() {
@@ -387,7 +388,7 @@ function preventDefaults(e: Event) {
         <template #right>
           <UButton
             v-if="state.step === 'start'"
-            :class="{ invisiblyat: state.startedExampleLoading }"
+            :class="{ invisiblyat: state.startedExampleLoading || state.startedManualLoading }"
             @click="loadExampleFile"
             :secondary="true"
           >
