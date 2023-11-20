@@ -86,11 +86,6 @@ function onEditClick() {
 </template>
 
 <style scoped>
-.invisiblyat {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .value-edit-wrapper {
   width: 30ch;
 }

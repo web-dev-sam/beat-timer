@@ -4,6 +4,8 @@
 
 :root {
   --color-muted: hsla(0, 0%, 100%, 0.33);
+  --color-primary-light: hsl(263, 100%, 72%);
+  --color-primary-light-muted: hsla(263, 100%, 72%, 0.75);
   --color-primary: hsl(263, 100%, 58%);
   --color-light-dark: var(--color-primary);
   --color-primary-60: hsla(263, 100%, 58%, 0.6);
@@ -11,8 +13,6 @@
   --color-primary-28: hsla(263, 100%, 58%, 0.22);
   --color-primary-28-opaque: hsl(264, 58%, 16%);
   --color-primary-34: hsla(263, 100%, 58%, 0.26);
-  --color-orange: hsl(22, 100%, 55%);
-  --color-orange-muted: hsla(22, 100%, 55%, 0.75);
   --color-dark: rgb(1, 1, 1);
 
   --body-bg: var(--color-dark);
@@ -40,6 +40,7 @@ body {
   overflow: hidden;
   text-align: center;
   font-size: 1rem;
+  line-height: 1.8;
 }
 
 *,
@@ -87,13 +88,13 @@ svg {
 }
 
 a {
-  color: var(--color-orange);
-  text-decoration: none;
+  color: var(--color-primary-light);
+  text-decoration: underline;
+  text-decoration: underline wavy;
 }
 
 .text-muted a {
-  color: var(--color-orange-muted);
-  text-decoration: none;
+  color: var(--color-primary-light-muted);
 }
 
 a:hover {
@@ -134,11 +135,7 @@ a:hover {
 }
 
 .auto-flow-small > * + * {
-  @apply mt-4;
-}
-
-.container {
-  @apply mx-auto my-0;
+  margin-top: 0.5rem;
 }
 
 .glow {
@@ -149,16 +146,13 @@ a:hover {
   box-shadow: var(--color-primary-60) 0px 0px 2em;
 }
 
-.btn {
-  @apply inline-flex cursor-pointer items-center justify-center rounded border-none bg-primary fill-current px-6 py-3 text-sm font-medium text-white ring-purple-28 hover:ring-4;
-}
-
-.btn-secondary {
-  @apply bg-gray-900 hover:bg-gray-800 hover:ring-0;
+.invisiblyat {
+  opacity: 0;
+  pointer-events: none;
 }
 
 [tooltip] {
-  @apply relative;
+  position: relative;
 }
 
 [tooltip]::after {
@@ -195,9 +189,9 @@ a:hover {
   height: 100lvh;
 }
 
-@supports (scrollbar-color: white var(--color-primary-28)) {
+@supports (scrollbar-color: var(--color-primary) var(--color-dark)) {
   * {
-    scrollbar-color: white var(--color-primary-28);
+    scrollbar-color: var(--color-primary) var(--color-dark);
     scrollbar-width: auto;
   }
 }

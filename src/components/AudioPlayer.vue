@@ -7,12 +7,9 @@ import AudioPlayerBasicControls from '@/components/AudioPlayerBasicControls.vue'
 import IconsMetronome from '@/components/icons/IconsMetronome.vue'
 import IconsSpeaker from '@/components/icons/IconsSpeaker.vue'
 import URange from '@/components/u/URange.vue'
-
-const MAX_METRONOME_BPM = 400
+import useAudioSettings from '@/composables/useAudioSettings'
 
 const props = defineProps<{
-  bpm: number
-  timingOffset: number
   audioBuffer: AudioBuffer
 }>()
 
@@ -21,6 +18,7 @@ const emit = defineEmits<{
   (e: 'seek', time: number): void
 }>()
 
+const { bpm } = useAudioSettings()
 const state = reactive({
   isStopped: true,
   isPaused: false,
@@ -30,7 +28,6 @@ const state = reactive({
     ? Number(localStorage.getItem('metronomeTickVolume'))
     : 100,
   songProgress: 0,
-  bpmMultiplier: 1,
 })
 
 const metronome = ref<Metronome>()
@@ -45,9 +42,7 @@ onMounted(async function () {
   player.value = new Player(audioContext, stop)
   metronome.value = new Metronome(
     audioContext,
-    props.bpm,
     metronomeTickBuffer,
-    props.timingOffset / 1000,
     state.metronomeTickVolume / 200,
     player.value,
     () => {
@@ -68,20 +63,6 @@ onMounted(async function () {
 })
 
 watch(
-  () => props.bpm,
-  () => {
-    metronome.value?.setBpm(props.bpm)
-  },
-)
-
-watch(
-  () => props.timingOffset,
-  () => {
-    metronome.value?.setOffset(props.timingOffset / 1000)
-  },
-)
-
-watch(
   () => state.volume,
   () => {
     state.metronomeTickVolume = state.volume
@@ -99,17 +80,6 @@ watch(
     if (state.metronomeTickVolume > 0) {
       localStorage.setItem('metronomeTickVolume', state.metronomeTickVolume.toString())
     }
-  },
-)
-
-watch(
-  () => state.bpmMultiplier,
-  () => {
-    if (state.bpmMultiplier * props.bpm > MAX_METRONOME_BPM) {
-      return
-    }
-
-    metronome.value?.setBpm(props.bpm * state.bpmMultiplier)
   },
 )
 
@@ -151,6 +121,7 @@ function stop(sender: any) {
   state.isPlaying = false
   state.isPaused = false
   state.isStopped = true
+  emit('metronome', 0, player.value?.getDuration() || 1)
 }
 
 function onProgressDrag(value: number) {
@@ -164,10 +135,6 @@ function onProgressDrag(value: number) {
   state.isPlaying = true
   state.isPaused = false
   state.isStopped = false
-}
-
-function toggleMetronomeSpeed(bpmMultiplier: number) {
-  state.bpmMultiplier = bpmMultiplier
 }
 
 defineExpose({
@@ -197,7 +164,6 @@ defineExpose({
           :is-stopped="state.isStopped"
           @play="play"
           @stop="stop"
-          @speed="toggleMetronomeSpeed"
         />
       </div>
       <div class="flex-1"></div>

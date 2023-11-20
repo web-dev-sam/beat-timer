@@ -5,12 +5,14 @@ import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import FfmpegHandler from '@/utils/FfmpegHandler'
 import { guess } from 'web-audio-beat-detector'
 import { songOffsetToSilencePadding } from '@/utils/utils'
+import useAudioSettings from '@/composables/useAudioSettings'
 
 import IconsHelp from '@/components/icons/IconsHelp.vue'
 import IconsUp from '@/components/icons/IconsUp.vue'
 import IconsDown from '@/components/icons/IconsDown.vue'
 import IconsZoomOut from '@/components/icons/IconsZoomOut.vue'
 import IconsZoomIn from '@/components/icons/IconsZoomIn.vue'
+import IconsClose from '@/components/icons/IconsClose.vue'
 
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import FooterArea from '@/components/FooterArea.vue'
@@ -20,18 +22,11 @@ import Step from '@/components/PageStep.vue'
 import USpectogram from '@/components/u/USpectogram.vue'
 import UFileInput from '@/components/u/UFileInput.vue'
 import UButton from '@/components/u/UButton.vue'
-import UModal from '@/components/u/UModal.vue'
 import UValueEdit from '@/components/u/UValueEdit.vue'
 import URange from '@/components/u/URange.vue'
 
 const version = APP_VERSION
 inject()
-
-// v2.2
-// settings on own page instead of modal
-// proper vue state management (performance)
-// remove @apply rules
-// show only when everything loaded (step 1 -> 2)
 
 // v2.3
 // Scroll for zooming
@@ -41,64 +36,58 @@ inject()
 // Auto Volume normalization
 // Detect bpm for subsection
 
+const {
+  bpm,
+  offset,
+  draggingBPM,
+  draggingOffset,
+  setBPM,
+  setOffset,
+  setDraggingBPM,
+  setDraggingOffset,
+} = useAudioSettings()
 const state = reactive<{
   audioFile: File | null
   stopped: boolean
   playing: boolean
   myBPMGuess: number
   myOffsetGuess: number
-  bpm: number
-  draggingBPM: number
-  timingOffset: number
-  draggingOffset: number
-  step: number
+  step: 'start' | 'edit' | 'export'
   fileExtension: string
   downloading: boolean
   audioBuffer: AudioBuffer | null
-  initialExampleFileLoading: boolean
-  initialSelectFileLoading: boolean
+  startedExampleLoading: boolean
+  startedManualLoading: boolean
+  audioLoaded: boolean
+  specLoaded: boolean
   advancedSettingsOpen: boolean
   exportQuality: number
   ffmpegHandler: FfmpegHandler
   zoomLevel: number
   activeModifier: 'BPM' | 'OFFSET'
   isDragOver: boolean
+  helpPageVisible: boolean
 }>({
   audioFile: null,
   stopped: true,
   playing: false,
   myBPMGuess: 0,
   myOffsetGuess: 0,
-  bpm: 120,
-  draggingBPM: 120,
-  timingOffset: 0,
-  draggingOffset: 0,
-  step: 0,
+  step: 'start',
   fileExtension: '',
   downloading: false,
   audioBuffer: null,
-  initialExampleFileLoading: false,
-  initialSelectFileLoading: false,
+  startedExampleLoading: false,
+  startedManualLoading: false,
+  audioLoaded: false,
+  specLoaded: false,
   advancedSettingsOpen: false,
   exportQuality: 8,
   ffmpegHandler: new FfmpegHandler(),
   zoomLevel: 15,
   activeModifier: 'BPM',
   isDragOver: false,
-})
-
-const estimateFileSize = computed(() => {
-  if (!state.audioBuffer || !state.ffmpegHandler) {
-    return 0
-  }
-
-  const seconds = state.audioBuffer?.duration ?? 0
-  return state.ffmpegHandler.formatFileSize(
-    state.ffmpegHandler.estimateFileSize(
-      seconds + songOffsetToSilencePadding(state.bpm, state.timingOffset) / 1000,
-      state.exportQuality,
-    ),
-  )
+  helpPageVisible: false,
 })
 
 onMounted(() => {
@@ -113,17 +102,31 @@ onUnmounted(() => {
   })
 })
 
+const estimateFileSize = computed(() => {
+  if (!state.audioBuffer || !state.ffmpegHandler) {
+    return 0
+  }
+
+  const seconds = state.audioBuffer?.duration ?? 0
+  return state.ffmpegHandler.formatFileSize(
+    state.ffmpegHandler.estimateFileSize(
+      seconds + songOffsetToSilencePadding(bpm.value, offset.value) / 1000,
+      state.exportQuality,
+    ),
+  )
+})
+
 watch(
-  () => state.bpm,
+  () => bpm.value,
   (newVal) => {
-    state.draggingBPM = newVal
+    setDraggingBPM(newVal)
   },
 )
 
 watch(
-  () => state.timingOffset,
+  () => offset.value,
   (newVal) => {
-    state.draggingOffset = newVal
+    setDraggingOffset(newVal)
   },
 )
 
@@ -136,8 +139,20 @@ watch(
   },
 )
 
+watch(
+  () =>
+    (state.startedExampleLoading || state.startedManualLoading) &&
+    state.audioLoaded &&
+    state.specLoaded,
+  (loaded) => {
+    if (loaded) {
+      state.step = 'edit'
+    }
+  },
+)
+
 const visualOffset = computed(() => {
-  return songOffsetToSilencePadding(state.bpm, state.draggingOffset)
+  return songOffsetToSilencePadding(bpm.value, draggingOffset.value)
 })
 
 async function onFileChange(event: Event) {
@@ -147,13 +162,13 @@ async function onFileChange(event: Event) {
     return
   }
 
-  state.initialSelectFileLoading = true
+  state.startedManualLoading = true
   await loadAudioFile(input.files[0])
-  state.initialSelectFileLoading = false
+  state.audioLoaded = true
 }
 
 function loadExampleFile() {
-  state.initialExampleFileLoading = true
+  state.startedExampleLoading = true
   fetch('/audios/sample.mp3')
     .then((res) => res.blob())
     .then(async (blob) => {
@@ -162,7 +177,7 @@ function loadExampleFile() {
           type: 'audio/mp3',
         }),
       )
-      state.initialExampleFileLoading = false
+      state.audioLoaded = true
     })
 }
 
@@ -173,28 +188,26 @@ async function loadAudioFile(file: File) {
   state.audioBuffer = await state.ffmpegHandler.getAudioBuffer()
   try {
     const { bpm, offset } = await guess(state.audioBuffer)
-    state.myBPMGuess = state.bpm = bpm === 0 ? -1 : bpm
-    state.myOffsetGuess = state.timingOffset = Math.round((offset * 1000) / 4) * 4
+    state.myBPMGuess = bpm === 0 ? -1 : bpm
+    state.myOffsetGuess = Math.round((offset * 1000) / 4) * 4
+    setBPM(state.myBPMGuess)
+    setOffset(state.myOffsetGuess)
   } catch {
     state.myBPMGuess = -1
-    state.bpm = 120
     state.myOffsetGuess = -1
-    state.timingOffset = (30 / state.bpm) * 1000
+    setBPM(120)
+    setOffset((30 / bpm.value) * 1000)
   }
-  state.step = 1
 }
 
 function onBPMChange(bpm: number) {
-  state.bpm = state.draggingBPM = bpm
+  setBPM(bpm)
+  setDraggingBPM(bpm)
 }
 
 function onTimingOffsetChange(offset: number) {
-  state.timingOffset = state.draggingOffset = offset
-}
-
-function onBPMOffsetDraggingChange(bpm: number, offset: number) {
-  state.draggingBPM = bpm
-  state.draggingOffset = offset
+  setOffset(offset)
+  setDraggingOffset(offset)
 }
 
 function onActiveBeatlineChange(type: 'BPM' | 'OFFSET') {
@@ -203,16 +216,16 @@ function onActiveBeatlineChange(type: 'BPM' | 'OFFSET') {
 
 function goToDownloadStep() {
   pauseAudio()
-  state.step = 2
+  state.step = 'export'
 }
 
 function goBackToTiming() {
-  state.step = 1
+  state.step = 'edit'
 }
 
 async function download() {
   state.downloading = true
-  await state.ffmpegHandler.download(state.bpm, state.timingOffset, state.exportQuality)
+  await state.ffmpegHandler.download(bpm.value, offset.value, state.exportQuality)
   state.downloading = false
 }
 
@@ -223,7 +236,7 @@ function toggleZoom() {
 
 function onMetronome(time: number) {
   if (spectogramRef.value) {
-    spectogramRef.value.onMetronome(time)
+    spectogramRef.value.onMetronome(time, time === 0)
   }
 }
 
@@ -235,15 +248,9 @@ function onSeek(time: number) {
 
 const audioPlayerRef = ref<InstanceType<typeof AudioPlayer> | null>(null)
 function pauseAudio() {
-  if (state.step === 1 && audioPlayerRef.value) {
+  if (state.step === 'edit' && audioPlayerRef.value) {
     audioPlayerRef.value.pause()
   }
-}
-
-const helpModalRef = ref<InstanceType<typeof UModal> | null>(null)
-function openHelpModal() {
-  if (helpModalRef.value == null) return
-  helpModalRef.value.open()
 }
 
 function toggleAdvancedSettings() {
@@ -252,12 +259,10 @@ function toggleAdvancedSettings() {
 
 function onManualBPMEdit(value: number) {
   onBPMChange(value)
-  spectogramRef.value?.changeBPM(value)
 }
 
 function onManualOffsetEdit(value: number) {
-  onTimingOffsetChange(60000 / state.bpm - value)
-  spectogramRef.value?.changeOffset(60000 / state.bpm - value)
+  onTimingOffsetChange(60000 / bpm.value - value)
 }
 
 function handleDragEnter(_: DragEvent) {
@@ -277,11 +282,11 @@ async function handleDrop(event: DragEvent) {
 
   const file = files[0]
   if (!file.type.startsWith('audio/')) return
-  if (state.step !== 0) return
+  if (state.step !== 'start') return
 
-  state.initialSelectFileLoading = true
+  state.startedManualLoading = true
   await loadAudioFile(file)
-  state.initialSelectFileLoading = false
+  state.audioLoaded = true
 }
 
 function preventDefaults(e: Event) {
@@ -293,7 +298,8 @@ function preventDefaults(e: Event) {
   <div
     class="h-screen bg-purple-28 transition-all"
     :style="{
-      padding: state.isDragOver && state.step === 0 ? '0.5rem' : '0',
+      padding:
+        state.isDragOver && state.step === 'start' && !state.helpPageVisible ? '0.5rem' : '0',
     }"
   >
     <div
@@ -307,12 +313,21 @@ function preventDefaults(e: Event) {
     >
       <HeaderButtons>
         <template #left>
-          <button @click="openHelpModal" tooltip-position="right" tooltip="Help" class="text-muted">
-            <IconsHelp class="text-muted" />
+          <button @click="state.helpPageVisible = true">
+            <IconsHelp class="text-muted" tooltip-position="right" tooltip="Help" />
           </button>
-          <UModal ref="helpModalRef">
-            <div class="auto-flow-small text-left">
-              <h2 class="h2">
+          <div
+            v-if="state.helpPageVisible"
+            class="auto-flow-small fixed left-0 top-0 z-10 h-screen min-w-full overflow-y-auto bg-dark p-4 text-center"
+          >
+            <button
+              @click="state.helpPageVisible = false"
+              class="absolute left-6 top-6 md:left-12 md:top-14"
+            >
+              <IconsClose class="text-muted" />
+            </button>
+            <div class="m-auto w-full lg:w-2/3">
+              <h2 class="h2 mb-4 mt-8 md:mt-16 lg:mt-32">
                 Beat Timer <span class="p pl-2 text-muted">v{{ version }}</span>
               </h2>
               <p>
@@ -320,81 +335,91 @@ function preventDefaults(e: Event) {
                 new, and tested primarily with Beat Saber. Please report any issues you find on
                 GitHub.
               </p>
-              <h3 class="h3 !mt-12">Tips</h3>
-              <ol class="auto-flow-small list-inside list-decimal text-left">
+              <h3 class="h3 !mt-12 mb-4">How To Use</h3>
+              <p>
+                <strong>Import</strong> your song. When you see the audio visualizer, hover over the
+                <strong>upper</strong> part of the audio and
+                <strong>drag to change the BPM</strong>. Hover over the <strong>lower</strong> part
+                and <strong>drag to change the offset</strong> (positioning a beat starts at). Click
+                "Seems On Time" when you've aligned the audio.
+              </p>
+              <h3 class="h3 !mt-12 mb-4">Tips</h3>
+              <ol class="auto-flow-small list-inside list-decimal">
                 <li>
-                  The website will try to guess the BPM of your song but if it fails you should
-                  check the exact BPM on Google.
+                  You should <strong>double check the BPM online</strong> to make sure its correct.
                 </li>
-                <li>Set your BPM first and then the offset.</li>
                 <li>
-                  If you have a song with BPM changes, align the beat to the BPM at the beginning.
+                  If your song has <strong>BPM changes</strong> align the beat to the BPM at the
+                  start.
                 </li>
                 <li>
-                  If you want to trim the audio drag the offset number into the negatives while
-                  aligning the beat
+                  If you want to <strong>trim the audio</strong> drag the offset number into the
+                  negatives while aligning the beat
                 </li>
                 <li>
-                  If you want to add more silence to the start just make the offset much higher.
-                  1000ms = 1 second.
+                  If you want to <strong>add more silence</strong> to the start just make the offset
+                  much higher. 1000ms = 1 second.
                 </li>
               </ol>
-              <h3 class="h3 !mt-12">How To Use</h3>
-              <ol class="auto-flow-small list-inside list-decimal text-left">
-                <li>Import your song.</li>
-                <li>
-                  When you see the fancy looking audio visualizer, hover over the upper part of the
-                  audio and drag to change the BPM. When you have aligned the BPM, hover over the
-                  lower part and drag to change the positioning a beat starts at (offset).
-                </li>
-                <li>Click "Seems On Time" when you've aligned the audio.</li>
-              </ol>
-              <h3 class="h3 !mt-12">Support</h3>
+              <h3 class="h3 !mt-12 mb-4">Support</h3>
               <p>
                 You can support me on GitHub by
-                <a href="https://github.com/web-dev-sam/beat-timer" target="_blank" class="purple"
-                  >giving this project a star</a
+                <strong
+                  ><a
+                    href="https://github.com/web-dev-sam/beat-timer"
+                    target="_blank"
+                    class="purple"
+                    >giving this project a star</a
+                  ></strong
                 >. I would really appreciate it!
               </p>
               <p class="!mt-12">
-                Made with &#129505; by
-                <a href="https://github.com/web-dev-sam" target="_blank" class="author"
-                  >Samuel Braun</a
+                Made with 💜 by
+                <strong
+                  ><a href="https://github.com/web-dev-sam" target="_blank" class="author"
+                    >Samuel Braun</a
+                  ></strong
                 >.
               </p>
             </div>
-          </UModal>
+          </div>
         </template>
         <template #center></template>
         <template #right>
           <UButton
-            v-if="state.step === 0"
-            :loading="state.initialExampleFileLoading"
+            v-if="state.step === 'start'"
+            :class="{ invisiblyat: state.startedExampleLoading || state.startedManualLoading }"
             @click="loadExampleFile"
-            class="btn-secondary"
+            :secondary="true"
           >
             Use Example
           </UButton>
-          <UButton v-if="state.step === 1" class="mb-0 mr-0" @click="goToDownloadStep">
+          <UButton v-if="state.step === 'edit'" class="mb-0 mr-0" @click="goToDownloadStep">
             Seems On Time
           </UButton>
         </template>
       </HeaderButtons>
       <Step :step="state.step">
-        <template #0>
+        <template #start>
           <div class="flex flex-col gap-8">
             <h1 class="h2">Import your song.</h1>
             <p class="text-muted">
               You can drag and drop your song here, or click to select a file.
             </p>
             <div class="mb-12 mt-2">
-              <UFileInput :loading="state.initialSelectFileLoading" @change="onFileChange">
+              <UFileInput
+                :loading="
+                  (state.startedExampleLoading || state.startedManualLoading) &&
+                  !(state.audioLoaded && state.specLoaded)
+                "
+                @change="onFileChange"
+              >
                 Select file
               </UFileInput>
             </div>
           </div>
         </template>
-        <template #1>
+        <template #edit>
           <div>
             <h1 class="h2 mb-18">Align the beat.</h1>
           </div>
@@ -402,7 +427,7 @@ function preventDefaults(e: Event) {
             <div>
               <UValueEdit
                 :invisible="state.activeModifier !== 'BPM'"
-                :value="state.draggingBPM"
+                :value="draggingBPM"
                 @change="onManualBPMEdit"
                 type="BPM"
                 :reversed="false"
@@ -412,16 +437,12 @@ function preventDefaults(e: Event) {
             <h2 class="h2"></h2>
           </div>
           <USpectogram
-            v-if="state.step > 0 && state.audioBuffer"
+            v-if="state.audioBuffer"
             ref="spectogramRef"
             :audio-buffer="state.audioBuffer"
-            :initial-offset="state.timingOffset"
-            :initial-bpm="state.bpm"
-            @bpm-change="onBPMChange"
-            @offset-change="onTimingOffsetChange"
             @drag-start="pauseAudio"
-            @bpm-offset-change="onBPMOffsetDraggingChange"
             @active-beatline-change="onActiveBeatlineChange"
+            @loaded="state.specLoaded = true"
           />
           <div class="mx-12 mt-6 flex justify-between" prevent-user-select>
             <UValueEdit
@@ -452,7 +473,7 @@ function preventDefaults(e: Event) {
             </div>
           </div>
         </template>
-        <template #2>
+        <template #export>
           <h1 class="h2">Export</h1>
           <p class="mb-6 text-muted">
             You have made it! You can now export your song. If you want to convert it to another
@@ -502,11 +523,9 @@ function preventDefaults(e: Event) {
       </Step>
       <FooterArea>
         <AudioPlayer
-          v-if="state.step === 1 && state.audioBuffer"
+          v-if="state.step === 'edit' && state.audioBuffer"
           ref="audioPlayerRef"
-          :bpm="state.bpm"
           :audio-buffer="state.audioBuffer"
-          :timing-offset="state.timingOffset"
           @metronome="onMetronome"
           @seek="onSeek"
         />
@@ -522,6 +541,10 @@ function preventDefaults(e: Event) {
 </template>
 
 <style scoped>
+strong {
+  color: var(--color-primary-light);
+}
+
 .light {
   background: radial-gradient(circle at 50% 120%, var(--color-primary) 0%, var(--color-dark) 66%);
 }

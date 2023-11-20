@@ -1,21 +1,21 @@
 <script setup lang="ts">
 defineProps<{
-  step: number
+  step: 'start' | 'edit' | 'export'
 }>()
 </script>
 
 <template>
   <main class="align-center flex flex-1 flex-col justify-center">
-    <div class="auto-flow-small step-0" :class="step === 0 ? 'main-shown' : 'main-hidden'">
-      <slot name="0"></slot>
+    <div class="auto-flow-small" :class="step === 'start' ? 'main-shown' : 'main-hidden'">
+      <slot name="start"></slot>
     </div>
 
-    <div class="step-1" :class="step === 1 ? 'main-shown' : 'main-hidden'">
-      <slot name="1"></slot>
+    <div :class="step === 'edit' ? 'main-shown' : 'main-hidden'">
+      <slot name="edit"></slot>
     </div>
 
-    <div class="auto-flow-small step-2" :class="step === 2 ? 'main-shown' : 'main-hidden'">
-      <slot name="2"></slot>
+    <div class="auto-flow-small" :class="step === 'export' ? 'main-shown' : 'main-hidden'">
+      <slot name="export"></slot>
     </div>
   </main>
 </template>

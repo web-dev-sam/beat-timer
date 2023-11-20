@@ -1,9 +1,13 @@
+import { watch } from 'vue'
 import { hslToRgb } from './utils'
+import useAudioSettings from '@/composables/useAudioSettings'
 
 export type BeatLine = {
   left: number
   time: number
 }
+
+const { draggingBPM, draggingOffset, bpmMultiplier } = useAudioSettings()
 
 export default class SpectogramHandler {
   private segmentSize: number
@@ -18,8 +22,6 @@ export default class SpectogramHandler {
   private currentZoom: number
   private vw: number
   private onBeatlineUpdate: (beatlines: any[]) => void
-  private bpm: number
-  private offset: number
   private scale: number
   private time: number
   private a: number
@@ -31,15 +33,11 @@ export default class SpectogramHandler {
     canvas,
     canvasImg,
     onBeatlineUpdate,
-    bpm,
-    offset,
   }: {
     audioBuffer: AudioBuffer
     canvas: HTMLCanvasElement
     canvasImg: HTMLDivElement
     onBeatlineUpdate: (beatlines: any[]) => void
-    bpm: number
-    offset: number
   }) {
     this.segmentSize = 1024
     this.segmentOverlap = 512
@@ -59,11 +57,25 @@ export default class SpectogramHandler {
     this.scale = 1
     this.vw = document.documentElement.clientWidth
     this.onBeatlineUpdate = onBeatlineUpdate
-    this.bpm = bpm
-    this.offset = offset
 
     const height = Math.floor((this.hzFilter * this.segmentSize) / this.sampleRate)
     this.canvas.height = height
+
+    watch(draggingBPM, () => {
+      this.onBeatlineUpdate(this.getBeatLines())
+    })
+
+    watch(draggingOffset, () => {
+      this.onBeatlineUpdate(this.getBeatLines())
+    })
+
+    watch(bpmMultiplier, () => {
+      this.onBeatlineUpdate(this.getBeatLines())
+    })
+  }
+
+  dispose() {
+    this.workers.forEach((w) => w.terminate())
   }
 
   initWorkers() {
@@ -72,24 +84,12 @@ export default class SpectogramHandler {
       .map(() => new Worker('js/fffWorker.js'))
   }
 
-  getBPM() {
-    return this.bpm
-  }
-
   zoomIn() {
     this.zoom(15)
   }
 
   zoomOut() {
     this.zoom(3)
-  }
-
-  setBPM(bpm: number) {
-    this.onBPMOrOffsetChange(bpm, this.offset)
-  }
-
-  setOffset(offset: number) {
-    this.onBPMOrOffsetChange(this.bpm, offset)
   }
 
   getWindowIfCursorAt(time: number, position: number, zoom: number) {
@@ -124,7 +124,7 @@ export default class SpectogramHandler {
     this.canvasImg.style.transform = `translateX(${-1 * this.a}px) scaleX(${this.scale})`
     this.canvasImg.style.transformOrigin = 'left'
 
-    this.onBeatlineUpdate(this.getBeatLines(this.bpm, this.offset))
+    this.onBeatlineUpdate(this.getBeatLines())
   }
 
   updateTime(time: number, position: number = 0) {
@@ -147,23 +147,6 @@ export default class SpectogramHandler {
     return cursorAbsolutePosition * this.scale - this.a
   }
 
-  onBPMOrOffsetChange(bpm: number, offset: number) {
-    const prevBPM = this.bpm
-    const prevOffset = this.offset
-
-    if (prevBPM !== bpm) {
-      this.bpm = bpm
-    }
-
-    if (prevOffset !== offset) {
-      this.offset = offset
-    }
-
-    if (prevBPM !== bpm || prevOffset !== offset) {
-      this.onBeatlineUpdate(this.getBeatLines(this.bpm, this.offset))
-    }
-  }
-
   zoom(sPerVw: number) {
     this.currentZoom = sPerVw
     this.jumpToCursor(this.time, 0.5, this.currentZoom)
@@ -171,10 +154,10 @@ export default class SpectogramHandler {
 
   secToPx = (sec: number) => sec * (this.vw / this.currentZoom)
   pxToSec = (px: number) => px / (this.vw / this.currentZoom)
-  getBeatLines(bpm: number, offset: number): BeatLine[] {
-    const interval = 60 / bpm
+  getBeatLines(): BeatLine[] {
+    const interval = 60 / (draggingBPM.value * bpmMultiplier.value)
     const intervalInPX = this.secToPx(interval)
-    const offsetInPX = this.secToPx(offset / 1000)
+    const offsetInPX = this.secToPx(draggingOffset.value / 1000)
     const beatOffsetOutsideWindow = this.a % intervalInPX
     const beatOffsetInsideWindow = intervalInPX - beatOffsetOutsideWindow
     const totalBeatOffsetInPX = beatOffsetInsideWindow + offsetInPX
@@ -199,7 +182,7 @@ export default class SpectogramHandler {
   }
 
   getPositionSec(positionPX: number) {
-    return this.pxToSec(this.a + positionPX) + this.offset / 1000
+    return this.pxToSec(this.a + positionPX) + draggingOffset.value / 1000
   }
 
   setSegmentSize(segmentSize: number) {
