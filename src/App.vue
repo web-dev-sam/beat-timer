@@ -5,6 +5,7 @@ import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 import FfmpegHandler from '@/utils/FfmpegHandler'
 import { guess } from 'web-audio-beat-detector'
 import { songOffsetToSilencePadding } from '@/utils/utils'
+import useAudioSettings from '@/composables/useAudioSettings'
 
 import IconsHelp from '@/components/icons/IconsHelp.vue'
 import IconsUp from '@/components/icons/IconsUp.vue'
@@ -29,7 +30,6 @@ inject()
 
 // v2.2
 // settings on own page instead of modal
-// proper vue state management (performance)
 // remove @apply rules
 // show only when everything loaded (step 1 -> 2)
 
@@ -41,16 +41,22 @@ inject()
 // Auto Volume normalization
 // Detect bpm for subsection
 
+const {
+  bpm,
+  offset,
+  draggingBPM,
+  draggingOffset,
+  setBPM,
+  setOffset,
+  setDraggingBPM,
+  setDraggingOffset,
+} = useAudioSettings()
 const state = reactive<{
   audioFile: File | null
   stopped: boolean
   playing: boolean
   myBPMGuess: number
   myOffsetGuess: number
-  bpm: number
-  draggingBPM: number
-  timingOffset: number
-  draggingOffset: number
   step: number
   fileExtension: string
   downloading: boolean
@@ -69,10 +75,6 @@ const state = reactive<{
   playing: false,
   myBPMGuess: 0,
   myOffsetGuess: 0,
-  bpm: 120,
-  draggingBPM: 120,
-  timingOffset: 0,
-  draggingOffset: 0,
   step: 0,
   fileExtension: '',
   downloading: false,
@@ -95,7 +97,7 @@ const estimateFileSize = computed(() => {
   const seconds = state.audioBuffer?.duration ?? 0
   return state.ffmpegHandler.formatFileSize(
     state.ffmpegHandler.estimateFileSize(
-      seconds + songOffsetToSilencePadding(state.bpm, state.timingOffset) / 1000,
+      seconds + songOffsetToSilencePadding(bpm.value, offset.value) / 1000,
       state.exportQuality,
     ),
   )
@@ -114,16 +116,16 @@ onUnmounted(() => {
 })
 
 watch(
-  () => state.bpm,
+  () => bpm.value,
   (newVal) => {
-    state.draggingBPM = newVal
+    setDraggingBPM(newVal)
   },
 )
 
 watch(
-  () => state.timingOffset,
+  () => offset.value,
   (newVal) => {
-    state.draggingOffset = newVal
+    setDraggingOffset(newVal)
   },
 )
 
@@ -137,7 +139,7 @@ watch(
 )
 
 const visualOffset = computed(() => {
-  return songOffsetToSilencePadding(state.bpm, state.draggingOffset)
+  return songOffsetToSilencePadding(bpm.value, draggingOffset.value)
 })
 
 async function onFileChange(event: Event) {
@@ -173,28 +175,27 @@ async function loadAudioFile(file: File) {
   state.audioBuffer = await state.ffmpegHandler.getAudioBuffer()
   try {
     const { bpm, offset } = await guess(state.audioBuffer)
-    state.myBPMGuess = state.bpm = bpm === 0 ? -1 : bpm
-    state.myOffsetGuess = state.timingOffset = Math.round((offset * 1000) / 4) * 4
+    state.myBPMGuess = bpm === 0 ? -1 : bpm
+    state.myOffsetGuess = Math.round((offset * 1000) / 4) * 4
+    setBPM(state.myBPMGuess)
+    setOffset(state.myOffsetGuess)
   } catch {
     state.myBPMGuess = -1
-    state.bpm = 120
     state.myOffsetGuess = -1
-    state.timingOffset = (30 / state.bpm) * 1000
+    setBPM(120)
+    setOffset((30 / bpm.value) * 1000)
   }
   state.step = 1
 }
 
 function onBPMChange(bpm: number) {
-  state.bpm = state.draggingBPM = bpm
+  setBPM(bpm)
+  setDraggingBPM(bpm)
 }
 
 function onTimingOffsetChange(offset: number) {
-  state.timingOffset = state.draggingOffset = offset
-}
-
-function onBPMOffsetDraggingChange(bpm: number, offset: number) {
-  state.draggingBPM = bpm
-  state.draggingOffset = offset
+  setOffset(offset)
+  setDraggingOffset(offset)
 }
 
 function onActiveBeatlineChange(type: 'BPM' | 'OFFSET') {
@@ -212,7 +213,7 @@ function goBackToTiming() {
 
 async function download() {
   state.downloading = true
-  await state.ffmpegHandler.download(state.bpm, state.timingOffset, state.exportQuality)
+  await state.ffmpegHandler.download(bpm.value, offset.value, state.exportQuality)
   state.downloading = false
 }
 
@@ -223,7 +224,7 @@ function toggleZoom() {
 
 function onMetronome(time: number) {
   if (spectogramRef.value) {
-    spectogramRef.value.onMetronome(time)
+    spectogramRef.value.onMetronome(time, time === 0)
   }
 }
 
@@ -252,12 +253,10 @@ function toggleAdvancedSettings() {
 
 function onManualBPMEdit(value: number) {
   onBPMChange(value)
-  spectogramRef.value?.changeBPM(value)
 }
 
 function onManualOffsetEdit(value: number) {
-  onTimingOffsetChange(60000 / state.bpm - value)
-  spectogramRef.value?.changeOffset(60000 / state.bpm - value)
+  onTimingOffsetChange(60000 / bpm.value - value)
 }
 
 function handleDragEnter(_: DragEvent) {
@@ -402,7 +401,7 @@ function preventDefaults(e: Event) {
             <div>
               <UValueEdit
                 :invisible="state.activeModifier !== 'BPM'"
-                :value="state.draggingBPM"
+                :value="draggingBPM"
                 @change="onManualBPMEdit"
                 type="BPM"
                 :reversed="false"
@@ -415,12 +414,7 @@ function preventDefaults(e: Event) {
             v-if="state.step > 0 && state.audioBuffer"
             ref="spectogramRef"
             :audio-buffer="state.audioBuffer"
-            :initial-offset="state.timingOffset"
-            :initial-bpm="state.bpm"
-            @bpm-change="onBPMChange"
-            @offset-change="onTimingOffsetChange"
             @drag-start="pauseAudio"
-            @bpm-offset-change="onBPMOffsetDraggingChange"
             @active-beatline-change="onActiveBeatlineChange"
           />
           <div class="mx-12 mt-6 flex justify-between" prevent-user-select>
@@ -504,9 +498,7 @@ function preventDefaults(e: Event) {
         <AudioPlayer
           v-if="state.step === 1 && state.audioBuffer"
           ref="audioPlayerRef"
-          :bpm="state.bpm"
           :audio-buffer="state.audioBuffer"
-          :timing-offset="state.timingOffset"
           @metronome="onMetronome"
           @seek="onSeek"
         />

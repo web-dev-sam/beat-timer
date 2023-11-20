@@ -2,21 +2,21 @@
 import { reactive, computed, watch, ref, onMounted, nextTick } from 'vue'
 import SpectogramHandler, { type BeatLine } from '@/utils/SpectogramHandler'
 import { songOffsetToSilencePadding } from '@/utils/utils'
+import useAudioSettings from '@/composables/useAudioSettings'
 
 const props = defineProps<{
   audioBuffer: AudioBuffer
-  initialBpm: number
-  initialOffset: number
 }>()
 
 const emit = defineEmits<{
-  (e: 'bpm-change', bpm: number): void
-  (e: 'offset-change', offset: number): void
   (e: 'drag-start'): void
-  (e: 'bpm-offset-change', bpm: number, offset: number): void
   (e: 'active-beatline-change', type: 'BPM' | 'OFFSET'): void
 }>()
 
+const { bpm, offset, draggingOffset, setBPM, setOffset, setDraggingBPM, setDraggingOffset } =
+  useAudioSettings()
+const initialBpm = bpm.value
+const initialOffset = offset.value
 const state = reactive<{
   spectogramHandler: SpectogramHandler | null
   beatlines: BeatLine[]
@@ -26,11 +26,7 @@ const state = reactive<{
   }
   dragStart: number | null
   hovering: boolean | null
-  bpm: number | null
-  offset: number | null
   progress: number
-  draggingBPM: number
-  draggingOffset: number
   mouseX: number
   spectogramDataURL: string
   dragTarget: 'new-start' | 'beat-line' | null
@@ -43,11 +39,7 @@ const state = reactive<{
   },
   dragStart: null,
   hovering: null,
-  bpm: null,
-  offset: null,
   progress: 0,
-  draggingBPM: 0,
-  draggingOffset: 0,
   mouseX: 0,
   spectogramDataURL: '',
   dragTarget: null,
@@ -61,8 +53,8 @@ const progressPX = computed(() => {
 })
 
 const visualOffset = computed(() => {
-  if (state.bpm != null && state.draggingOffset != null) {
-    return songOffsetToSilencePadding(state.bpm, state.draggingOffset)
+  if (bpm.value != null && draggingOffset.value != null) {
+    return songOffsetToSilencePadding(bpm.value, draggingOffset.value)
   }
   return 0
 })
@@ -97,28 +89,26 @@ const hoverBeat = computed(() => {
   }
 
   return Math.round(
-    state.spectogramHandler.pxToSec(state.mouseX - newStartPosition.value) / (60 / state.bpm!),
+    state.spectogramHandler.pxToSec(state.mouseX - newStartPosition.value) / (60 / bpm.value),
   )
 })
 
 watch(
-  () => state.bpm,
+  () => bpm.value,
   (bpm) => {
-    if (bpm != null && bpm !== props.initialBpm) {
-      state.draggingBPM = bpm
-      state.spectogramHandler?.setBPM(bpm)
-      emit('bpm-change', bpm)
+    if (bpm != null && bpm !== initialBpm) {
+      setBPM(bpm)
+      setDraggingBPM(bpm)
     }
   },
 )
 
 watch(
-  () => state.offset,
+  () => offset.value,
   (offset) => {
-    if (offset != null && offset !== props.initialOffset) {
-      state.draggingOffset = offset
-      state.spectogramHandler?.setOffset(offset)
-      emit('offset-change', offset)
+    if (offset != null && offset !== initialOffset) {
+      setOffset(offset)
+      setDraggingOffset(offset)
     }
   },
 )
@@ -133,14 +123,14 @@ watch(
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const canvasImg = ref<HTMLDivElement | null>(null)
 onMounted(async () => {
-  state.bpm = state.draggingBPM = props.initialBpm
-  state.offset = state.draggingOffset = props.initialOffset
+  setBPM(initialBpm)
+  setDraggingBPM(initialBpm)
+  setOffset(initialOffset)
+  setDraggingOffset(initialOffset)
   state.spectogramHandler = new SpectogramHandler({
     audioBuffer: props.audioBuffer,
     canvas: canvasRef.value!,
     canvasImg: canvasImg.value!,
-    bpm: props.initialBpm,
-    offset: props.initialOffset,
     onBeatlineUpdate: (beatlines) => {
       state.beatlines = beatlines
     },
@@ -214,38 +204,33 @@ function onCanvasMouseMove(event: MouseEvent) {
 function updateOnBPMDrag(dragChange: number, fromBeatline: { time: number }) {
   const snapPrecision = 1
   const bpmDiff = dragChange / 40
-  const newBPM = Math.round((state.bpm! + bpmDiff) / snapPrecision) * snapPrecision
-  state.draggingBPM = newBPM
-  state.spectogramHandler!.setBPM(newBPM)
+  const newBPM = Math.round((bpm.value + bpmDiff) / snapPrecision) * snapPrecision
+  setDraggingBPM(newBPM)
 
   const interval = 60 / newBPM
   const activeBeatlineTime = fromBeatline.time
   const newOffset = (activeBeatlineTime % interval) * 1000
 
-  state.draggingOffset = newOffset
-  state.spectogramHandler!.setOffset(newOffset)
+  setDraggingOffset(newOffset)
 
-  emit('bpm-offset-change', newBPM, newOffset)
   return [newBPM, newOffset]
 }
 
 function updateOnOffsetDrag(dragChange: number) {
   const offsetDiff = dragChange / 4
-  const newOffset = state.offset! - offsetDiff
-  state.draggingOffset = newOffset
-  state.spectogramHandler!.setOffset(newOffset)
+  const newOffset = offset.value - offsetDiff
 
-  emit('bpm-offset-change', state.bpm!, newOffset)
+  setDraggingBPM(bpm.value)
+  setDraggingOffset(newOffset)
   return newOffset
 }
 
 function updateOnOffsetDragNormal(dragChange: number) {
   const offsetDiff = state.spectogramHandler?.pxToSec(dragChange) ?? 0
-  const newOffset = state.offset! - offsetDiff * 1000
-  state.draggingOffset = newOffset
-  state.spectogramHandler!.setOffset(newOffset)
+  const newOffset = offset.value! - offsetDiff * 1000
 
-  emit('bpm-offset-change', state.bpm!, newOffset)
+  setDraggingBPM(bpm.value!)
+  setDraggingOffset(newOffset)
   return newOffset
 }
 
@@ -282,15 +267,15 @@ function onCanvasMouseUp(event: MouseEvent) {
       state.dragStart - event.clientX,
       state.activeBeatline.data,
     )
-    state.bpm = newBPM
-    state.offset = newOffset
+    setBPM(newBPM)
+    setOffset(newOffset)
   }
 
   // Update Offset
   if (state.dragStart != null && state.activeBeatline.type === 'OFFSET') {
     const updater = state.dragTarget === 'new-start' ? updateOnOffsetDragNormal : updateOnOffsetDrag
     const newOffset = updater(state.dragStart - event.clientX)
-    state.offset = newOffset
+    setOffset(newOffset)
   }
 
   state.dragStart = null
@@ -312,14 +297,6 @@ function onMetronome(time: number, seeked: boolean = false) {
   }
 }
 
-function changeBPM(value: number) {
-  state.bpm = value
-}
-
-function changeOffset(value: number) {
-  state.offset = value
-}
-
 function formatMS(ms: number) {
   if (Math.abs(ms) < 1000) {
     return `${ms}ms`
@@ -329,8 +306,6 @@ function formatMS(ms: number) {
 
 defineExpose({
   onMetronome,
-  changeBPM,
-  changeOffset,
   setZoomLevel,
 })
 </script>
