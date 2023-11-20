@@ -11,6 +11,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'drag-start'): void
   (e: 'active-beatline-change', type: 'BPM' | 'OFFSET'): void
+  (e: 'loaded'): void
 }>()
 
 const { bpm, offset, draggingOffset, setBPM, setOffset, setDraggingBPM, setDraggingOffset } =
@@ -138,6 +139,7 @@ onMounted(async () => {
 
   await state.spectogramHandler.generateSpectogram()
   state.spectogramDataURL = state.spectogramHandler.canvasToTransparentImage()
+
   nextTick(() => {
     document.body.addEventListener('mousemove', (e) => {
       state.mouseX = e.clientX
@@ -151,6 +153,7 @@ onMounted(async () => {
     document.body.addEventListener('mouseup', (e) => {
       onCanvasMouseUp(e)
     })
+    emit('loaded')
   })
 })
 

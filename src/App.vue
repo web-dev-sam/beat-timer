@@ -28,10 +28,6 @@ import URange from '@/components/u/URange.vue'
 const version = APP_VERSION
 inject()
 
-// v2.2
-// remove @apply rules
-// show only when everything loaded (step 1 -> 2)
-
 // v2.3
 // Scroll for zooming
 // e2e/unit tests
@@ -69,6 +65,8 @@ const state = reactive<{
   activeModifier: 'BPM' | 'OFFSET'
   isDragOver: boolean
   helpPageVisible: boolean
+  specLoading: boolean
+  startedLoading: boolean
 }>({
   audioFile: null,
   stopped: true,
@@ -88,6 +86,20 @@ const state = reactive<{
   activeModifier: 'BPM',
   isDragOver: false,
   helpPageVisible: false,
+  specLoading: true,
+  startedLoading: false,
+})
+
+onMounted(() => {
+  ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
+    document.body.addEventListener(eventName, preventDefaults)
+  })
+})
+
+onUnmounted(() => {
+  ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
+    document.body.removeEventListener(eventName, preventDefaults)
+  })
 })
 
 const estimateFileSize = computed(() => {
@@ -102,18 +114,6 @@ const estimateFileSize = computed(() => {
       state.exportQuality,
     ),
   )
-})
-
-onMounted(() => {
-  ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
-    document.body.addEventListener(eventName, preventDefaults)
-  })
-})
-
-onUnmounted(() => {
-  ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
-    document.body.removeEventListener(eventName, preventDefaults)
-  })
 })
 
 watch(
@@ -139,6 +139,18 @@ watch(
   },
 )
 
+watch(
+  () =>
+    (!state.initialSelectFileLoading || !state.initialExampleFileLoading) &&
+    !state.specLoading &&
+    state.startedLoading,
+  (loaded) => {
+    if (loaded) {
+      state.step = 'edit'
+    }
+  },
+)
+
 const visualOffset = computed(() => {
   return songOffsetToSilencePadding(bpm.value, draggingOffset.value)
 })
@@ -151,12 +163,14 @@ async function onFileChange(event: Event) {
   }
 
   state.initialSelectFileLoading = true
+  state.startedLoading = true
   await loadAudioFile(input.files[0])
   state.initialSelectFileLoading = false
 }
 
 function loadExampleFile() {
   state.initialExampleFileLoading = true
+  state.startedLoading = true
   fetch('/audios/sample.mp3')
     .then((res) => res.blob())
     .then(async (blob) => {
@@ -186,7 +200,6 @@ async function loadAudioFile(file: File) {
     setBPM(120)
     setOffset((30 / bpm.value) * 1000)
   }
-  state.step = 'edit'
 }
 
 function onBPMChange(bpm: number) {
@@ -287,7 +300,8 @@ function preventDefaults(e: Event) {
   <div
     class="h-screen bg-purple-28 transition-all"
     :style="{
-      padding: state.isDragOver && state.step === 'start' ? '0.5rem' : '0',
+      padding:
+        state.isDragOver && state.step === 'start' && !state.helpPageVisible ? '0.5rem' : '0',
     }"
   >
     <div
@@ -376,7 +390,9 @@ function preventDefaults(e: Event) {
         <template #right>
           <UButton
             v-if="state.step === 'start'"
-            :loading="state.initialExampleFileLoading"
+            :loading="
+              (state.initialExampleFileLoading || state.specLoading) && state.startedLoading
+            "
             @click="loadExampleFile"
             :secondary="true"
           >
@@ -395,7 +411,12 @@ function preventDefaults(e: Event) {
               You can drag and drop your song here, or click to select a file.
             </p>
             <div class="mb-12 mt-2">
-              <UFileInput :loading="state.initialSelectFileLoading" @change="onFileChange">
+              <UFileInput
+                :loading="
+                  (state.initialSelectFileLoading || state.specLoading) && state.startedLoading
+                "
+                @change="onFileChange"
+              >
                 Select file
               </UFileInput>
             </div>
@@ -419,11 +440,12 @@ function preventDefaults(e: Event) {
             <h2 class="h2"></h2>
           </div>
           <USpectogram
-            v-if="state.step !== 'start' && state.audioBuffer"
+            v-if="state.audioBuffer"
             ref="spectogramRef"
             :audio-buffer="state.audioBuffer"
             @drag-start="pauseAudio"
             @active-beatline-change="onActiveBeatlineChange"
+            @loaded="state.specLoading = false"
           />
           <div class="mx-12 mt-6 flex justify-between" prevent-user-select>
             <UValueEdit
