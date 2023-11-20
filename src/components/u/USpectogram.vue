@@ -155,7 +155,6 @@ onMounted(async () => {
     })
 
     const reinitSpectogramHandler = debounce(async () => {
-      console.log('reinit')
       if (state.spectogramHandler) {
         state.spectogramHandler.dispose()
       }

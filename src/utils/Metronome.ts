@@ -35,14 +35,12 @@ export default class Metronome {
     })
 
     watch(bpmMultiplier, () => {
-      console.log('bpmMultiplier changed')
       this.updateMetronomeInterval()
     })
   }
 
   private updateMetronomeInterval() {
     if (this.isPlaying && this.metronomeNode) {
-      console.log('bpmMultiplier changed fr', bpmMultiplier.value)
       this.metronomeNode.parameters
         .get('interval')
         ?.setValueAtTime(
