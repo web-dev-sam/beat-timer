@@ -169,7 +169,7 @@ onMounted(async () => {
       })
       await state.spectogramHandler.generateSpectogram()
       state.spectogramDataURL = state.spectogramHandler.canvasToTransparentImage()
-    }, 1000)
+    }, 250)
 
     window.addEventListener('resize', reinitSpectogramHandler)
     emit('loaded')
