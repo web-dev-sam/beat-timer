@@ -56,8 +56,10 @@ const state = reactive<{
   fileExtension: string
   downloading: boolean
   audioBuffer: AudioBuffer | null
-  initialExampleFileLoading: boolean
-  initialSelectFileLoading: boolean
+  startedExampleLoading: boolean
+  startedManualLoading: boolean
+  audioLoaded: boolean
+  specLoaded: boolean
   advancedSettingsOpen: boolean
   exportQuality: number
   ffmpegHandler: FfmpegHandler
@@ -65,8 +67,6 @@ const state = reactive<{
   activeModifier: 'BPM' | 'OFFSET'
   isDragOver: boolean
   helpPageVisible: boolean
-  specLoading: boolean
-  startedLoading: boolean
 }>({
   audioFile: null,
   stopped: true,
@@ -77,8 +77,10 @@ const state = reactive<{
   fileExtension: '',
   downloading: false,
   audioBuffer: null,
-  initialExampleFileLoading: false,
-  initialSelectFileLoading: false,
+  startedExampleLoading: false,
+  startedManualLoading: false,
+  audioLoaded: false,
+  specLoaded: false,
   advancedSettingsOpen: false,
   exportQuality: 8,
   ffmpegHandler: new FfmpegHandler(),
@@ -86,8 +88,6 @@ const state = reactive<{
   activeModifier: 'BPM',
   isDragOver: false,
   helpPageVisible: false,
-  specLoading: true,
-  startedLoading: false,
 })
 
 onMounted(() => {
@@ -141,9 +141,9 @@ watch(
 
 watch(
   () =>
-    (!state.initialSelectFileLoading || !state.initialExampleFileLoading) &&
-    !state.specLoading &&
-    state.startedLoading,
+    (state.startedExampleLoading || state.startedManualLoading) &&
+    state.audioLoaded &&
+    state.specLoaded,
   (loaded) => {
     if (loaded) {
       state.step = 'edit'
@@ -162,15 +162,12 @@ async function onFileChange(event: Event) {
     return
   }
 
-  state.initialSelectFileLoading = true
-  state.startedLoading = true
+  state.startedManualLoading = true
   await loadAudioFile(input.files[0])
-  state.initialSelectFileLoading = false
 }
 
 function loadExampleFile() {
-  state.initialExampleFileLoading = true
-  state.startedLoading = true
+  state.startedExampleLoading = true
   fetch('/audios/sample.mp3')
     .then((res) => res.blob())
     .then(async (blob) => {
@@ -179,7 +176,7 @@ function loadExampleFile() {
           type: 'audio/mp3',
         }),
       )
-      state.initialExampleFileLoading = false
+      state.audioLoaded = true
     })
 }
 
@@ -286,9 +283,9 @@ async function handleDrop(event: DragEvent) {
   if (!file.type.startsWith('audio/')) return
   if (state.step !== 'start') return
 
-  state.initialSelectFileLoading = true
+  state.startedManualLoading = true
   await loadAudioFile(file)
-  state.initialSelectFileLoading = false
+  state.audioLoaded = true
 }
 
 function preventDefaults(e: Event) {
@@ -390,9 +387,7 @@ function preventDefaults(e: Event) {
         <template #right>
           <UButton
             v-if="state.step === 'start'"
-            :loading="
-              (state.initialExampleFileLoading || state.specLoading) && state.startedLoading
-            "
+            :class="{ invisiblyat: state.startedExampleLoading }"
             @click="loadExampleFile"
             :secondary="true"
           >
@@ -413,7 +408,8 @@ function preventDefaults(e: Event) {
             <div class="mb-12 mt-2">
               <UFileInput
                 :loading="
-                  (state.initialSelectFileLoading || state.specLoading) && state.startedLoading
+                  (state.startedExampleLoading || state.startedManualLoading) &&
+                  !(state.audioLoaded && state.specLoaded)
                 "
                 @change="onFileChange"
               >
@@ -445,7 +441,7 @@ function preventDefaults(e: Event) {
             :audio-buffer="state.audioBuffer"
             @drag-start="pauseAudio"
             @active-beatline-change="onActiveBeatlineChange"
-            @loaded="state.specLoading = false"
+            @loaded="state.specLoaded = true"
           />
           <div class="mx-12 mt-6 flex justify-between" prevent-user-select>
             <UValueEdit

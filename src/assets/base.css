@@ -146,6 +146,11 @@ a:hover {
   box-shadow: var(--color-primary-60) 0px 0px 2em;
 }
 
+.invisiblyat {
+  opacity: 0;
+  pointer-events: none;
+}
+
 [tooltip] {
   position: relative;
 }
