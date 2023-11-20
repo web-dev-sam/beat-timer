@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive, computed, watch, ref, onMounted, nextTick } from 'vue'
 import SpectogramHandler, { type BeatLine } from '@/utils/SpectogramHandler'
-import { songOffsetToSilencePadding } from '@/utils/utils'
+import { debounce, songOffsetToSilencePadding } from '@/utils/utils'
 import useAudioSettings from '@/composables/useAudioSettings'
 
 const props = defineProps<{
@@ -153,6 +153,25 @@ onMounted(async () => {
     document.body.addEventListener('mouseup', (e) => {
       onCanvasMouseUp(e)
     })
+
+    const reinitSpectogramHandler = debounce(async () => {
+      console.log('reinit')
+      if (state.spectogramHandler) {
+        state.spectogramHandler.dispose()
+      }
+      state.spectogramHandler = new SpectogramHandler({
+        audioBuffer: props.audioBuffer,
+        canvas: canvasRef.value!,
+        canvasImg: canvasImg.value!,
+        onBeatlineUpdate: (beatlines) => {
+          state.beatlines = beatlines
+        },
+      })
+      await state.spectogramHandler.generateSpectogram()
+      state.spectogramDataURL = state.spectogramHandler.canvasToTransparentImage()
+    }, 1000)
+
+    window.addEventListener('resize', reinitSpectogramHandler)
     emit('loaded')
   })
 })

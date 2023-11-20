@@ -87,3 +87,17 @@ export function openGitHubIssue(debugInfo: Record<string, string>) {
   )}`
   window.open(githubIssueUrl, '_blank')
 }
+
+export function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number = 1000,
+): (...funcArgs: Parameters<T>) => void {
+  let timeoutId: number | undefined
+
+  return function (...args: Parameters<T>) {
+    clearTimeout(timeoutId)
+    timeoutId = window.setTimeout(() => {
+      func(...args)
+    }, wait)
+  }
+}

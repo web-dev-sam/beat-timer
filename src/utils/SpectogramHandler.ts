@@ -74,6 +74,10 @@ export default class SpectogramHandler {
     })
   }
 
+  dispose() {
+    this.workers.forEach((w) => w.terminate())
+  }
+
   initWorkers() {
     return new Array(Math.max(Math.min(navigator.hardwareConcurrency || 4, 12), 4))
       .fill(null)
