@@ -135,11 +135,7 @@ a:hover {
 }
 
 .auto-flow-small > * + * {
-  @apply mt-2;
-}
-
-.container {
-  @apply mx-auto my-0;
+  margin-top: 0.5rem;
 }
 
 .glow {
@@ -150,16 +146,8 @@ a:hover {
   box-shadow: var(--color-primary-60) 0px 0px 2em;
 }
 
-.btn {
-  @apply inline-flex cursor-pointer items-center justify-center rounded border-none bg-primary fill-current px-6 py-3 text-sm font-medium text-white ring-purple-28 hover:ring-4;
-}
-
-.btn-secondary {
-  @apply bg-gray-900 hover:bg-gray-800 hover:ring-0;
-}
-
 [tooltip] {
-  @apply relative;
+  position: relative;
 }
 
 [tooltip]::after {
@@ -194,6 +182,10 @@ a:hover {
 
 .h-screen {
   height: 100lvh;
+}
+
+.min-h-screen {
+  min-height: 100vh;
 }
 
 @supports (scrollbar-color: white var(--color-primary-28)) {

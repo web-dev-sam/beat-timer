@@ -306,7 +306,7 @@ function preventDefaults(e: Event) {
           </button>
           <div
             v-if="state.helpPageVisible"
-            class="help-page auto-flow-small fixed left-0 top-0 z-10 min-h-screen min-w-full bg-dark text-center"
+            class="auto-flow-small fixed left-0 top-0 z-10 min-h-screen min-w-full bg-dark text-center"
           >
             <button
               @click="state.helpPageVisible = false"
@@ -378,7 +378,7 @@ function preventDefaults(e: Event) {
             v-if="state.step === 'start'"
             :loading="state.initialExampleFileLoading"
             @click="loadExampleFile"
-            class="btn-secondary"
+            :secondary="true"
           >
             Use Example
           </UButton>
@@ -524,10 +524,6 @@ function preventDefaults(e: Event) {
 <style scoped>
 strong {
   color: var(--color-primary-light);
-}
-
-.help-page {
-  min-height: 100lvh;
 }
 
 .light {
