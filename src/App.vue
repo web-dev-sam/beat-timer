@@ -1,32 +1,32 @@
 <script setup lang="ts">
-import { inject } from '@vercel/analytics'
-import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
+import { inject } from "@vercel/analytics";
+import { ref, reactive, computed, watch, onMounted, onUnmounted } from "vue";
 
-import FfmpegHandler from '@/utils/FfmpegHandler'
-import { guess } from 'web-audio-beat-detector'
-import { songOffsetToSilencePadding } from '@/utils/utils'
-import useAudioSettings from '@/composables/useAudioSettings'
+import FfmpegHandler from "@/utils/FfmpegHandler";
+import { guess } from "web-audio-beat-detector";
+import { songOffsetToSilencePadding } from "@/utils/utils";
+import useAudioSettings from "@/composables/useAudioSettings";
 
-import IconsHelp from '@/components/icons/IconsHelp.vue'
-import IconsUp from '@/components/icons/IconsUp.vue'
-import IconsDown from '@/components/icons/IconsDown.vue'
-import IconsZoomOut from '@/components/icons/IconsZoomOut.vue'
-import IconsZoomIn from '@/components/icons/IconsZoomIn.vue'
-import IconsClose from '@/components/icons/IconsClose.vue'
+import IconsHelp from "@/components/icons/IconsHelp.vue";
+import IconsUp from "@/components/icons/IconsUp.vue";
+import IconsDown from "@/components/icons/IconsDown.vue";
+import IconsZoomOut from "@/components/icons/IconsZoomOut.vue";
+import IconsZoomIn from "@/components/icons/IconsZoomIn.vue";
+import IconsClose from "@/components/icons/IconsClose.vue";
 
-import AudioPlayer from '@/components/AudioPlayer.vue'
-import FooterArea from '@/components/FooterArea.vue'
-import HeaderButtons from '@/components/HeaderButtons.vue'
-import Step from '@/components/PageStep.vue'
+import AudioPlayer from "@/components/AudioPlayer.vue";
+import FooterArea from "@/components/FooterArea.vue";
+import HeaderButtons from "@/components/HeaderButtons.vue";
+import Step from "@/components/PageStep.vue";
 
-import USpectogram from '@/components/u/USpectogram.vue'
-import UFileInput from '@/components/u/UFileInput.vue'
-import UButton from '@/components/u/UButton.vue'
-import UValueEdit from '@/components/u/UValueEdit.vue'
-import URange from '@/components/u/URange.vue'
+import USpectogram from "@/components/u/USpectogram.vue";
+import UFileInput from "@/components/u/UFileInput.vue";
+import UButton from "@/components/u/UButton.vue";
+import UValueEdit from "@/components/u/UValueEdit.vue";
+import URange from "@/components/u/URange.vue";
 
-const version = APP_VERSION
-inject()
+const version = APP_VERSION;
+inject();
 
 // v2.3
 // Scroll for zooming
@@ -45,36 +45,36 @@ const {
   setOffset,
   setDraggingBPM,
   setDraggingOffset,
-} = useAudioSettings()
+} = useAudioSettings();
 const state = reactive<{
-  audioFile: File | null
-  stopped: boolean
-  playing: boolean
-  myBPMGuess: number
-  myOffsetGuess: number
-  step: 'start' | 'edit' | 'export'
-  fileExtension: string
-  downloading: boolean
-  audioBuffer: AudioBuffer | null
-  startedExampleLoading: boolean
-  startedManualLoading: boolean
-  audioLoaded: boolean
-  specLoaded: boolean
-  advancedSettingsOpen: boolean
-  exportQuality: number
-  ffmpegHandler: FfmpegHandler
-  zoomLevel: number
-  activeModifier: 'BPM' | 'OFFSET'
-  isDragOver: boolean
-  helpPageVisible: boolean
+  audioFile: File | null;
+  stopped: boolean;
+  playing: boolean;
+  myBPMGuess: number;
+  myOffsetGuess: number;
+  step: "start" | "edit" | "export";
+  fileExtension: string;
+  downloading: boolean;
+  audioBuffer: AudioBuffer | null;
+  startedExampleLoading: boolean;
+  startedManualLoading: boolean;
+  audioLoaded: boolean;
+  specLoaded: boolean;
+  advancedSettingsOpen: boolean;
+  exportQuality: number;
+  ffmpegHandler: FfmpegHandler;
+  zoomLevel: number;
+  activeModifier: "BPM" | "OFFSET";
+  isDragOver: boolean;
+  helpPageVisible: boolean;
 }>({
   audioFile: null,
   stopped: true,
   playing: false,
   myBPMGuess: 0,
   myOffsetGuess: 0,
-  step: 'start',
-  fileExtension: '',
+  step: "start",
+  fileExtension: "",
   downloading: false,
   audioBuffer: null,
   startedExampleLoading: false,
@@ -85,59 +85,59 @@ const state = reactive<{
   exportQuality: 8,
   ffmpegHandler: new FfmpegHandler(),
   zoomLevel: 15,
-  activeModifier: 'BPM',
+  activeModifier: "BPM",
   isDragOver: false,
   helpPageVisible: false,
-})
+});
 
 onMounted(() => {
-  ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
-    document.body.addEventListener(eventName, preventDefaults)
-  })
-})
+  ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+    document.body.addEventListener(eventName, preventDefaults);
+  });
+});
 
 onUnmounted(() => {
-  ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
-    document.body.removeEventListener(eventName, preventDefaults)
-  })
-})
+  ["dragenter", "dragover", "dragleave", "drop"].forEach((eventName) => {
+    document.body.removeEventListener(eventName, preventDefaults);
+  });
+});
 
 const estimateFileSize = computed(() => {
   if (!state.audioBuffer || !state.ffmpegHandler) {
-    return 0
+    return 0;
   }
 
-  const seconds = state.audioBuffer?.duration ?? 0
+  const seconds = state.audioBuffer?.duration ?? 0;
   return state.ffmpegHandler.formatFileSize(
     state.ffmpegHandler.estimateFileSize(
       seconds + songOffsetToSilencePadding(bpm.value, offset.value) / 1000,
       state.exportQuality,
     ),
-  )
-})
+  );
+});
 
 watch(
   () => bpm.value,
   (newVal) => {
-    setDraggingBPM(newVal)
+    setDraggingBPM(newVal);
   },
-)
+);
 
 watch(
   () => offset.value,
   (newVal) => {
-    setDraggingOffset(newVal)
+    setDraggingOffset(newVal);
   },
-)
+);
 
 watch(
   () => state.zoomLevel,
   (newVal) => {
     if (spectogramRef.value) {
-      spectogramRef.value.setZoomLevel(newVal)
+      spectogramRef.value.setZoomLevel(newVal);
     }
   },
-)
+);
 
 watch(
   () =>
@@ -146,151 +146,155 @@ watch(
     state.specLoaded,
   (loaded) => {
     if (loaded) {
-      state.step = 'edit'
+      state.step = "edit";
     }
   },
-)
+);
 
 const visualOffset = computed(() => {
-  return songOffsetToSilencePadding(bpm.value, draggingOffset.value)
-})
+  return songOffsetToSilencePadding(bpm.value, draggingOffset.value);
+});
 
 async function onFileChange(event: Event) {
-  event.preventDefault()
-  const input = event.target as HTMLInputElement
+  event.preventDefault();
+  const input = event.target as HTMLInputElement;
   if (!input.files || input.files.length === 0) {
-    return
+    return;
   }
 
-  state.startedManualLoading = true
-  await loadAudioFile(input.files[0])
-  state.audioLoaded = true
+  state.startedManualLoading = true;
+  await loadAudioFile(input.files[0]);
+  state.audioLoaded = true;
 }
 
 function loadExampleFile() {
-  state.startedExampleLoading = true
-  fetch('/audios/sample.mp3')
+  state.startedExampleLoading = true;
+  fetch("/audios/sample.mp3")
     .then((res) => res.blob())
     .then(async (blob) => {
       await loadAudioFile(
-        new File([blob], 'sample.mp3', {
-          type: 'audio/mp3',
+        new File([blob], "sample.mp3", {
+          type: "audio/mp3",
         }),
-      )
-      state.audioLoaded = true
-    })
+      );
+      state.audioLoaded = true;
+    });
 }
 
 async function loadAudioFile(file: File) {
-  state.audioFile = file
-  state.fileExtension = file.name.split('.').pop() ?? ''
-  await state.ffmpegHandler.loadAudio(state.audioFile)
-  state.audioBuffer = await state.ffmpegHandler.getAudioBuffer()
+  state.audioFile = file;
+  state.fileExtension = file.name.split(".").pop() ?? "";
+  await state.ffmpegHandler.loadAudio(state.audioFile);
+  state.audioBuffer = await state.ffmpegHandler.getAudioBuffer();
   try {
-    const { bpm, offset } = await guess(state.audioBuffer)
-    state.myBPMGuess = bpm === 0 ? -1 : bpm
-    state.myOffsetGuess = Math.round((offset * 1000) / 4) * 4
-    setBPM(state.myBPMGuess)
-    setOffset(state.myOffsetGuess)
+    const { bpm, offset } = await guess(state.audioBuffer);
+    state.myBPMGuess = bpm === 0 ? -1 : bpm;
+    state.myOffsetGuess = Math.round((offset * 1000) / 4) * 4;
+    setBPM(state.myBPMGuess);
+    setOffset(state.myOffsetGuess);
   } catch {
-    state.myBPMGuess = -1
-    state.myOffsetGuess = -1
-    setBPM(120)
-    setOffset((30 / bpm.value) * 1000)
+    state.myBPMGuess = -1;
+    state.myOffsetGuess = -1;
+    setBPM(120);
+    setOffset((30 / bpm.value) * 1000);
   }
 }
 
 function onBPMChange(bpm: number) {
-  setBPM(bpm)
-  setDraggingBPM(bpm)
+  setBPM(bpm);
+  setDraggingBPM(bpm);
 }
 
 function onTimingOffsetChange(offset: number) {
-  setOffset(offset)
-  setDraggingOffset(offset)
+  setOffset(offset);
+  setDraggingOffset(offset);
 }
 
-function onActiveBeatlineChange(type: 'BPM' | 'OFFSET') {
-  state.activeModifier = type
+function onActiveBeatlineChange(type: "BPM" | "OFFSET") {
+  state.activeModifier = type;
 }
 
 function goToDownloadStep() {
-  pauseAudio()
-  state.step = 'export'
+  pauseAudio();
+  state.step = "export";
 }
 
 function goBackToTiming() {
-  state.step = 'edit'
+  state.step = "edit";
 }
 
 async function download() {
-  state.downloading = true
-  await state.ffmpegHandler.download(bpm.value, offset.value, state.exportQuality)
-  state.downloading = false
+  state.downloading = true;
+  await state.ffmpegHandler.download(
+    bpm.value,
+    offset.value,
+    state.exportQuality,
+  );
+  state.downloading = false;
 }
 
-const spectogramRef = ref<InstanceType<typeof USpectogram> | null>(null)
+const spectogramRef = ref<InstanceType<typeof USpectogram> | null>(null);
 function toggleZoom() {
-  state.zoomLevel = state.zoomLevel === 15 ? 3 : 15
+  state.zoomLevel = state.zoomLevel === 15 ? 3 : 15;
 }
 
 function onMetronome(time: number) {
   if (spectogramRef.value) {
-    spectogramRef.value.onMetronome(time, time === 0)
+    spectogramRef.value.onMetronome(time, time === 0);
   }
 }
 
 function onSeek(time: number) {
   if (spectogramRef.value) {
-    spectogramRef.value.onMetronome(time, true)
+    spectogramRef.value.onMetronome(time, true);
   }
 }
 
-const audioPlayerRef = ref<InstanceType<typeof AudioPlayer> | null>(null)
+const audioPlayerRef = ref<InstanceType<typeof AudioPlayer> | null>(null);
 function pauseAudio() {
-  if (state.step === 'edit' && audioPlayerRef.value) {
-    audioPlayerRef.value.pause()
+  if (state.step === "edit" && audioPlayerRef.value) {
+    audioPlayerRef.value.pause();
   }
 }
 
 function toggleAdvancedSettings() {
-  state.advancedSettingsOpen = !state.advancedSettingsOpen
+  state.advancedSettingsOpen = !state.advancedSettingsOpen;
 }
 
 function onManualBPMEdit(value: number) {
-  onBPMChange(value)
+  onBPMChange(value);
 }
 
 function onManualOffsetEdit(value: number) {
-  onTimingOffsetChange(60000 / bpm.value - value)
+  onTimingOffsetChange(60000 / bpm.value - value);
 }
 
 function handleDragEnter(_: DragEvent) {
-  _.preventDefault()
-  state.isDragOver = true
+  _.preventDefault();
+  state.isDragOver = true;
 }
 
 function handleDragLeave(_: DragEvent) {
-  _.preventDefault()
-  state.isDragOver = false
+  _.preventDefault();
+  state.isDragOver = false;
 }
 
 async function handleDrop(event: DragEvent) {
-  state.isDragOver = false
-  const files = Array.from(event.dataTransfer?.files ?? [])
-  if (files.length === 0) return
+  state.isDragOver = false;
+  const files = Array.from(event.dataTransfer?.files ?? []);
+  if (files.length === 0) return;
 
-  const file = files[0]
-  if (!file.type.startsWith('audio/')) return
-  if (state.step !== 'start') return
+  const file = files[0];
+  if (!file.type.startsWith("audio/")) return;
+  if (state.step !== "start") return;
 
-  state.startedManualLoading = true
-  await loadAudioFile(file)
-  state.audioLoaded = true
+  state.startedManualLoading = true;
+  await loadAudioFile(file);
+  state.audioLoaded = true;
 }
 
 function preventDefaults(e: Event) {
-  e.preventDefault()
+  e.preventDefault();
 }
 </script>
 
