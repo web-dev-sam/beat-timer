@@ -75,10 +75,13 @@ export default class Metronome {
     const contextCurrentTime = this.context.currentTime
     const timeDifference = contextCurrentTime - songCurrentTime
     const interval = 60 / (bpm.value * bpmMultiplier.value)
+
+    const getPositiveModulo = (start: number, interval: number): number => ((start % interval) + interval) % interval;
+    const positiveOffset = getPositiveModulo(offset.value, interval * 1000)
     const nextNoteTime =
       Math.floor(songCurrentTime / interval) * interval +
       interval +
-      offset.value / 1000 +
+      positiveOffset / 1000 +
       timeDifference
     return nextNoteTime
   }
@@ -88,17 +91,17 @@ export default class Metronome {
       return
     }
 
-    const time = this.calculateNextNoteTimeInSeconds()
+    const timeOfNextNote = this.calculateNextNoteTimeInSeconds()
     this.source = this.context.createBufferSource()
     this.source.buffer = this.audioBuffer
     this.source.connect(this.gainNode)
-    this.source.start(time)
+    this.source.start(timeOfNextNote)
 
-    const timeDifference = (time - this.context.currentTime) * 1000
+    const timeToNextNote = (timeOfNextNote - this.context.currentTime) * 1000
 
     setTimeout(() => {
       this.onBeat()
-    }, timeDifference)
+    }, timeToNextNote)
   }
 
   public async start() {

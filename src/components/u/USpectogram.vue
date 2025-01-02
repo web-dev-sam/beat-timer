@@ -237,24 +237,6 @@ function updateOnBPMDrag(dragChange: number, fromBeatline: { time: number }) {
   return [newBPM, newOffset]
 }
 
-function updateOnOffsetDrag(dragChange: number) {
-  const offsetDiff = dragChange / 4
-  const newOffset = offset.value - offsetDiff
-
-  setDraggingBPM(bpm.value)
-  setDraggingOffset(newOffset)
-  return newOffset
-}
-
-function updateOnOffsetDragNormal(dragChange: number) {
-  const offsetDiff = state.spectogramHandler?.pxToSec(dragChange) ?? 0
-  const newOffset = offset.value! - offsetDiff * 1000
-
-  setDraggingBPM(bpm.value!)
-  setDraggingOffset(newOffset)
-  return newOffset
-}
-
 function onCanvasMouseDown(event: MouseEvent) {
   state.dragStart = event.clientX
   state.dragTarget = 'beat-line'
@@ -290,6 +272,7 @@ function onCanvasMouseUp(event: MouseEvent) {
     )
     setBPM(newBPM)
     setOffset(newOffset)
+    console.log('newOffset', newOffset)
   }
 
   // Update Offset
@@ -297,11 +280,31 @@ function onCanvasMouseUp(event: MouseEvent) {
     const updater = state.dragTarget === 'new-start' ? updateOnOffsetDragNormal : updateOnOffsetDrag
     const newOffset = updater(state.dragStart - event.clientX)
     setOffset(newOffset)
+    console.log('newOffset', newOffset)
   }
 
   state.dragStart = null
   state.dragTarget = null
 }
+
+function updateOnOffsetDrag(dragChange: number) {
+  const offsetDiff = dragChange / 4
+  const newOffset = offset.value - offsetDiff
+
+  setDraggingBPM(bpm.value)
+  setDraggingOffset(newOffset)
+  return newOffset
+}
+
+function updateOnOffsetDragNormal(dragChange: number) {
+  const offsetDiff = state.spectogramHandler?.pxToSec(dragChange) ?? 0
+  const newOffset = offset.value! - offsetDiff * 1000
+
+  setDraggingBPM(bpm.value!)
+  setDraggingOffset(newOffset)
+  return newOffset
+}
+
 
 function onCanvasMouseEnter() {
   state.hovering = true
