@@ -28,12 +28,10 @@ import URange from '@/components/u/URange.vue'
 const version = APP_VERSION
 inject()
 
-// v2.3
-// Scroll for zooming
+// v2.4
 // e2e/unit tests
 
-// v2.4
-// Auto Volume normalization
+// v2.5
 // Detect bpm for subsection
 
 const {
@@ -62,6 +60,7 @@ const state = reactive<{
   specLoaded: boolean
   advancedSettingsOpen: boolean
   exportQuality: number
+  downloadProgress: number
   ffmpegHandler: FfmpegHandler
   zoomLevel: number
   activeModifier: 'BPM' | 'OFFSET'
@@ -85,6 +84,7 @@ const state = reactive<{
   exportQuality: 8,
   ffmpegHandler: new FfmpegHandler(),
   zoomLevel: 15,
+  downloadProgress: 0,
   activeModifier: 'BPM',
   isDragOver: false,
   helpPageVisible: false,
@@ -142,8 +142,7 @@ watch(
 watch(
   () =>
     (state.startedExampleLoading || state.startedManualLoading) &&
-    state.audioLoaded &&
-    state.specLoaded,
+    (state.audioLoaded || state.specLoaded),
   (loaded) => {
     if (loaded) {
       state.step = 'edit'
@@ -192,11 +191,12 @@ async function loadAudioFile(file: File) {
     state.myOffsetGuess = Math.round((offset * 1000) / 4) * 4
     setBPM(state.myBPMGuess)
     setOffset(state.myOffsetGuess)
-  } catch {
-    state.myBPMGuess = -1
-    state.myOffsetGuess = -1
-    setBPM(120)
-    setOffset((30 / bpm.value) * 1000)
+  } catch (e) {
+    console.error("Couldn't detect bpm: ", e)
+    state.myBPMGuess = 120
+    state.myOffsetGuess = (30 / bpm.value) * 1000
+    setBPM(state.myBPMGuess)
+    setOffset(state.myOffsetGuess)
   }
 }
 
@@ -225,7 +225,9 @@ function goBackToTiming() {
 
 async function download() {
   state.downloading = true
-  await state.ffmpegHandler.download(bpm.value, offset.value, state.exportQuality)
+  await state.ffmpegHandler.download(bpm.value, offset.value, state.exportQuality, (progress) => {
+    state.downloadProgress = progress;
+  })
   state.downloading = false
 }
 
@@ -529,6 +531,20 @@ function preventDefaults(e: Event) {
           @metronome="onMetronome"
           @seek="onSeek"
         />
+        <!-- Download Progress --> 
+        <div
+          v-if="state.downloadProgress > 0 && state.downloadProgress < 100"
+          class="absolute bottom-0 left-0 w-full h-2 bg-primary transition-all duration-500"
+          :style="{
+            width: state.downloadProgress + '%'
+          }">
+          <div 
+            class="absolute text-primary font-medium -translate-y-8 -translate-x-1/2 transition-all duration-500"
+            :style="{ left: state.downloadProgress + 'vw' }"
+          >
+            {{ state.downloadProgress.toFixed(0) + '%' }}
+          </div>
+        </div>
       </FooterArea>
     </div>
     <div

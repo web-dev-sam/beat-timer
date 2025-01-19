@@ -140,7 +140,7 @@ onMounted(async () => {
   await state.spectogramHandler.generateSpectogram()
   state.spectogramDataURL = state.spectogramHandler.canvasToTransparentImage()
 
-  nextTick(() => {
+  await nextTick(() => {
     document.body.addEventListener('mousemove', (e) => {
       state.mouseX = e.clientX
       onCanvasMouseMove(e)
