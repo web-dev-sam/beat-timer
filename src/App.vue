@@ -29,7 +29,7 @@ const version = APP_VERSION
 inject()
 
 // v2.4
-// e2e/unit tests
+// Trim audio at end (or add silence)
 
 // v2.5
 // Detect bpm for subsection
