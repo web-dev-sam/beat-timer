@@ -28,8 +28,6 @@ import URange from '@/components/u/URange.vue'
 const version = APP_VERSION
 inject()
 
-// v2.3.1 Disable bpm dragging
-// v2.3.2 Fix clicking on current audio position
 // v2.3.3 Progress bar loading song (even possible?)
 // v2.3.4 Detect bpm for subsection
 // v2.4 Trim audio at end (or add silence)
@@ -229,7 +227,7 @@ function goBackToTiming() {
 async function download() {
   state.downloading = true
   await state.ffmpegHandler.download(bpm.value, offset.value, state.exportQuality, (progress) => {
-    state.downloadProgress = progress;
+    state.downloadProgress = progress
   })
   state.downloading = false
 }
@@ -532,15 +530,16 @@ function preventDefaults(e: Event) {
           @metronome="onMetronome"
           @seek="onSeek"
         />
-        <!-- Download Progress --> 
+        <!-- Download Progress -->
         <div
           v-if="state.downloadProgress > 0 && state.downloadProgress < 100"
-          class="absolute bottom-0 left-0 w-full h-2 bg-primary transition-all duration-500"
+          class="absolute bottom-0 left-0 h-2 w-full bg-primary transition-all duration-500"
           :style="{
-            width: state.downloadProgress + '%'
-          }">
-          <div 
-            class="absolute text-primary font-medium -translate-y-8 -translate-x-1/2 transition-all duration-500"
+            width: state.downloadProgress + '%',
+          }"
+        >
+          <div
+            class="absolute -translate-x-1/2 -translate-y-8 font-medium text-primary transition-all duration-500"
             :style="{ left: state.downloadProgress + 'vw' }"
           >
             {{ state.downloadProgress.toFixed(0) + '%' }}

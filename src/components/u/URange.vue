@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, onUnmounted, reactive, ref, watch } from 'vue'
+import { computed, onUnmounted, reactive, ref } from 'vue'
 
+const model = defineModel<number>({ required: true })
 const props = withDefaults(
   defineProps<{
-    modelValue: number
     min: number
     max: number
     immediate?: boolean
@@ -25,26 +25,24 @@ const props = withDefaults(
 
 onUnmounted(() => {
   document.removeEventListener('mousemove', updateValueFromPosition)
-  document.removeEventListener('mouseup', stopDragging)
+  document.removeEventListener('mouseup', onSliderMouseUp)
 })
 
 const state = reactive({
   isDraggingThumb: false,
-  innerModelValue: props.modelValue,
   mouseX: 0,
 })
 
 const emit = defineEmits<{
-  (event: 'update:modelValue', value: number): void
-  (event: 'change', value: number): void
+  (event: 'change', value: number, play?: boolean): void
 }>()
 
 const percentage = computed(() => {
   const range = props.max - props.min
   if (props.reverse) {
-    return 100 - ((state.innerModelValue - props.min) / range) * 100
+    return 100 - ((model.value - props.min) / range) * 100
   }
-  return ((state.innerModelValue - props.min) / range) * 100
+  return ((model.value - props.min) / range) * 100
 })
 
 const steps = computed(() => {
@@ -129,30 +127,32 @@ const progressStyles = computed(() => {
   }
 })
 
-watch(
-  () => props.modelValue,
-  (newValue) => {
-    if (state.isDraggingThumb) return
-    state.innerModelValue = newValue
-  },
-)
+function onSliderClick(event: MouseEvent) {
+  if (state.isDraggingThumb) {
+    state.isDraggingThumb = false
+    document.removeEventListener('mousemove', updateValueFromPosition)
+    document.removeEventListener('mouseup', onSliderMouseUp)
+    return
+  }
 
-function startDragging() {
-  state.isDraggingThumb = true
-  document.addEventListener('mousemove', updateValueFromPosition)
-  document.addEventListener('mouseup', stopDragging)
+  updateValueFromPosition(event, true)
 }
 
-function stopDragging() {
+function onSliderMouseDown() {
+  state.isDraggingThumb = true
+  document.addEventListener('mousemove', updateValueFromPosition)
+  document.addEventListener('mouseup', onSliderMouseUp)
+}
+
+function onSliderMouseUp() {
   state.isDraggingThumb = false
   document.removeEventListener('mousemove', updateValueFromPosition)
-  document.removeEventListener('mouseup', stopDragging)
-  emit('update:modelValue', state.innerModelValue)
-  emit('change', state.innerModelValue)
+  document.removeEventListener('mouseup', onSliderMouseUp)
+  emit('change', model.value, true)
 }
 
 const progressBarRef = ref<HTMLDivElement | null>(null)
-function updateValueFromPosition(event: MouseEvent) {
+function updateValueFromPosition(event: MouseEvent, play = false) {
   const rect = progressBarRef.value?.getBoundingClientRect()
   if (!rect) return
 
@@ -167,11 +167,11 @@ function updateValueFromPosition(event: MouseEvent) {
     ? Math.round(progressPercent / stepLength) * stepLength
     : progressPercent
   const value = snappedProgressPercent * rangeWidth + props.min
-  state.innerModelValue = Math.max(props.min, Math.min(props.max, value))
+  const newValue = Math.max(props.min, Math.min(props.max, value))
 
   if (props.immediate) {
-    emit('update:modelValue', state.innerModelValue)
-    emit('change', state.innerModelValue)
+    model.value = newValue
+    emit('change', newValue, play)
   }
 }
 </script>
@@ -182,14 +182,15 @@ function updateValueFromPosition(event: MouseEvent) {
       class="progress bg-gray-900"
       :class="{ 'progress-vertical': vertical }"
       ref="progressBarRef"
-      @mousedown="startDragging"
+      @mousedown="onSliderMouseDown"
+      @click="onSliderClick"
     >
       <div class="progress__progress bg-purple" :style="progressStyles"></div>
       <div
         class="progress__thumb bg-white ring-[#ffffff30] transition-[box-shadow] hover:ring-8"
         :style="thumbStyles"
         :class="{ 'ring-8': state.isDraggingThumb }"
-        @mousedown="startDragging"
+        @mousedown="onSliderMouseDown"
       ></div>
       <div v-if="showSteps">
         <div

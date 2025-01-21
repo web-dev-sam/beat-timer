@@ -124,14 +124,15 @@ function stop(sender: any) {
   emit('metronome', 0, player.value?.getDuration() || 1)
 }
 
-function onProgressDrag(value: number) {
+function onProgressDrag(value: number, play: boolean) {
+  metronome.value?.stop()
   if (player.value) {
     state.songProgress = value
     const targetTime = (state.songProgress / 100) * player.value.getDuration()
-    player.value.setCurrentTime(targetTime)
-    emit('seek', player.value.getCurrentTime())
+    player.value.setCurrentTime(targetTime, play)
+    emit('seek', targetTime)
   }
-  metronome.value?.start()
+  if (play) metronome.value?.start()
   state.isPlaying = true
   state.isPaused = false
   state.isStopped = false
@@ -190,9 +191,9 @@ defineExpose({
       <URange
         :min="0"
         :max="100"
-        :immediate="false"
+        :immediate="true"
         v-model="state.songProgress"
-        @change="(value: number) => onProgressDrag(value)"
+        @change="(value: number, play: boolean = false) => onProgressDrag(value, play)"
       />
     </div>
   </section>

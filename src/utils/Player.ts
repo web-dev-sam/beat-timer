@@ -82,9 +82,9 @@ export default class Player {
     }
   }
 
-  setCurrentTime(time: number): void {
+  setCurrentTime(time: number, play: boolean): void {
     this.pause()
     this.pausedTime = time
-    this.play()
+    if (play) this.play()
   }
 }

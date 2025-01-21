@@ -1,8 +1,17 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
-	"settings": {}
+  "folders": [
+    {
+      "path": ".",
+    }
+  ],
+  "settings": {
+  },
+  "extensions": {
+    "recommendations": [
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "actboy168.tasks",
+      "vue.volar"
+    ]
+  }
 }
