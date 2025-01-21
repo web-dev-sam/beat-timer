@@ -10,7 +10,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'drag-start'): void
-  (e: 'active-beatline-change', type: 'BPM' | 'OFFSET'): void
+  (e: 'active-beatline-change', type: 'OFFSET'): void
   (e: 'loaded'): void
 }>()
 
@@ -22,7 +22,7 @@ const state = reactive<{
   spectogramHandler: SpectogramHandler | null
   beatlines: BeatLine[]
   activeBeatline: {
-    type: 'BPM' | 'OFFSET'
+    type: 'OFFSET'
     data: BeatLine | null
   }
   dragStart: number | null
@@ -35,7 +35,7 @@ const state = reactive<{
   spectogramHandler: null,
   beatlines: [],
   activeBeatline: {
-    type: 'BPM',
+    type: 'OFFSET',
     data: null,
   },
   dragStart: null,
@@ -190,11 +190,9 @@ function onCanvasMouseMove(event: MouseEvent) {
       return
     }
 
-    const middleOfCanvas = canvasRect.top + canvasRect.height / 2
-    const movingInUpperHalf = event.clientY < middleOfCanvas
     state.activeBeatline = {
       data: nearestBeatline,
-      type: movingInUpperHalf ? 'BPM' : 'OFFSET',
+      type: 'OFFSET',
     }
     return
   }
@@ -208,11 +206,6 @@ function onCanvasMouseMove(event: MouseEvent) {
     return
   }
 
-  // Adjust BPM
-  if (state.activeBeatline.type === 'BPM') {
-    updateOnBPMDrag(state.dragStart - event.clientX, state.activeBeatline.data)
-  }
-
   // Adjust Offset
   if (state.activeBeatline.type === 'OFFSET') {
     const updater = state.dragTarget === 'new-start' ? updateOnOffsetDragNormal : updateOnOffsetDrag
@@ -220,21 +213,6 @@ function onCanvasMouseMove(event: MouseEvent) {
   }
 
   state.beatlines = [...state.beatlines]
-}
-
-function updateOnBPMDrag(dragChange: number, fromBeatline: { time: number }) {
-  const snapPrecision = 1
-  const bpmDiff = dragChange / 40
-  const newBPM = Math.round((bpm.value + bpmDiff) / snapPrecision) * snapPrecision
-  setDraggingBPM(newBPM)
-
-  const interval = 60 / newBPM
-  const activeBeatlineTime = fromBeatline.time
-  const newOffset = (activeBeatlineTime % interval) * 1000
-
-  setDraggingOffset(newOffset)
-
-  return [newBPM, newOffset]
 }
 
 function onCanvasMouseDown(event: MouseEvent) {
@@ -245,42 +223,20 @@ function onCanvasMouseDown(event: MouseEvent) {
     return
   }
 
-  const middleOfCanvas = canvasRect.top + canvasRect.height / 2
-  state.activeBeatline.type = event.clientY < middleOfCanvas ? 'BPM' : 'OFFSET'
   emit('drag-start')
 }
 
 function onNewStartMouseDown(event: MouseEvent) {
   state.dragStart = event.clientX
   state.dragTarget = 'new-start'
-  state.activeBeatline.type = 'OFFSET'
   emit('drag-start')
 }
 
 function onCanvasMouseUp(event: MouseEvent) {
-  // Update BPM
-  if (state.dragStart != null && state.activeBeatline.type === 'BPM') {
-    if (state.activeBeatline == null || state.activeBeatline.data == null) {
-      state.dragStart = null
-      state.dragTarget = null
-      return
-    }
-
-    const [newBPM, newOffset] = updateOnBPMDrag(
-      state.dragStart - event.clientX,
-      state.activeBeatline.data,
-    )
-    setBPM(newBPM)
-    setOffset(newOffset)
-    console.log('newOffset', newOffset)
-  }
-
-  // Update Offset
   if (state.dragStart != null && state.activeBeatline.type === 'OFFSET') {
     const updater = state.dragTarget === 'new-start' ? updateOnOffsetDragNormal : updateOnOffsetDrag
     const newOffset = updater(state.dragStart - event.clientX)
     setOffset(newOffset)
-    console.log('newOffset', newOffset)
   }
 
   state.dragStart = null
@@ -304,7 +260,6 @@ function updateOnOffsetDragNormal(dragChange: number) {
   setDraggingOffset(newOffset)
   return newOffset
 }
-
 
 function onCanvasMouseEnter() {
   state.hovering = true

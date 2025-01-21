@@ -28,11 +28,14 @@ import URange from '@/components/u/URange.vue'
 const version = APP_VERSION
 inject()
 
-// v2.4
-// Trim audio at end (or add silence)
-
-// v2.5
-// Detect bpm for subsection
+// v2.3.1 Disable bpm dragging
+// v2.3.2 Fix clicking on current audio position
+// v2.3.3 Progress bar loading song (even possible?)
+// v2.3.4 Detect bpm for subsection
+// v2.4 Trim audio at end (or add silence)
+// v2.5 Export new zipped BeatSaber map with right settings
+// v2.5.1 Update everything simple (updates, pnpm, etc.)
+// v2.6 Updating everything (incl. ffmpeg)
 
 const {
   bpm,
@@ -428,7 +431,6 @@ function preventDefaults(e: Event) {
           <div class="mx-6 flex items-end justify-between md:mx-12" prevent-user-select>
             <div>
               <UValueEdit
-                :invisible="state.activeModifier !== 'BPM'"
                 :value="draggingBPM"
                 @change="onManualBPMEdit"
                 type="BPM"
@@ -448,7 +450,6 @@ function preventDefaults(e: Event) {
           />
           <div class="mx-12 mt-6 flex justify-between" prevent-user-select>
             <UValueEdit
-              :invisible="state.activeModifier !== 'OFFSET'"
               :value="+visualOffset.toFixed(0)"
               @change="onManualOffsetEdit"
               type="MS"

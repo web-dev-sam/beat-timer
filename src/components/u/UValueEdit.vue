@@ -6,8 +6,7 @@ import IconsPen from '@/components/icons/IconsPen.vue'
 const props = defineProps<{
   value: number
   type: 'BPM' | 'MS'
-  reversed: boolean
-  invisible: boolean
+  reversed: Boolean
 }>()
 
 const emit = defineEmits<{
@@ -61,7 +60,7 @@ function onEditClick() {
 </script>
 
 <template>
-  <div class="value-edit-wrapper text-left" :class="invisible ? 'invisiblyat' : ''">
+  <div class="value-edit-wrapper text-left">
     <div class="align-start flex gap-4" :class="reversed ? 'flex-col-reverse' : 'flex-col'">
       <button @click="onEditClick"><IconsPen /></button>
       <div>
