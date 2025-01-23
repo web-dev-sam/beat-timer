@@ -4,7 +4,7 @@ import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
 
 import FfmpegHandler from '@/utils/FfmpegHandler'
 import { guess } from 'web-audio-beat-detector'
-import { songOffsetToSilencePadding } from '@/utils/utils'
+import { isTouchPrimary, songOffsetToSilencePadding } from '@/utils/utils'
 import useAudioSettings from '@/composables/useAudioSettings'
 
 import IconsHelp from '@/components/icons/IconsHelp.vue'
@@ -28,12 +28,12 @@ import URange from '@/components/u/URange.vue'
 const version = APP_VERSION
 inject()
 
-// v2.3.3 Progress bar loading song (even possible?)
 // v2.3.4 Detect bpm for subsection
 // v2.4 Trim audio at end (or add silence)
 // v2.5 Export new zipped BeatSaber map with right settings
-// v2.5.1 Update everything simple (updates, pnpm, etc.)
-// v2.6 Updating everything (incl. ffmpeg)
+// v2.6.1 Update everything simple (updates, pnpm, etc.)
+// v2.7 Updating everything (incl. ffmpeg)
+// v3 Mobile Version
 
 const {
   bpm,
@@ -67,6 +67,7 @@ const state = reactive<{
   activeModifier: 'BPM' | 'OFFSET'
   isDragOver: boolean
   helpPageVisible: boolean
+  ignoreMobileWarning: boolean
 }>({
   audioFile: null,
   stopped: true,
@@ -89,7 +90,9 @@ const state = reactive<{
   activeModifier: 'BPM',
   isDragOver: false,
   helpPageVisible: false,
+  ignoreMobileWarning: false,
 })
+const mightBeOnMobile = isTouchPrimary()
 
 onMounted(() => {
   ;['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
@@ -306,6 +309,21 @@ function preventDefaults(e: Event) {
     }"
   >
     <div
+      class="flex h-full items-center bg-dark transition-all"
+      v-if="mightBeOnMobile && !state.ignoreMobileWarning"
+    >
+      <div class="-translate-y-8 space-y-4">
+        <h1 class="text-2xl font-semibold">Be careful</h1>
+        <p class="px-12 opacity-60">
+          This tool is not optimized for mobile. You can try it, but it will not work as expected.
+        </p>
+        <UButton secondary class="inline-block" @click="state.ignoreMobileWarning = true">
+          Continue anyways
+        </UButton>
+      </div>
+    </div>
+    <div
+      v-else
       class="flex h-full flex-col bg-dark transition-all"
       :style="{
         'border-radius': state.isDragOver ? '0.5rem' : '0',
@@ -340,11 +358,9 @@ function preventDefaults(e: Event) {
               </p>
               <h3 class="h3 !mt-12 mb-4">How To Use</h3>
               <p>
-                <strong>Import</strong> your song. When you see the audio visualizer, hover over the
-                <strong>upper</strong> part of the audio and
-                <strong>drag to change the BPM</strong>. Hover over the <strong>lower</strong> part
-                and <strong>drag to change the offset</strong> (positioning a beat starts at). Click
-                "Seems On Time" when you've aligned the audio.
+                <strong>Import</strong> your song. <strong>Select its bpm</strong>. Hover over the
+                spectogram and <strong>drag to change the offset</strong> (align the lines with the
+                beat). Click "Seems On Time" when you're done.
               </p>
               <h3 class="h3 !mt-12 mb-4">Tips</h3>
               <ol class="auto-flow-small list-inside list-decimal">
@@ -357,7 +373,7 @@ function preventDefaults(e: Event) {
                 </li>
                 <li>
                   If you want to <strong>trim the audio</strong> drag the offset number into the
-                  negatives while aligning the beat
+                  negatives while aligning the beat.
                 </li>
                 <li>
                   If you want to <strong>add more silence</strong> to the start just make the offset
@@ -393,7 +409,7 @@ function preventDefaults(e: Event) {
             v-if="state.step === 'start'"
             :class="{ invisiblyat: state.startedExampleLoading || state.startedManualLoading }"
             @click="loadExampleFile"
-            :secondary="true"
+            secondary
           >
             Use Example
           </UButton>

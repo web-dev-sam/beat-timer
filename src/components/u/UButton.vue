@@ -1,16 +1,10 @@
 <script setup lang="ts">
 import ULoader from '@/components/u/ULoader.vue'
 
-withDefaults(
-  defineProps<{
-    loading?: boolean
-    secondary?: boolean
-  }>(),
-  {
-    loading: false,
-    secondary: false,
-  },
-)
+defineProps<{
+  loading?: boolean
+  secondary?: boolean
+}>()
 
 const emit = defineEmits<{
   (e: 'click'): void

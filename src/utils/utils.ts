@@ -101,3 +101,12 @@ export function debounce<T extends (...args: any[]) => any>(
     }, wait)
   }
 }
+
+export function isTouchPrimary() {
+  if (navigator.maxTouchPoints > 0) return true;
+
+  const mediaQuery = window.matchMedia('(pointer: coarse)');
+  if (mediaQuery.matches) return true;
+
+  return 'ontouchstart' in window;
+}
