@@ -103,10 +103,10 @@ export function debounce<T extends (...args: any[]) => any>(
 }
 
 export function isTouchPrimary() {
-  if (navigator.maxTouchPoints > 0) return true;
+  if (navigator.maxTouchPoints > 0) return true
 
-  const mediaQuery = window.matchMedia('(pointer: coarse)');
-  if (mediaQuery.matches) return true;
+  const mediaQuery = window.matchMedia('(pointer: coarse)')
+  if (mediaQuery.matches) return true
 
-  return 'ontouchstart' in window;
+  return 'ontouchstart' in window
 }

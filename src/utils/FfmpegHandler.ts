@@ -24,7 +24,12 @@ export default class FfmpegHandler {
     await this.ffmpeg.load()
   }
 
-  async download(bpm: number, offset: number, exportQuality: number, onProgress: (progress: number) => void) {
+  async download(
+    bpm: number,
+    offset: number,
+    exportQuality: number,
+    onProgress: (progress: number) => void,
+  ) {
     const file = this.file
     if (!file) {
       return
@@ -37,9 +42,9 @@ export default class FfmpegHandler {
       log('ffmpegDownloadPaddingDuration', paddingDuration.toString())
       log('ffmpegDownloadExportQuality', exportQuality.toString())
       if (paddingDuration >= 0) {
-        (await this.padAudio(file, paddingDuration, onProgress, exportQuality))()
+        ; (await this.padAudio(file, paddingDuration, onProgress, exportQuality))()
       } else {
-        (await this.trimAudio(file, -paddingDuration, onProgress, exportQuality))()
+        ; (await this.trimAudio(file, -paddingDuration, onProgress, exportQuality))()
       }
     } catch (error) {
       const err = error as Error
@@ -49,7 +54,12 @@ export default class FfmpegHandler {
     }
   }
 
-  async padAudio(file: File, beginningPad: number = 0, onProgress: (progress: number) => void, exportQuality: number = 8) {
+  async padAudio(
+    file: File,
+    beginningPad: number = 0,
+    onProgress: (progress: number) => void,
+    exportQuality: number = 8,
+  ) {
     const name = file.name
     const paddedName = 'song.ogg'
 
@@ -57,13 +67,13 @@ export default class FfmpegHandler {
 
     const silenceDuration = beginningPad / 1000
 
-    let totalTime = null;
+    let totalTime = null
     this.ffmpeg.setLogger((log: { message: string }) => {
-      totalTime ??= this.extractTimeInMs("Duration: ", log.message);
-      const time = this.extractTimeInMs("time=", log.message);
-      if (!time) return;
+      totalTime ??= this.extractTimeInMs('Duration: ', log.message)
+      const time = this.extractTimeInMs('time=', log.message)
+      if (!time) return
       if (totalTime) {
-        onProgress(time * 100 / totalTime);
+        onProgress((time * 100) / totalTime)
       }
     })
     await this.ffmpeg.run(
@@ -77,7 +87,8 @@ export default class FfmpegHandler {
       name,
       '-filter_complex',
       '[0:a][1:a]concat=n=2:v=0:a=1[concat];[concat]loudnorm=I=-14:LRA=11:TP=-1.5[audio_out]',
-      '-map', '[audio_out]',
+      '-map',
+      '[audio_out]',
       '-c:a',
       'libvorbis',
       '-q:a',
@@ -89,7 +100,12 @@ export default class FfmpegHandler {
     return () => this.downloadAudio(paddedData, paddedName)
   }
 
-  async trimAudio(file: File, beginningTrim = 0, onProgress: (progress: number) => void, exportQuality = 8) {
+  async trimAudio(
+    file: File,
+    beginningTrim = 0,
+    onProgress: (progress: number) => void,
+    exportQuality = 8,
+  ) {
     const name = file.name
     const trimmedName = 'song.ogg'
     const dataArray = await fetchFile(file)
@@ -100,13 +116,13 @@ export default class FfmpegHandler {
     const trimEnd = 0
     const trimDuration = ((await this.getDuration(dataArray)) as number) - trimStart - trimEnd
 
-    let totalTime = null;
+    let totalTime = null
     this.ffmpeg.setLogger((log: { message: string }) => {
-      totalTime ??= this.extractTimeInMs("Duration: ", log.message);
-      const time = this.extractTimeInMs("time=", log.message);
-      if (!time) return;
+      totalTime ??= this.extractTimeInMs('Duration: ', log.message)
+      const time = this.extractTimeInMs('time=', log.message)
+      if (!time) return
       if (totalTime) {
-        onProgress(time * 100 / totalTime);
+        onProgress((time * 100) / totalTime)
       }
     })
     await this.ffmpeg.run(
@@ -130,20 +146,20 @@ export default class FfmpegHandler {
     return () => this.downloadAudio(trimmedData, trimmedName)
   }
 
-  extractTimeInMs(prefix: "time=" | "Duration: ", ffmpegOutput: string) {
-    const timeRegex = new RegExp(`${prefix}(\\d{2}):(\\d{2}):(\\d{2}\\.\\d{2})`);
-    const match = ffmpegOutput.match(timeRegex);
+  extractTimeInMs(prefix: 'time=' | 'Duration: ', ffmpegOutput: string) {
+    const timeRegex = new RegExp(`${prefix}(\\d{2}):(\\d{2}):(\\d{2}\\.\\d{2})`)
+    const match = ffmpegOutput.match(timeRegex)
 
-    if (!match) return null;
+    if (!match) return null
 
-    const [_, hours, minutes, seconds] = match;
+    const [, hours, minutes, seconds] = match
 
     // Convert all units to milliseconds
-    const hoursMs = parseInt(hours) * 3600 * 1000;
-    const minutesMs = parseInt(minutes) * 60 * 1000;
-    const secondsMs = parseFloat(seconds) * 1000;
+    const hoursMs = parseInt(hours) * 3600 * 1000
+    const minutesMs = parseInt(minutes) * 60 * 1000
+    const secondsMs = parseFloat(seconds) * 1000
 
-    return hoursMs + minutesMs + Math.round(secondsMs);
+    return hoursMs + minutesMs + Math.round(secondsMs)
   }
 
   estimateFileSize(durationInSeconds: number, quality: number): number {
@@ -233,40 +249,40 @@ export default class FfmpegHandler {
 
   getAudioSlice(startTimeSec: number, endTimeSec: number) {
     if (this.currentAudioBuffer == null) {
-      return;
+      return
     }
 
-    const duration = this.currentAudioBuffer.duration;
-    const timeRange = endTimeSec - startTimeSec;
+    const duration = this.currentAudioBuffer.duration
+    const timeRange = endTimeSec - startTimeSec
 
     if (timeRange >= duration) {
-      return this.currentAudioBuffer;
+      return this.currentAudioBuffer
     } else if (startTimeSec < 0) {
-      endTimeSec -= startTimeSec;
-      startTimeSec = 0;
+      endTimeSec -= startTimeSec
+      startTimeSec = 0
     } else if (endTimeSec > duration) {
-      startTimeSec -= endTimeSec - duration;
+      startTimeSec -= endTimeSec - duration
       endTimeSec = duration
     }
 
-    const sampleRate = this.currentAudioBuffer.sampleRate;
-    const startSample = Math.floor(startTimeSec * sampleRate);
-    const endSample = Math.ceil(endTimeSec * sampleRate);
-    const newLength = endSample - startSample;
+    const sampleRate = this.currentAudioBuffer.sampleRate
+    const startSample = Math.floor(startTimeSec * sampleRate)
+    const endSample = Math.ceil(endTimeSec * sampleRate)
+    const newLength = endSample - startSample
 
     const newBuffer = new AudioBuffer({
       length: newLength,
       numberOfChannels: this.currentAudioBuffer.numberOfChannels,
-      sampleRate: sampleRate
-    });
+      sampleRate: sampleRate,
+    })
 
     for (let channel = 0; channel < this.currentAudioBuffer.numberOfChannels; channel++) {
-      const channelData = this.currentAudioBuffer.getChannelData(channel);
-      const newChannelData = new Float32Array(channelData.slice(startSample, endSample));
-      newBuffer.copyToChannel(newChannelData, channel);
+      const channelData = this.currentAudioBuffer.getChannelData(channel)
+      const newChannelData = new Float32Array(channelData.slice(startSample, endSample))
+      newBuffer.copyToChannel(newChannelData, channel)
     }
 
-    return newBuffer;
+    return newBuffer
   }
 
   downloadAudio(data: Uint8Array, filename: string) {

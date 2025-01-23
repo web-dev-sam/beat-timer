@@ -76,7 +76,8 @@ export default class Metronome {
     const timeDifference = contextCurrentTime - songCurrentTime
     const interval = 60 / (bpm.value * bpmMultiplier.value)
 
-    const getPositiveModulo = (start: number, interval: number): number => ((start % interval) + interval) % interval;
+    const getPositiveModulo = (start: number, interval: number): number =>
+      ((start % interval) + interval) % interval
     const positiveOffset = getPositiveModulo(offset.value, interval * 1000)
     const nextNoteTime =
       Math.floor(songCurrentTime / interval) * interval +
