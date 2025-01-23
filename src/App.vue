@@ -30,6 +30,7 @@ import IconsDrum from './components/icons/IconsDrum.vue'
 const version = APP_VERSION
 inject()
 
+// v2.3.5 Fix .mp3 files not displaying
 // v2.4 Trim audio at end (or add silence)
 // v2.5 Export new zipped BeatSaber map with right settings
 // v2.6.1 Update everything simple (updates, pnpm, etc.)
