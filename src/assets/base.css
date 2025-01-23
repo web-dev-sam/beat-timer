@@ -157,11 +157,15 @@ a:hover {
 
 [tooltip]::after {
   content: attr(tooltip);
-  @apply pointer-events-none absolute left-1/2 top-full w-max -translate-x-1/2 transform rounded px-4 py-2 text-sm text-muted opacity-0;
+  @apply pointer-events-none absolute left-1/2 top-full w-max -translate-x-1/2 transform rounded px-2 py-2 text-sm text-muted opacity-0;
 }
 
 [tooltip]:hover::after {
   @apply opacity-100;
+}
+
+[tooltip-primary]::after {
+  @apply text-primary;
 }
 
 [tooltip-position='left']::after {

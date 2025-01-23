@@ -24,11 +24,12 @@ import UFileInput from '@/components/u/UFileInput.vue'
 import UButton from '@/components/u/UButton.vue'
 import UValueEdit from '@/components/u/UValueEdit.vue'
 import URange from '@/components/u/URange.vue'
+import IconsMagic from './components/icons/IconsMagic.vue'
+import IconsDrum from './components/icons/IconsDrum.vue'
 
 const version = APP_VERSION
 inject()
 
-// v2.3.4 Detect bpm for subsection
 // v2.4 Trim audio at end (or add silence)
 // v2.5 Export new zipped BeatSaber map with right settings
 // v2.6.1 Update everything simple (updates, pnpm, etc.)
@@ -202,6 +203,46 @@ async function loadAudioFile(file: File) {
     setBPM(state.myBPMGuess)
     setOffset(state.myOffsetGuess)
   }
+}
+
+async function onBPMDetect() {
+  const currentTime = audioPlayerRef.value?.player?.getCurrentTime?.()
+  if (currentTime == null) return
+
+  const sliceBuffer = state.ffmpegHandler.getAudioSlice(currentTime - 8, currentTime + 8)
+  if (sliceBuffer == null) return
+
+  const { bpm, offset } = await guess(sliceBuffer)
+  setBPM(bpm)
+  setOffset(offset * 1000)
+}
+
+let clicks: number[] = []
+let lastTimeout: number | null = null
+function onBPMFinderClick() {
+  function calculateBPM(timestamps: number[]): number {
+    if (timestamps.length < 2) return 0
+
+    const intervals = timestamps.slice(1).map((time, i) => time - timestamps[i])
+    const avgInterval = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length
+
+    console.log((Math.round(6000000 / avgInterval) / 100).toFixed(2))
+    return Math.round(60000 / avgInterval)
+  }
+
+  // Mute the metronome when clicking with the beat
+  audioPlayerRef.value?.metronome?.mute?.()
+  lastTimeout && clearTimeout(lastTimeout)
+  lastTimeout = setTimeout(() => {
+    audioPlayerRef.value?.metronome?.unmute?.()
+    clicks = []
+  }, 1000)
+
+  const now = Date.now()
+  const timeoutThreshold = now - 15000
+  clicks = [...clicks, now].filter((time) => time > timeoutThreshold)
+
+  onBPMChange(calculateBPM(clicks))
 }
 
 function onBPMChange(bpm: number) {
@@ -442,17 +483,38 @@ function preventDefaults(e: Event) {
           <div>
             <h1 class="h2 mb-18">Align the beat.</h1>
           </div>
-          <div class="mx-6 flex items-end justify-between md:mx-12" prevent-user-select>
-            <div>
-              <UValueEdit
-                :value="draggingBPM"
-                @change="onManualBPMEdit"
-                type="BPM"
-                :reversed="false"
-                @edit-start="pauseAudio"
-              />
-            </div>
-            <h2 class="h2"></h2>
+          <div class="mx-6 flex items-end justify-start md:mx-12" prevent-user-select>
+            <UValueEdit
+              :value="draggingBPM"
+              @change="onManualBPMEdit"
+              type="BPM"
+              :reversed="false"
+              @edit-start="pauseAudio"
+            >
+              <template #buttons>
+                <span class="ml-8 flex gap-8">
+                  <button
+                    class="inline-block translate-y-1 hover:text-primary"
+                    tooltip="Detect BPM in this section"
+                    tooltip-position="top"
+                    tooltip-primary
+                    @click="onBPMDetect"
+                  >
+                    <IconsMagic />
+                  </button>
+                  <button
+                    v-if="audioPlayerRef?.isPlaying"
+                    class="inline-block translate-y-1 self-center hover:text-primary"
+                    tooltip="Click with the beat to find BPM"
+                    tooltip-position="top"
+                    tooltip-primary
+                    @click="onBPMFinderClick"
+                  >
+                    <IconsDrum />
+                  </button>
+                </span>
+              </template>
+            </UValueEdit>
           </div>
           <USpectogram
             v-if="state.audioBuffer"

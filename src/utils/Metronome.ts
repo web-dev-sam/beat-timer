@@ -160,4 +160,20 @@ export default class Metronome {
     this.volume = volume / 100
     this.gainNode.gain.value = this.volume
   }
+
+  public mute() {
+    if (!this.gainNode) {
+      return
+    }
+
+    this.gainNode.gain.value = 0
+  }
+
+  public unmute() {
+    if (!this.gainNode) {
+      return
+    }
+
+    this.gainNode.gain.value = this.volume
+  }
 }

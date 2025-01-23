@@ -8,6 +8,7 @@ const { log } = useLogger()
 export default class FfmpegHandler {
   private ffmpeg: FFmpeg
   private file: File | null
+  private currentAudioBuffer: AudioBuffer | null
 
   constructor() {
     this.ffmpeg = createFFmpeg({
@@ -15,6 +16,7 @@ export default class FfmpegHandler {
       log: false,
     })
     this.file = null
+    this.currentAudioBuffer = null
   }
 
   async loadAudio(file: File) {
@@ -206,11 +208,12 @@ export default class FfmpegHandler {
       }
 
       const reader = new FileReader()
-      reader.onload = function (fileEvent) {
+      reader.onload = (fileEvent) => {
         const arrayBuffer = fileEvent.target?.result
         new window.AudioContext()
           .decodeAudioData(arrayBuffer as ArrayBuffer)
           .then((audioBuffer) => {
+            this.currentAudioBuffer = audioBuffer
             resolve(audioBuffer)
           })
           .catch((error) => {
@@ -226,6 +229,44 @@ export default class FfmpegHandler {
 
       reader.readAsArrayBuffer(this.file)
     })
+  }
+
+  getAudioSlice(startTimeSec: number, endTimeSec: number) {
+    if (this.currentAudioBuffer == null) {
+      return;
+    }
+
+    const duration = this.currentAudioBuffer.duration;
+    const timeRange = endTimeSec - startTimeSec;
+
+    if (timeRange >= duration) {
+      return this.currentAudioBuffer;
+    } else if (startTimeSec < 0) {
+      endTimeSec -= startTimeSec;
+      startTimeSec = 0;
+    } else if (endTimeSec > duration) {
+      startTimeSec -= endTimeSec - duration;
+      endTimeSec = duration
+    }
+
+    const sampleRate = this.currentAudioBuffer.sampleRate;
+    const startSample = Math.floor(startTimeSec * sampleRate);
+    const endSample = Math.ceil(endTimeSec * sampleRate);
+    const newLength = endSample - startSample;
+
+    const newBuffer = new AudioBuffer({
+      length: newLength,
+      numberOfChannels: this.currentAudioBuffer.numberOfChannels,
+      sampleRate: sampleRate
+    });
+
+    for (let channel = 0; channel < this.currentAudioBuffer.numberOfChannels; channel++) {
+      const channelData = this.currentAudioBuffer.getChannelData(channel);
+      const newChannelData = new Float32Array(channelData.slice(startSample, endSample));
+      newBuffer.copyToChannel(newChannelData, channel);
+    }
+
+    return newBuffer;
   }
 
   downloadAudio(data: Uint8Array, filename: string) {

@@ -13,11 +13,11 @@ const emit = defineEmits<{
 
 <template>
   <div
-    class="inline-flex cursor-pointer items-center justify-center rounded border-none bg-primary fill-current px-5 py-2.5 text-sm font-medium text-white ring-purple-28 hover:ring-4"
+    class="inline-flex cursor-pointer items-center justify-center rounded border-none bg-primary fill-current text-sm font-medium text-white ring-purple-28 hover:ring-4"
   >
     <label
       for="file-input"
-      class="focus:ring-purple-300 bg-purple-600 hover:bg-purple-700 focus:ring-purple-800 cursor-pointer rounded-lg text-sm font-medium text-white focus:ring-4"
+      class="focus:ring-purple-300 bg-purple-600 hover:bg-purple-700 focus:ring-purple-800 cursor-pointer rounded-lg px-5 py-2.5 text-sm font-medium text-white focus:ring-4"
     >
       <slot v-if="!loading"></slot>
       <ULoader v-else />

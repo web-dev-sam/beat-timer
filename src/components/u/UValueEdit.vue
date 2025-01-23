@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { reactive, watch } from 'vue'
+import { nextTick, reactive, useId, watch } from 'vue'
 
 import IconsPen from '@/components/icons/IconsPen.vue'
 
+const bpmEditInputId = useId()
 const props = defineProps<{
   value: number
   type: 'BPM' | 'MS'
@@ -55,6 +56,13 @@ function onEditClick() {
   state.edit = !state.edit
   if (state.edit) {
     emit('edit-start')
+    nextTick(() => {
+      const input = document.querySelector(`#bpm-edit-input-${bpmEditInputId}`) as HTMLInputElement
+      if (input) {
+        input.focus()
+        input.select()
+      }
+    })
   }
 }
 </script>
@@ -65,11 +73,13 @@ function onEditClick() {
       <button @click="onEditClick"><IconsPen /></button>
       <div>
         <div class="relative">
-          <h2>
-            <span class="h3 text-xl">{{ value }}</span>
-            <span class="ml-2 text-muted">{{ type }}</span>
-          </h2>
+          <div class="flex items-center">
+            <span class="h3 !font-mono text-xl font-bold">{{ value }}</span>
+            <span class="ml-2 self-end text-muted">{{ type }}</span>
+            <slot name="buttons"></slot>
+          </div>
           <input
+            :id="`bpm-edit-input-${bpmEditInputId}`"
             type="text"
             class="mt-1"
             v-model.number="state.innerValue"

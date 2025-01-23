@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import Metronome from '@/utils/Metronome'
 import Player from '@/utils/Player'
 
@@ -52,6 +52,7 @@ onMounted(async function () {
       }
     },
   )
+  metronome.value.setTickVolume
   player.value.loadBuffer(props.audioBuffer)
   player.value.setVolume(state.volume / 2)
 
@@ -140,6 +141,9 @@ function onProgressDrag(value: number, play: boolean) {
 
 defineExpose({
   pause,
+  player,
+  metronome,
+  isPlaying: computed(() => state.isPlaying),
 })
 </script>
 

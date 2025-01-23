@@ -13,10 +13,11 @@ export default {
       'gray-700': '#3f3f3f',
       white: '#fff',
       current: 'currentColor',
-      muted: 'hsla(0, 0%, 100%, 0.33)',
+      muted: '#4b4651',
     },
     fontFamily: {
       sans: ['Kanit', '-apple-system', 'sans-serif'],
+      mono: ['monospace'],
     },
     extend: {
       borderRadius: {
