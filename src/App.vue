@@ -31,6 +31,8 @@ const version = APP_VERSION
 inject()
 
 // v2.3.5 Fix .mp3 files not displaying
+// Adjust volume and length at start (make 5min max)
+// v2.3.6 Toggle volume normalization at export
 // v2.4 Trim audio at end (or add silence)
 // v2.5 Export new zipped BeatSaber map with right settings
 // v2.6.1 Update everything simple (updates, pnpm, etc.)
