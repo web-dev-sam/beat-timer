@@ -17,7 +17,6 @@ export default {
     },
     fontFamily: {
       sans: ['Kanit', '-apple-system', 'sans-serif'],
-      mono: ['monospace'],
     },
     extend: {
       borderRadius: {

@@ -74,8 +74,10 @@ function onEditClick() {
       <div>
         <div class="relative">
           <div class="flex items-center">
-            <span class="h3 !font-mono text-xl font-bold">{{ value }}</span>
-            <span class="ml-2 self-end text-muted">{{ type }}</span>
+            <div class="w-20">
+              <span class="h3 text-xl font-bold">{{ value }}</span>
+              <span class="ml-2 self-end text-muted">{{ type }}</span>
+            </div>
             <slot name="buttons"></slot>
           </div>
           <input
