@@ -113,7 +113,7 @@ function pause() {
   state.isStopped = false
 }
 
-function stop(sender: any) {
+function stop(sender?: 'player') {
   if (sender !== 'player') {
     player.value?.stop()
   }

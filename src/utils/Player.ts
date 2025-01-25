@@ -6,9 +6,9 @@ export default class Player {
   private pausedTime: number
   private started: boolean
   private gainNode: GainNode
-  private onStop: (arg: any) => void
+  private onStop: (sender?: 'player') => void
 
-  constructor(context: AudioContext, onStop: (arg: any) => void) {
+  constructor(context: AudioContext, onStop: (sender?: 'player') => void) {
     this.context = context
     this.source = null
     this.buffer = null

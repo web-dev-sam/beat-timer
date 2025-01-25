@@ -17,7 +17,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'play'): void
-  (e: 'stop'): void
+  (e: 'stop', sender?: 'player'): void
 }>()
 
 const { bpmMultiplier, setBPMMultiplier } = useAudioSettings()
