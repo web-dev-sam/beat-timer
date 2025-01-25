@@ -110,3 +110,40 @@ export function isTouchPrimary() {
 
   return 'ontouchstart' in window
 }
+
+export function useBPMFinder({
+  muteMetronome,
+  unmuteMetronome
+}: {
+  muteMetronome: () => void,
+  unmuteMetronome: () => void
+}) {
+  let clicks: number[] = []
+  let lastTimeout: number | null = null
+
+  function calculateBPM(timestamps: number[]): number {
+    if (timestamps.length < 2) return 120
+
+    const intervals = timestamps.slice(1).map((time, i) => time - timestamps[i]!)
+    const avgInterval = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length
+    if (avgInterval === 0) return 120
+
+    return Math.round(60000 / avgInterval)
+  }
+
+  return {
+    click: () => {
+      muteMetronome()
+      lastTimeout && clearTimeout(lastTimeout)
+      lastTimeout = setTimeout(() => {
+        unmuteMetronome()
+        clicks = []
+      }, 1000)
+
+      const now = Date.now()
+      const timeoutThreshold = now - 15000
+      clicks = [...clicks, now].filter((time) => time > timeoutThreshold)
+      return calculateBPM(clicks)
+    }
+  }
+}

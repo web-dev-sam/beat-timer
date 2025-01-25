@@ -63,10 +63,11 @@ export default class FfmpegHandler {
     exportQuality: number = 8,
     doVolumeNormalization: boolean = true,
   ) {
-    const name = file.name
-    const paddedName = 'song.ogg'
+    const wantedFileName = 'song.ogg'
+    const inputFileName = file.name === wantedFileName ? 'input.ogg' : file.name
+    const outputFileName = wantedFileName
 
-    this.ffmpeg.FS('writeFile', name, await fetchFile(file))
+    this.ffmpeg.FS('writeFile', inputFileName, await fetchFile(file))
 
     const silenceDuration = beginningPad / 1000
 
@@ -82,21 +83,21 @@ export default class FfmpegHandler {
     const filterComplex = doVolumeNormalization
       ? '[0:a][1:a]concat=n=2:v=0:a=1[concat];[concat]loudnorm=I=-14:LRA=11:TP=-1.5[audio_out]'
       : '[0:a][1:a]concat=n=2:v=0:a=1[audio_out]'
-
     await this.ffmpeg.run(
       '-f', 'lavfi',
       '-t', this.formatDuration(silenceDuration),
       '-i', `anullsrc=channel_layout=stereo:sample_rate=44100`,
-      '-i', name,
+      '-i', inputFileName,
       '-filter_complex', filterComplex,
       '-map', '[audio_out]',
       '-c:a', 'libvorbis',
       '-q:a', exportQuality.toString(),
-      paddedName,
+      outputFileName,
     )
 
-    const paddedData = this.ffmpeg.FS('readFile', paddedName)
-    return () => this.downloadAudio(paddedData, paddedName)
+    const paddedData = this.ffmpeg.FS('readFile', outputFileName)
+    console.log(paddedData)
+    return () => this.downloadAudio(paddedData, outputFileName)
   }
 
   async trimAudio(
@@ -164,7 +165,7 @@ export default class FfmpegHandler {
     return hoursMs + minutesMs + Math.round(secondsMs)
   }
 
-  estimateFileSize(durationInSeconds: number, quality: number): number {
+  private estimateFileSize(durationInSeconds: number, quality: number): number {
     const bitrates = [64, 80, 96, 112, 128, 160, 192, 224, 256, 320]
     const bitrate = bitrates[Math.round(quality) - 1]
     if (!bitrate) {
@@ -188,6 +189,16 @@ export default class FfmpegHandler {
       const sizeInGB = sizeInMB / 1024
       return sizeInGB.toFixed(2) + ' GB'
     }
+  }
+
+  getEstimatedFileSize(bpm: number, offset: number, quality: number) {
+    const seconds = this.currentAudioBuffer?.duration ?? 0
+    return this.formatFileSize(
+      this.estimateFileSize(
+        seconds + songOffsetToSilencePadding(bpm, offset) / 1000,
+        quality,
+      ),
+    )
   }
 
   getDuration(dataArray: Uint8Array) {

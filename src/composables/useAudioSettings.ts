@@ -1,45 +1,26 @@
-import { reactive, toRefs } from 'vue'
+import { ref } from 'vue'
 
-const state = reactive({
-  bpm: 120,
-  draggingBPM: 120,
-  offset: 0,
-  draggingOffset: 0,
-  bpmMultiplier: 1,
-})
+const bpm = ref(120)
+const draggingBPM = ref(120)
+const offset = ref(0)
+const draggingOffset = ref(0)
+const bpmMultiplier = ref(1)
 
-function setBPM(newBPM: number) {
-  state.bpm = newBPM
-}
-
-function setOffset(newOffset: number) {
-  state.offset = newOffset
-}
-
-function setDraggingBPM(newBPM: number) {
-  state.draggingBPM = newBPM
-}
-
-function setDraggingOffset(newOffset: number) {
-  state.draggingOffset = newOffset
-}
-
-function setBPMMultiplier(newMultiplier: number) {
-  const newBPM = newMultiplier * state.bpm
+function setBPMMultiplier(newMultiplier: 1 | 2) {
+  const newBPM = newMultiplier * bpm.value
   if (newBPM > 400 || newBPM < 20) {
     return
   }
-
-  state.bpmMultiplier = newMultiplier
+  bpmMultiplier.value = newMultiplier
 }
 
 export default function useAudioSettings() {
   return {
-    ...toRefs(state),
-    setBPM,
-    setOffset,
-    setDraggingBPM,
-    setDraggingOffset,
-    setBPMMultiplier,
+    bpm,
+    draggingBPM,
+    offset,
+    draggingOffset,
+    bpmMultiplier,
+    setBPMMultiplier
   }
 }

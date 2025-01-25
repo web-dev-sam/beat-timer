@@ -45,7 +45,10 @@ export default class SpectogramHandler {
     this.audioBuffer = audioBuffer
     this.canvas = canvas
     this.canvasImg = canvasImg
-    this.canvasContext = this.canvas.getContext('2d')!
+    this.canvasContext = this.canvas.getContext('2d', {
+      willReadFrequently: true,
+    })!
+
     this.sampleRate = audioBuffer.sampleRate
     this.workers = this.initWorkers()
 
@@ -162,7 +165,7 @@ export default class SpectogramHandler {
     const beatOffsetInsideWindow = intervalInPX - beatOffsetOutsideWindow
     const totalBeatOffsetInPX = beatOffsetInsideWindow + offsetInPX
 
-    const beatLines = [] as BeatLine[]
+    const beatLines: BeatLine[] = []
     const leftBeatShift = Math.ceil(totalBeatOffsetInPX / intervalInPX) * intervalInPX
     let left = totalBeatOffsetInPX - leftBeatShift
     while (left <= this.vw) {

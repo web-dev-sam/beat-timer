@@ -15,7 +15,7 @@
     "format": "prettier --write src/",
     "format-check": "prettier --check src/",
     "preview": "vite preview",
-    "type-check": "vue-tsc --noEmit -p tsconfig.app.json --composite false"
+    "type-check": "vue-tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.11.6",

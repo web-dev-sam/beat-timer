@@ -10,21 +10,16 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'drag-start'): void
-  (e: 'active-beatline-change', type: 'OFFSET'): void
   (e: 'loaded'): void
 }>()
 
-const { bpm, offset, draggingOffset, setBPM, setOffset, setDraggingBPM, setDraggingOffset } =
-  useAudioSettings()
+const { bpm, offset, draggingBPM, draggingOffset } = useAudioSettings()
 const initialBpm = bpm.value
 const initialOffset = offset.value
 const state = reactive<{
   spectogramHandler: SpectogramHandler | null
   beatlines: BeatLine[]
-  activeBeatline: {
-    type: 'OFFSET'
-    data: BeatLine | null
-  }
+  activeBeatline: BeatLine | null
   dragStart: number | null
   hovering: boolean | null
   progress: number
@@ -34,10 +29,7 @@ const state = reactive<{
 }>({
   spectogramHandler: null,
   beatlines: [],
-  activeBeatline: {
-    type: 'OFFSET',
-    data: null,
-  },
+  activeBeatline: null,
   dragStart: null,
   hovering: null,
   progress: 0,
@@ -96,38 +88,31 @@ const hoverBeat = computed(() => {
 
 watch(
   () => bpm.value,
-  (bpm) => {
-    if (bpm != null && bpm !== initialBpm) {
-      setBPM(bpm)
-      setDraggingBPM(bpm)
+  (changedBPM) => {
+    if (changedBPM != null && changedBPM !== initialBpm) {
+      bpm.value = changedBPM
+      draggingBPM.value = changedBPM
     }
   },
 )
 
 watch(
   () => offset.value,
-  (offset) => {
-    if (offset != null && offset !== initialOffset) {
-      setOffset(offset)
-      setDraggingOffset(offset)
+  (changedOffset) => {
+    if (changedOffset != null && changedOffset !== initialOffset) {
+      offset.value = changedOffset
+      draggingOffset.value = changedOffset
     }
-  },
-)
-
-watch(
-  () => state.activeBeatline,
-  () => {
-    emit('active-beatline-change', state.activeBeatline.type)
   },
 )
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const canvasImg = ref<HTMLDivElement | null>(null)
 onMounted(async () => {
-  setBPM(initialBpm)
-  setDraggingBPM(initialBpm)
-  setOffset(initialOffset)
-  setDraggingOffset(initialOffset)
+  bpm.value = initialBpm
+  draggingBPM.value = initialBpm
+  offset.value = initialOffset
+  draggingOffset.value = initialOffset
   state.spectogramHandler = new SpectogramHandler({
     audioBuffer: props.audioBuffer,
     canvas: canvasRef.value!,
@@ -190,27 +175,17 @@ function onCanvasMouseMove(event: MouseEvent) {
       return
     }
 
-    state.activeBeatline = {
-      data: nearestBeatline,
-      type: 'OFFSET',
-    }
+    state.activeBeatline = nearestBeatline
     return
   }
 
-  if (
-    state.activeBeatline == null ||
-    state.activeBeatline.data == null ||
-    state.dragStart == null ||
-    state.dragTarget == null
-  ) {
+  if (state.activeBeatline == null || state.dragStart == null || state.dragTarget == null) {
     return
   }
 
   // Adjust Offset
-  if (state.activeBeatline.type === 'OFFSET') {
-    const updater = state.dragTarget === 'new-start' ? updateOnOffsetDragNormal : updateOnOffsetDrag
-    updater(state.dragStart - event.clientX)
-  }
+  const updater = state.dragTarget === 'new-start' ? updateOnOffsetDragNormal : updateOnOffsetDrag
+  updater(state.dragStart - event.clientX)
 
   state.beatlines = [...state.beatlines]
 }
@@ -233,10 +208,10 @@ function onNewStartMouseDown(event: MouseEvent) {
 }
 
 function onCanvasMouseUp(event: MouseEvent) {
-  if (state.dragStart != null && state.activeBeatline.type === 'OFFSET') {
+  if (state.dragStart != null) {
     const updater = state.dragTarget === 'new-start' ? updateOnOffsetDragNormal : updateOnOffsetDrag
     const newOffset = updater(state.dragStart - event.clientX)
-    setOffset(newOffset)
+    offset.value = newOffset
   }
 
   state.dragStart = null
@@ -247,8 +222,8 @@ function updateOnOffsetDrag(dragChange: number) {
   const offsetDiff = dragChange / 4
   const newOffset = offset.value - offsetDiff
 
-  setDraggingBPM(bpm.value)
-  setDraggingOffset(newOffset)
+  draggingBPM.value = bpm.value
+  draggingOffset.value = newOffset
   return newOffset
 }
 
@@ -256,8 +231,8 @@ function updateOnOffsetDragNormal(dragChange: number) {
   const offsetDiff = state.spectogramHandler?.pxToSec(dragChange) ?? 0
   const newOffset = offset.value! - offsetDiff * 1000
 
-  setDraggingBPM(bpm.value!)
-  setDraggingOffset(newOffset)
+  draggingBPM.value = bpm.value
+  draggingOffset.value = newOffset
   return newOffset
 }
 
@@ -269,11 +244,9 @@ function onCanvasMouseLeave() {
   state.hovering = false
 }
 
-function onMetronome(time: number, seeked: boolean = false) {
+function updateProgress(time: number, startAtMiddle: boolean = false) {
   state.progress = time
-  if (state.spectogramHandler) {
-    state.spectogramHandler.updateTime(time, seeked ? 0.5 : 0)
-  }
+  state.spectogramHandler?.updateTime(time, startAtMiddle ? 0.5 : 0)
 }
 
 function formatMS(ms: number) {
@@ -284,7 +257,7 @@ function formatMS(ms: number) {
 }
 
 defineExpose({
-  onMetronome,
+  updateProgress,
   setZoomLevel,
 })
 </script>
@@ -319,7 +292,7 @@ defineExpose({
         <div
           class="beat-line h-32"
           :style="{
-            left: (state.activeBeatline.data?.left ?? '-100') + 'px',
+            left: (state.activeBeatline?.left ?? '-100') + 'px',
             opacity: 0.5,
           }"
         ></div>
