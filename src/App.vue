@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { inject } from '@vercel/analytics'
-import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
+import { inject as useVercelAnalytics } from '@vercel/analytics'
+import { ref, reactive, computed, watch, onMounted, onUnmounted, useTemplateRef } from 'vue'
 
 import FfmpegHandler from '@/utils/FfmpegHandler'
 import { guess } from 'web-audio-beat-detector'
 import { isTouchPrimary, songOffsetToSilencePadding } from '@/utils/utils'
+import { useMouseInElement, useKeyModifier, type MaybeElementRef } from '@vueuse/core'
 import useAudioSettings from '@/composables/useAudioSettings'
 
 import IconsHelp from '@/components/icons/IconsHelp.vue'
@@ -13,6 +14,8 @@ import IconsDown from '@/components/icons/IconsDown.vue'
 import IconsZoomOut from '@/components/icons/IconsZoomOut.vue'
 import IconsZoomIn from '@/components/icons/IconsZoomIn.vue'
 import IconsClose from '@/components/icons/IconsClose.vue'
+import IconsMagic from './components/icons/IconsMagic.vue'
+import IconsDrum from './components/icons/IconsDrum.vue'
 
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import FooterArea from '@/components/FooterArea.vue'
@@ -24,11 +27,9 @@ import UFileInput from '@/components/u/UFileInput.vue'
 import UButton from '@/components/u/UButton.vue'
 import UValueEdit from '@/components/u/UValueEdit.vue'
 import URange from '@/components/u/URange.vue'
-import IconsMagic from './components/icons/IconsMagic.vue'
-import IconsDrum from './components/icons/IconsDrum.vue'
 
 const version = APP_VERSION
-inject()
+useVercelAnalytics()
 
 // v2.3.5 Fix .mp3 files not displaying
 // Adjust volume and length at start (make 5min max)
@@ -49,6 +50,12 @@ const {
   setDraggingBPM,
   setDraggingOffset,
 } = useAudioSettings()
+
+const detectBPMButtonRef = useTemplateRef('detect-bpm-button')
+const { isOutside } = useMouseInElement(detectBPMButtonRef as MaybeElementRef)
+const shiftKeyState = useKeyModifier('Shift')
+const isShiftHoveringBPMFinderButton = computed(() => !isOutside.value && shiftKeyState.value)
+
 const state = reactive<{
   audioFile: File | null
   stopped: boolean
@@ -208,14 +215,16 @@ async function loadAudioFile(file: File) {
   }
 }
 
-async function onBPMDetect() {
+async function onBPMDetect(onlyCurrentSlice: boolean) {
   const currentTime = audioPlayerRef.value?.player?.getCurrentTime?.()
   if (currentTime == null) return
 
-  const sliceBuffer = state.ffmpegHandler.getAudioSlice(currentTime - 8, currentTime + 8)
-  if (sliceBuffer == null) return
+  const buffer = onlyCurrentSlice
+    ? state.ffmpegHandler.getAudioSlice(currentTime - 8, currentTime + 8)
+    : await state.ffmpegHandler.getAudioBuffer()
+  if (buffer == null) return
 
-  const { bpm, offset } = await guess(sliceBuffer)
+  const { bpm, offset } = await guess(buffer)
   setBPM(bpm)
   setOffset(offset * 1000)
 }
@@ -498,10 +507,14 @@ function preventDefaults(e: Event) {
                 <span class="ml-8 flex gap-8">
                   <button
                     class="inline-block translate-y-1 hover:text-primary"
-                    tooltip="Detect BPM in this section"
+                    :tooltip="
+                      isShiftHoveringBPMFinderButton ? 'Detect BPM in this section' : 'Detect BPM'
+                    "
                     tooltip-position="top"
                     tooltip-primary
-                    @click="onBPMDetect"
+                    ref="detect-bpm-button"
+                    @click.exact="onBPMDetect(false)"
+                    @click.shift="onBPMDetect(true)"
                   >
                     <IconsMagic />
                   </button>

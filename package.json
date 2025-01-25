@@ -1,6 +1,6 @@
 {
   "name": "beat-timer",
-  "version": "2.3.4",
+  "version": "2.3.5",
   "author": {
     "name": "Samuel Braun",
     "url": "https://www.webry.com/about/"
@@ -20,6 +20,7 @@
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.11.6",
     "@vercel/analytics": "^1.1.0",
+    "@vueuse/core": "^12.5.0",
     "vue": "^3.5.13",
     "web-audio-beat-detector": "^8.1.54"
   },
