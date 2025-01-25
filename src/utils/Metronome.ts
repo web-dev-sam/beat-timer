@@ -43,7 +43,7 @@ export default class Metronome {
     if (this.isPlaying && this.metronomeNode) {
       const finalBpm = bpm.value * bpmMultiplier.value
       if (finalBpm === 0) {
-        return
+        throw new Error('BPM cannot be 0')
       }
 
       this.metronomeNode.parameters.get('interval')?.setValueAtTime(

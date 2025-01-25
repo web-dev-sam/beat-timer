@@ -224,12 +224,12 @@ let clicks: number[] = []
 let lastTimeout: number | null = null
 function onBPMFinderClick() {
   function calculateBPM(timestamps: number[]): number {
-    if (timestamps.length < 2) return 0
+    if (timestamps.length < 2) return 120
 
     const intervals = timestamps.slice(1).map((time, i) => time - timestamps[i]!)
     const avgInterval = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length
+    if (avgInterval === 0) return 120
 
-    console.log((Math.round(6000000 / avgInterval) / 100).toFixed(2))
     return Math.round(60000 / avgInterval)
   }
 
