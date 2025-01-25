@@ -41,12 +41,15 @@ export default class Metronome {
 
   private updateMetronomeInterval() {
     if (this.isPlaying && this.metronomeNode) {
-      this.metronomeNode.parameters
-        .get('interval')
-        ?.setValueAtTime(
-          (this.context.sampleRate * 60) / (bpm.value * bpmMultiplier.value),
-          this.context.currentTime,
-        )
+      const finalBpm = bpm.value * bpmMultiplier.value
+      if (finalBpm === 0) {
+        return
+      }
+
+      this.metronomeNode.parameters.get('interval')?.setValueAtTime(
+        (this.context.sampleRate * 60) / finalBpm,
+        this.context.currentTime,
+      )
     }
   }
 
