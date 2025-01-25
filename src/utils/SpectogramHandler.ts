@@ -241,9 +241,9 @@ export default class SpectogramHandler {
             const [red, green, blue] = colorMap[intensity] || [0, 0, 0]
             const idx = (y * width + segmentIndex) * 4
 
-            imageData.data[idx] = red
-            imageData.data[idx + 1] = green
-            imageData.data[idx + 2] = blue
+            imageData.data[idx] = red!
+            imageData.data[idx + 1] = green!
+            imageData.data[idx + 2] = blue!
             imageData.data[idx + 3] = 255
           }
 

@@ -155,9 +155,9 @@ export default class FfmpegHandler {
     const [, hours, minutes, seconds] = match
 
     // Convert all units to milliseconds
-    const hoursMs = parseInt(hours) * 3600 * 1000
-    const minutesMs = parseInt(minutes) * 60 * 1000
-    const secondsMs = parseFloat(seconds) * 1000
+    const hoursMs = parseInt(hours!) * 3600 * 1000
+    const minutesMs = parseInt(minutes!) * 60 * 1000
+    const secondsMs = parseFloat(seconds!) * 1000
 
     return hoursMs + minutesMs + Math.round(secondsMs)
   }
@@ -165,6 +165,9 @@ export default class FfmpegHandler {
   estimateFileSize(durationInSeconds: number, quality: number): number {
     const bitrates = [64, 80, 96, 112, 128, 160, 192, 224, 256, 320]
     const bitrate = bitrates[Math.round(quality) - 1]
+    if (!bitrate) {
+      throw new Error('Invalid quality value.')
+    }
 
     const sizeInBits = bitrate * 1000 * durationInSeconds
     const sizeInBytes = sizeInBits / 8

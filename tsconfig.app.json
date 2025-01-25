@@ -9,6 +9,8 @@
     "noImplicitReturns": true,
     "noUnusedParameters": true,
     "noUnusedLocals": true,
+    "noUncheckedIndexedAccess": true,
+    "noPropertyAccessFromIndexSignature": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "composite": true,

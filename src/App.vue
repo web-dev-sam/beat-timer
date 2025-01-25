@@ -170,7 +170,7 @@ async function onFileChange(event: Event) {
   }
 
   state.startedManualLoading = true
-  await loadAudioFile(input.files[0])
+  await loadAudioFile(input.files[0]!)
   state.audioLoaded = true
 }
 
@@ -226,7 +226,7 @@ function onBPMFinderClick() {
   function calculateBPM(timestamps: number[]): number {
     if (timestamps.length < 2) return 0
 
-    const intervals = timestamps.slice(1).map((time, i) => time - timestamps[i])
+    const intervals = timestamps.slice(1).map((time, i) => time - timestamps[i]!)
     const avgInterval = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length
 
     console.log((Math.round(6000000 / avgInterval) / 100).toFixed(2))
@@ -330,7 +330,7 @@ async function handleDrop(event: DragEvent) {
   const files = Array.from(event.dataTransfer?.files ?? [])
   if (files.length === 0) return
 
-  const file = files[0]
+  const file = files[0]!
   if (!file.type.startsWith('audio/')) return
   if (state.step !== 'start') return
 

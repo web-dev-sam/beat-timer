@@ -182,11 +182,11 @@ function setZoomLevel(value: number) {
 function onCanvasMouseMove(event: MouseEvent) {
   const currentlyDragging = state.dragStart != null
   if (!currentlyDragging) {
-    const nearestBeatline = state.beatlines.reduce((prev, curr) =>
-      Math.abs(curr.left - event.clientX) < Math.abs(prev.left - event.clientX) ? curr : prev,
-    )
+    const nearestBeatline = state.beatlines.sort(
+      (a, b) => Math.abs(a.left - event.clientX) - Math.abs(b.left - event.clientX),
+    )[0]
     const canvasRect = canvasImg.value?.getBoundingClientRect()
-    if (!canvasRect) {
+    if (!canvasRect || !nearestBeatline) {
       return
     }
 
