@@ -28,6 +28,7 @@ export default class FfmpegHandler {
     bpm: number,
     offset: number,
     exportQuality: number,
+    doVolumeNormalization: boolean,
     onProgress: (progress: number) => void,
   ) {
     const file = this.file
@@ -41,10 +42,11 @@ export default class FfmpegHandler {
       log('ffmpegDownloadBPM', bpm.toString())
       log('ffmpegDownloadPaddingDuration', paddingDuration.toString())
       log('ffmpegDownloadExportQuality', exportQuality.toString())
+      log('ffmpegDownloadDoVolumeNormalization', doVolumeNormalization.toString())
       if (paddingDuration >= 0) {
-        ; (await this.padAudio(file, paddingDuration, onProgress, exportQuality))()
+        ; (await this.padAudio(file, paddingDuration, onProgress, exportQuality, doVolumeNormalization))()
       } else {
-        ; (await this.trimAudio(file, -paddingDuration, onProgress, exportQuality))()
+        ; (await this.trimAudio(file, -paddingDuration, onProgress, exportQuality, doVolumeNormalization))()
       }
     } catch (error) {
       const err = error as Error
@@ -59,6 +61,7 @@ export default class FfmpegHandler {
     beginningPad: number = 0,
     onProgress: (progress: number) => void,
     exportQuality: number = 8,
+    doVolumeNormalization: boolean = true,
   ) {
     const name = file.name
     const paddedName = 'song.ogg'
@@ -76,23 +79,19 @@ export default class FfmpegHandler {
         onProgress((time * 100) / totalTime)
       }
     })
+    const filterComplex = doVolumeNormalization
+      ? '[0:a][1:a]concat=n=2:v=0:a=1[concat];[concat]loudnorm=I=-14:LRA=11:TP=-1.5[audio_out]'
+      : '[0:a][1:a]concat=n=2:v=0:a=1[audio_out]'
+
     await this.ffmpeg.run(
-      '-f',
-      'lavfi',
-      '-t',
-      this.formatDuration(silenceDuration),
-      '-i',
-      `anullsrc=channel_layout=stereo:sample_rate=44100`,
-      '-i',
-      name,
-      '-filter_complex',
-      '[0:a][1:a]concat=n=2:v=0:a=1[concat];[concat]loudnorm=I=-14:LRA=11:TP=-1.5[audio_out]',
-      '-map',
-      '[audio_out]',
-      '-c:a',
-      'libvorbis',
-      '-q:a',
-      exportQuality.toString(),
+      '-f', 'lavfi',
+      '-t', this.formatDuration(silenceDuration),
+      '-i', `anullsrc=channel_layout=stereo:sample_rate=44100`,
+      '-i', name,
+      '-filter_complex', filterComplex,
+      '-map', '[audio_out]',
+      '-c:a', 'libvorbis',
+      '-q:a', exportQuality.toString(),
       paddedName,
     )
 
@@ -104,7 +103,8 @@ export default class FfmpegHandler {
     file: File,
     beginningTrim = 0,
     onProgress: (progress: number) => void,
-    exportQuality = 8,
+    exportQuality: number = 8,
+    doVolumeNormalization: boolean = true,
   ) {
     const name = file.name
     const trimmedName = 'song.ogg'
@@ -125,7 +125,8 @@ export default class FfmpegHandler {
         onProgress((time * 100) / totalTime)
       }
     })
-    await this.ffmpeg.run(
+
+    const ffmpegArgs = [
       'pipe:0 -v warning',
       '-i',
       name,
@@ -133,14 +134,15 @@ export default class FfmpegHandler {
       this.formatDuration(trimStart),
       '-t',
       this.formatDuration(trimDuration),
-      '-filter:a',
-      'loudnorm=I=-14:LRA=11:TP=-1.5',
+      doVolumeNormalization ? '-filter:a' : '',
+      doVolumeNormalization ? 'loudnorm=I=-14:LRA=11:TP=-1.5' : '',
       '-c:a',
       'libvorbis',
       '-q:a',
       exportQuality.toString(),
       trimmedName,
-    )
+    ].filter(Boolean)
+    await this.ffmpeg.run(...ffmpegArgs)
 
     const trimmedData = this.ffmpeg.FS('readFile', trimmedName)
     return () => this.downloadAudio(trimmedData, trimmedName)

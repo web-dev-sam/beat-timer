@@ -27,13 +27,13 @@ import UFileInput from '@/components/u/UFileInput.vue'
 import UButton from '@/components/u/UButton.vue'
 import UValueEdit from '@/components/u/UValueEdit.vue'
 import URange from '@/components/u/URange.vue'
+import UCheckbox from '@/components/u/UCheckbox.vue'
 
 const version = APP_VERSION
 useVercelAnalytics()
 
-// v2.3.5 Fix .mp3 files not displaying
+// v2.3.7 Fix .mp3 files not displaying
 // Adjust volume and length at start (make 5min max)
-// v2.3.6 Toggle volume normalization at export
 // v2.4 Trim audio at end (or add silence)
 // v2.5 Export new zipped BeatSaber map with right settings
 // v2.6.1 Update everything simple (updates, pnpm, etc.)
@@ -72,6 +72,7 @@ const state = reactive<{
   specLoaded: boolean
   advancedSettingsOpen: boolean
   exportQuality: number
+  doVolumeNormalization: boolean
   downloadProgress: number
   ffmpegHandler: FfmpegHandler
   zoomLevel: number
@@ -95,6 +96,7 @@ const state = reactive<{
   specLoaded: false,
   advancedSettingsOpen: false,
   exportQuality: 8,
+  doVolumeNormalization: true,
   ffmpegHandler: new FfmpegHandler(),
   zoomLevel: 15,
   downloadProgress: 0,
@@ -282,9 +284,15 @@ function goBackToTiming() {
 
 async function download() {
   state.downloading = true
-  await state.ffmpegHandler.download(bpm.value, offset.value, state.exportQuality, (progress) => {
-    state.downloadProgress = progress
-  })
+  await state.ffmpegHandler.download(
+    bpm.value,
+    offset.value,
+    state.exportQuality,
+    state.doVolumeNormalization,
+    (progress) => {
+      state.downloadProgress = progress
+    },
+  )
   state.downloading = false
 }
 
@@ -585,16 +593,12 @@ function preventDefaults(e: Event) {
               class="mr-1 inline-block"
               style="--icon-size: 16px"
             />
-            <IconsUp
-              v-if="state.advancedSettingsOpen"
-              class="mr-1 inline-block"
-              style="--icon-size: 16px"
-            />
+            <IconsUp v-else class="mr-1 inline-block" style="--icon-size: 16px" />
             <span class="inline-block">Advanced</span>
           </button>
-          <div v-if="state.advancedSettingsOpen">
-            <div class="flex items-center justify-center gap-4">
-              <div>Export Quality</div>
+          <div v-if="state.advancedSettingsOpen" class="grid max-w-max grid-cols-2 gap-x-6 gap-y-4">
+            <div class="text-right">Export Quality</div>
+            <div class="flex w-[460px] items-center gap-4">
               <div class="h3">
                 {{ state.exportQuality.toFixed(0) }}
               </div>
@@ -612,6 +616,10 @@ function preventDefaults(e: Event) {
               <div tooltip-position="bottom" tooltip="Could be lower or higher based on the song.">
                 ~{{ estimateFileSize }}
               </div>
+            </div>
+            <div class="text-right">Volume Normalization</div>
+            <div class="flex w-[460px] items-center gap-4">
+              <UCheckbox v-model="state.doVolumeNormalization" />
             </div>
           </div>
         </template>

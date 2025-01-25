@@ -31,6 +31,7 @@ const globalDebugInformation: Record<string, string> = {
 
 export function useLogger() {
   const log = (key: string, message: string) => {
+    console.log(key, message)
     globalDebugInformation[key] = message
   }
 
