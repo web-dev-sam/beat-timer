@@ -21,7 +21,7 @@ const globalDebugInformation: Record<string, string> = {
       name = 'Firefox'
     } else if (
       window.navigator.userAgent.indexOf('MSIE') !== -1 ||
-      typeof (document as any).documentMode !== 'undefined'
+      "documentMode" in document
     ) {
       name = 'IE'
     }

@@ -21,7 +21,7 @@ export default class SpectogramHandler {
   private durationInMS: number
   private currentZoom: number
   private vw: number
-  private onBeatlineUpdate: (beatlines: any[]) => void
+  private onBeatlineUpdate: (beatlines: BeatLine[]) => void
   private scale: number
   private time: number
   private a: number
@@ -37,7 +37,7 @@ export default class SpectogramHandler {
     audioBuffer: AudioBuffer
     canvas: HTMLCanvasElement
     canvasImg: HTMLDivElement
-    onBeatlineUpdate: (beatlines: any[]) => void
+    onBeatlineUpdate: (beatlines: BeatLine[]) => void
   }) {
     this.segmentSize = 1024
     this.segmentOverlap = 512
