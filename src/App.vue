@@ -32,12 +32,17 @@ import URange from '@/components/u/URange.vue'
 import UCheckbox from '@/components/u/UCheckbox.vue'
 import MainLayout from './layout/MainLayout.vue'
 
-// Click on outside (edit)
+// Plan:
+//        Fix gray colors
+//        Small Screen friendly (esp. height)
 // v2.3.7 Fix .mp3 files not displaying
-// Adjust volume and length at start (make 5min max)
-// v2.4 Trim audio at end (or add silence)
-// v2.5 Export new zipped BeatSaber map with right settings
-// v2.6 Updating everything (incl. ffmpeg)
+//        Normalize volume and shorten length at start (make 5min max)
+//        Add import progress bar
+//        Fix export to use original buffer
+//        Debugging button & Github issue link
+// v2.3.8 Export new zipped BeatSaber map with right settings
+// v2.4   Trim audio at end (or add silence)
+// v2.5   Updating everything (incl. ffmpeg, tailwind, ...)
 
 const detectBPMButtonRef = useTemplateRef('detect-bpm-button')
 const audioPlayerRef = useTemplateRef('audio-player')
