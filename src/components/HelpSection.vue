@@ -10,7 +10,7 @@ const emit = defineEmits(['close'])
   <div
     class="auto-flow-small fixed left-0 top-0 z-10 h-screen min-w-full overflow-y-auto bg-dark p-4 text-center"
   >
-    <button @click="emit('close')" class="absolute left-6 top-6 md:left-12 md:top-14">
+    <button @click="emit('close')" class="absolute left-6 top-6 md:left-12 md:top-12">
       <X />
     </button>
     <div class="m-auto w-full lg:w-2/3">
