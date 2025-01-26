@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { nextTick, reactive, useId, watch } from 'vue'
+import { nextTick, reactive, useTemplateRef, watch } from 'vue'
+import { onClickOutside, onKeyStroke } from '@vueuse/core'
 
 import { Pencil } from 'lucide-vue-next'
 
-const bpmEditInputId = useId()
+const bpmEditInputRef = useTemplateRef('bpm-edit-input')
 const props = defineProps<{
   value: number
   type: 'BPM' | 'MS'
@@ -30,7 +31,13 @@ watch(
   },
 )
 
-function save(value: number) {
+onClickOutside(bpmEditInputRef, () => (state.edit = false))
+onKeyStroke('Escape', () => (state.edit = false))
+onKeyStroke('Enter', (event) => save(state.innerValue, event))
+
+function save(value: number, event: KeyboardEvent): void {
+  event.preventDefault()
+
   if (!isNaN(value)) {
     const max = props.type === 'BPM' ? 400 : 10000
     const min = props.type === 'BPM' ? 1 : -10000
@@ -40,7 +47,7 @@ function save(value: number) {
   }
 }
 
-function isNumber(evt: KeyboardEvent): void {
+function enteredCharacter(evt: KeyboardEvent): void {
   const keysAllowed: string[] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', 'Enter']
   if (props.type === 'MS') {
     keysAllowed.push('-')
@@ -57,11 +64,8 @@ function onEditClick() {
   if (state.edit) {
     emit('edit-start')
     nextTick(() => {
-      const input = document.querySelector(`#bpm-edit-input-${bpmEditInputId}`) as HTMLInputElement
-      if (input) {
-        input.focus()
-        input.select()
-      }
+      bpmEditInputRef.value?.focus()
+      bpmEditInputRef.value?.select()
     })
   }
 }
@@ -81,15 +85,15 @@ function onEditClick() {
             <slot name="buttons"></slot>
           </div>
           <input
-            :id="`bpm-edit-input-${bpmEditInputId}`"
+            v-if="state.edit"
+            ref="bpm-edit-input"
             type="text"
             class="mt-1"
             v-model.number="state.innerValue"
-            @keypress="isNumber($event)"
-            @keyup.enter="save(state.innerValue)"
+            @keypress="enteredCharacter($event)"
             v-show="state.edit"
           />
-          <kbd v-show="state.edit" class="mt-1">Enter</kbd>
+          <kbd v-if="state.edit" class="mt-1">Enter</kbd>
         </div>
       </div>
     </div>
