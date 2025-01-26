@@ -5,9 +5,9 @@ import Player from '@/utils/Player'
 
 import AudioPlayerBasicControls from '@/components/AudioPlayerBasicControls.vue'
 import IconsMetronome from '@/components/icons/IconsMetronome.vue'
-import IconsSpeaker from '@/components/icons/IconsSpeaker.vue'
 import URange from '@/components/u/URange.vue'
 import useAudioSettings from '@/composables/useAudioSettings'
+import { Speaker } from 'lucide-vue-next'
 
 const props = defineProps<{
   audioBuffer: AudioBuffer
@@ -156,7 +156,7 @@ defineExpose({
         </div>
         <button @click="toggleMute" class="text-left">
           <span tooltip-position="right" tooltip="Volume" class="inline-block">
-            <IconsSpeaker />
+            <Speaker />
           </span>
         </button>
       </div>

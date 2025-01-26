@@ -2,11 +2,8 @@
 import { computed } from 'vue'
 
 import IconsStop from '@/components/icons/IconsStop.vue'
-import IconsPause from '@/components/icons/IconsPause.vue'
-import IconsPlay from '@/components/icons/IconsPlay.vue'
-import IconsX1 from '@/components/icons/IconsX1.vue'
-import IconsX2 from '@/components/icons/IconsX2.vue'
 import useAudioSettings from '@/composables/useAudioSettings'
+import { Pause, Play, Rabbit, Turtle } from 'lucide-vue-next'
 
 const props = defineProps<{
   isStopped: boolean
@@ -27,7 +24,7 @@ const metronomeDoubleSpeedDisabled = computed(() => {
 </script>
 
 <template>
-  <div class="flex items-end gap-12">
+  <div class="flex items-center gap-12">
     <button
       :disabled="metronomeDoubleSpeedDisabled"
       tooltip-position="left"
@@ -35,12 +32,12 @@ const metronomeDoubleSpeedDisabled = computed(() => {
         bpmMultiplier !== 1 ? 'Make the metronome normal speed' : 'Make the metronome twice as fast'
       "
     >
-      <IconsX2 v-show="bpmMultiplier !== 2" @click="() => setBPMMultiplier(2)" />
-      <IconsX1 v-show="bpmMultiplier !== 1" @click="() => setBPMMultiplier(1)" />
+      <Rabbit v-show="bpmMultiplier !== 2" @click="() => setBPMMultiplier(2)" />
+      <Turtle v-show="bpmMultiplier !== 1" @click="() => setBPMMultiplier(1)" />
     </button>
     <button @click="emit('play')">
-      <IconsPlay v-if="isPaused || isStopped" />
-      <IconsPause v-if="isPlaying" />
+      <Play v-if="isPaused || isStopped" />
+      <Pause v-if="isPlaying" />
     </button>
     <button :disabled="isStopped" @click="emit('stop')">
       <IconsStop />

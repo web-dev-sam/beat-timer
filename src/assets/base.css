@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  --color-muted: hsla(0, 0%, 100%, 0.33);
+  --color-muted: hsla(263, 100%, 90%, 0.4);
   --color-primary-light: hsl(263, 100%, 72%);
   --color-primary-light-muted: hsla(263, 100%, 72%, 0.75);
   --color-primary: hsl(263, 100%, 58%);
@@ -81,12 +81,6 @@ label:has(input[type='radio']) {
   border-radius: 0.5rem;
 }
 
-svg {
-  width: var(--icon-size, 24px) !important;
-  height: var(--icon-size, 24px) !important;
-  fill: var(--icon-fill, white) !important;
-}
-
 a {
   color: var(--color-primary-light);
   text-decoration: underline;
@@ -126,10 +120,6 @@ a:hover {
   text-rendering: optimizeLegibility;
 }
 
-.text-muted {
-  --icon-fill: var(--color-muted);
-}
-
 .auto-flow-big > * + * {
   margin-top: clamp(3rem, 8vh, 5.75rem);
 }
@@ -157,7 +147,7 @@ a:hover {
 
 [tooltip]::after {
   content: attr(tooltip);
-  @apply pointer-events-none absolute left-1/2 top-full w-max -translate-x-1/2 transform rounded px-2 py-2 text-sm text-muted opacity-0;
+  @apply pointer-events-none absolute left-1/2 top-full w-max -translate-x-1/2 transform rounded px-2 py-2 text-sm text-white opacity-0;
 }
 
 [tooltip]:hover::after {

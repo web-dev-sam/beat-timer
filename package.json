@@ -21,6 +21,7 @@
     "@ffmpeg/ffmpeg": "^0.11.6",
     "@vercel/analytics": "^1.4.1",
     "@vueuse/core": "^12.5.0",
+    "lucide-vue-next": "^0.474.0",
     "vue": "^3.5.13",
     "web-audio-beat-detector": "^8.2.20"
   },

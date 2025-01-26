@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, reactive, useId, watch } from 'vue'
 
-import IconsPen from '@/components/icons/IconsPen.vue'
+import { Pencil } from 'lucide-vue-next'
 
 const bpmEditInputId = useId()
 const props = defineProps<{
@@ -70,7 +70,7 @@ function onEditClick() {
 <template>
   <div class="value-edit-wrapper text-left">
     <div class="align-start flex gap-4" :class="reversed ? 'flex-col-reverse' : 'flex-col'">
-      <button @click="onEditClick"><IconsPen /></button>
+      <button @click="onEditClick"><Pencil /></button>
       <div>
         <div class="relative">
           <div class="flex items-center">

@@ -7,13 +7,15 @@ import { songOffsetToSilencePadding, useBPMFinder } from '@/utils/utils'
 import { useMouseInElement, useKeyModifier, type MaybeElementRef } from '@vueuse/core'
 import useAudioSettings from '@/composables/useAudioSettings'
 
-import IconsHelp from '@/components/icons/IconsHelp.vue'
-import IconsUp from '@/components/icons/IconsUp.vue'
-import IconsDown from '@/components/icons/IconsDown.vue'
-import IconsZoomOut from '@/components/icons/IconsZoomOut.vue'
-import IconsZoomIn from '@/components/icons/IconsZoomIn.vue'
-import IconsMagic from './components/icons/IconsMagic.vue'
-import IconsDrum from './components/icons/IconsDrum.vue'
+import {
+  ChevronDown,
+  ChevronUp,
+  Drum,
+  HelpCircle,
+  WandSparkles,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-vue-next'
 
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import FooterArea from '@/components/FooterArea.vue'
@@ -30,6 +32,7 @@ import URange from '@/components/u/URange.vue'
 import UCheckbox from '@/components/u/UCheckbox.vue'
 import MainLayout from './layout/MainLayout.vue'
 
+// Click on outside (edit)
 // v2.3.7 Fix .mp3 files not displaying
 // Adjust volume and length at start (make 5min max)
 // v2.4 Trim audio at end (or add silence)
@@ -197,8 +200,8 @@ async function handleDrop(file: File) {
   <MainLayout :deactivateDropZone="step !== 'start' || isHelpPageShown" @drop="handleDrop">
     <HeaderButtons>
       <template #left>
-        <button @click="isHelpPageShown = true">
-          <IconsHelp class="text-muted" tooltip-position="right" tooltip="Help" />
+        <button @click="isHelpPageShown = true" tooltip-position="right" tooltip="Help">
+          <HelpCircle />
         </button>
         <HelpSection v-if="isHelpPageShown" @close="isHelpPageShown = false"> </HelpSection>
       </template>
@@ -253,7 +256,7 @@ async function handleDrop(file: File) {
                   @click.exact="onBPMGuessClick(false)"
                   @click.shift="onBPMGuessClick(true)"
                 >
-                  <IconsMagic />
+                  <WandSparkles />
                 </button>
                 <button
                   v-if="audioPlayerRef?.isPlaying"
@@ -263,7 +266,7 @@ async function handleDrop(file: File) {
                   tooltip-primary
                   @click="onBPMChange(bpmFinderClick())"
                 >
-                  <IconsDrum />
+                  <Drum />
                 </button>
               </span>
             </template>
@@ -298,8 +301,8 @@ async function handleDrop(file: File) {
               tooltip-position="top"
               :tooltip="zoomLevel !== 15 ? 'Zoom Out' : 'Zoom In'"
             >
-              <IconsZoomIn v-show="zoomLevel === 15" />
-              <IconsZoomOut v-show="zoomLevel !== 15" />
+              <ZoomIn v-show="zoomLevel === 15" />
+              <ZoomOut v-show="zoomLevel !== 15" />
             </button>
           </div>
         </div>
@@ -315,13 +318,13 @@ async function handleDrop(file: File) {
           <UButton :secondary="true" @click="step = 'edit'"> Back </UButton>
           <UButton :loading="isDownloading" @click="download"> Export </UButton>
         </div>
-        <button class="!mt-12" @click="toggleAdvancedSettings">
-          <IconsDown
+        <button class="!mt-12 inline-flex items-center" @click="toggleAdvancedSettings">
+          <ChevronDown
             v-if="!isAdvancedSettingsOpen"
             class="mr-1 inline-block"
             style="--icon-size: 16px"
           />
-          <IconsUp v-else class="mr-1 inline-block" style="--icon-size: 16px" />
+          <ChevronUp v-else class="mr-1 inline-block" style="--icon-size: 16px" />
           <span class="inline-block">Advanced</span>
         </button>
         <div v-if="isAdvancedSettingsOpen" class="grid max-w-max grid-cols-2 gap-x-6 gap-y-4">
