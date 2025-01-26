@@ -27,53 +27,6 @@ export function songOffsetToSilencePadding(bpm: number, offset: number) {
   return 60000 / bpm - offset
 }
 
-export function benchmark<T extends (...args: any[]) => any>(
-  _: Object,
-  propertyKey: string,
-  descriptor: TypedPropertyDescriptor<T>,
-): TypedPropertyDescriptor<T> {
-  const originalMethod = descriptor.value // Save the original method for later use
-
-  if (originalMethod) {
-    // Replace the original method with a wrapper
-    descriptor.value = function (this: any, ...args: any[]): any {
-      const start = performance.now() // Start timer
-
-      try {
-        const result = originalMethod.apply(this, args) // Call the original method
-
-        if (result instanceof Promise) {
-          // If the function returns a promise, wait for it to resolve
-          return result
-            .then((value: any) => {
-              const end = performance.now() // End timer
-              console.log(`Async execution time for ${propertyKey}: ${end - start} milliseconds`)
-              return value
-            })
-            .catch((error: any) => {
-              const end = performance.now()
-              console.error(
-                `Async execution time for ${propertyKey} (errored): ${end - start} milliseconds`,
-              )
-              throw error // Rethrow the error after logging
-            })
-        } else {
-          // If the function returns a non-promise value, log the time immediately
-          const end = performance.now() // End timer
-          console.log(`Execution time for ${propertyKey}: ${end - start} milliseconds`)
-          return result
-        }
-      } catch (error) {
-        const end = performance.now() // End timer
-        console.error(`Execution time for ${propertyKey} (exception): ${end - start} milliseconds`)
-        throw error // Rethrow the error after logging
-      }
-    } as T
-  }
-
-  return descriptor
-}
-
 export function openGitHubIssue(debugInfo: Record<string, string>) {
   let issueBody = `# Bug Description \n\n\n\n\n\n\n## Debugging Information\n`
   issueBody += `| Key       | Value         |\n|-----------|---------------|\n`
