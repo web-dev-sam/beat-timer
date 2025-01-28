@@ -66,7 +66,7 @@ const { click: bpmFinderClick } = useBPMFinder({
   muteMetronome: () => audioPlayerRef.value?.metronome?.mute?.(),
   unmuteMetronome: () => audioPlayerRef.value?.metronome?.unmute?.(),
 })
-const { isOutside } = useMouseInElement(detectBPMButtonRef as MaybeElementRef)
+const { isOutside } = useMouseInElement(detectBPMButtonRef)
 const shiftKeyState = useKeyModifier('Shift')
 
 const isShiftHoveringBPMFinderButton = computed(() => !isOutside.value && shiftKeyState.value)
