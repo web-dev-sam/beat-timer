@@ -4,7 +4,7 @@ import { ref, computed, watch, useTemplateRef } from 'vue'
 import FfmpegHandler from '@/utils/FfmpegHandler'
 import { guess } from 'web-audio-beat-detector'
 import { songOffsetToSilencePadding, useBPMFinder } from '@/utils/utils'
-import { useMouseInElement, useKeyModifier, type MaybeElementRef } from '@vueuse/core'
+import { useMouseInElement, useKeyModifier } from '@vueuse/core'
 import useAudioSettings from '@/composables/useAudioSettings'
 
 import {
