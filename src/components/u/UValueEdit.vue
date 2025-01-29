@@ -8,7 +8,7 @@ const bpmEditInputRef = useTemplateRef('bpm-edit-input')
 const props = defineProps<{
   value: number
   type: 'BPM' | 'MS'
-  reversed: Boolean
+  reversed: boolean
 }>()
 
 const emit = defineEmits<{

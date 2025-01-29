@@ -22,8 +22,7 @@ Beat Timer is mainly built to allow mappers of rythm games like BeatSaber to eas
 
 1. Clone the repository
 2. Install dependencies with `npm install`
-3. Run `npx husky install` to install the git hooks
-4. Run the development server with `npm run dev`
+3. Run the development server with `npm run dev`
 
 ## 📝 License
 

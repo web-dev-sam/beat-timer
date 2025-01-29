@@ -46,10 +46,9 @@ export default class Metronome {
         throw new Error('BPM cannot be 0')
       }
 
-      this.metronomeNode.parameters.get('interval')?.setValueAtTime(
-        (this.context.sampleRate * 60) / finalBpm,
-        this.context.currentTime,
-      )
+      this.metronomeNode.parameters
+        .get('interval')
+        ?.setValueAtTime((this.context.sampleRate * 60) / finalBpm, this.context.currentTime)
     }
   }
 

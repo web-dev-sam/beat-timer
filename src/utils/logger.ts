@@ -19,10 +19,7 @@ const globalDebugInformation: Record<string, string> = {
       name = 'Safari'
     } else if (window.navigator.userAgent.indexOf('Firefox') != -1) {
       name = 'Firefox'
-    } else if (
-      window.navigator.userAgent.indexOf('MSIE') !== -1 ||
-      "documentMode" in document
-    ) {
+    } else if (window.navigator.userAgent.indexOf('MSIE') !== -1 || 'documentMode' in document) {
       name = 'IE'
     }
     return name

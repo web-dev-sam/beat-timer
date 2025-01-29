@@ -8,13 +8,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "run-p type-check \"build-only {@}\" --",
-    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
-    "build-only": "vite build",
     "dev": "vite",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "build": "run-p type-check \"build-only {@}\" --",
+    "build-only": "vite build",
     "format": "prettier --write src/",
     "format-check": "prettier --check src/",
-    "preview": "vite preview",
     "type-check": "vue-tsc --noEmit -p tsconfig.json --composite false"
   },
   "dependencies": {
@@ -38,6 +38,7 @@
     "eslint-plugin-vue": "^9.17.0",
     "husky": "^8.0.3",
     "npm-run-all2": "^7.0.2",
+    "oxlint": "^0.15.8",
     "postcss": "^8.4.31",
     "prettier": "^3.0.3",
     "prettier-plugin-tailwindcss": "^0.5.6",

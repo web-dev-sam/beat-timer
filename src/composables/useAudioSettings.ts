@@ -21,6 +21,6 @@ export default function useAudioSettings() {
     offset,
     draggingOffset,
     bpmMultiplier,
-    setBPMMultiplier
+    setBPMMultiplier,
   }
 }

@@ -11,6 +11,15 @@
             }
         },
         {
+            "label": "Lint",
+            "type": "shell",
+            "command": "npm run lint",
+            "icon": {
+                "id": "beaker",
+                "color": "terminal.ansiCyan"
+            }
+        },
+        {
             "label": "Dev",
             "type": "shell",
             "command": "npm run dev",

@@ -332,9 +332,12 @@ async function handleDrop(file: File) {
           <ChevronUp v-else class="mr-1 inline-block" style="--icon-size: 16px" />
           <span class="inline-block">Advanced</span>
         </button>
-        <div v-if="isAdvancedSettingsOpen" class="grid max-w-max grid-cols-2 gap-x-6 gap-y-4">
+        <div
+          v-if="isAdvancedSettingsOpen"
+          class="mx-auto grid max-w-max grid-cols-[auto_1fr] gap-x-6 gap-y-4"
+        >
           <div class="text-right">Export Quality</div>
-          <div class="flex w-[460px] items-center gap-4">
+          <div class="flex items-center gap-4">
             <div class="h3">
               {{ exportQuality.toFixed(0) }}
             </div>
@@ -354,7 +357,7 @@ async function handleDrop(file: File) {
             </div>
           </div>
           <div class="text-right">Volume Normalization</div>
-          <div class="flex w-[460px] items-center gap-4">
+          <div class="flex items-center gap-4">
             <UCheckbox v-model="doVolumeNormalization" />
           </div>
         </div>

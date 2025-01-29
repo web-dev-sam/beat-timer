@@ -82,7 +82,7 @@ export default class SpectogramHandler {
   }
 
   initWorkers() {
-    return new Array(Math.max(Math.min(navigator.hardwareConcurrency || 4, 12), 4))
+    return Array.from({ length: Math.max(Math.min(navigator.hardwareConcurrency || 4, 12), 4) })
       .fill(null)
       .map(() => new Worker('js/fffWorker.js'))
   }

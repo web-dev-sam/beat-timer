@@ -9,7 +9,7 @@ function FFT(size) {
   this._csize = size << 1;
 
   // NOTE: Use of `var` is intentional for old V8 versions
-  var table = new Array(this.size * 2);
+  var table = Array.from({ length: this.size * 2 })
   for (var i = 0; i < table.length; i += 2) {
     const angle = Math.PI * i / this.size;
     table[i] = Math.cos(angle);
@@ -28,7 +28,7 @@ function FFT(size) {
   this._width = power % 2 === 0 ? power - 1 : power;
 
   // Pre-compute bit-reversal patterns
-  this._bitrev = new Array(1 << this._width);
+  this._bitrev = Array.from({ length: 1 << this._width });
   for (var j = 0; j < this._bitrev.length; j++) {
     this._bitrev[j] = 0;
     for (var shift = 0; shift < this._width; shift += 2) {
@@ -43,14 +43,15 @@ function FFT(size) {
 }
 
 FFT.prototype.fromComplexArray = function fromComplexArray(complex, storage) {
-  var res = storage || new Array(complex.length >>> 1);
+  var res = storage || Array.from({ length: complex.length >>> 1 });
   for (var i = 0; i < complex.length; i += 2)
     res[i >>> 1] = complex[i];
   return res;
 };
 
 FFT.prototype.createComplexArray = function createComplexArray() {
-  const res = new Array(this._csize);
+  
+  const res = Array.from({ length: this._csize });
   for (var i = 0; i < res.length; i++)
     res[i] = 0;
   return res;

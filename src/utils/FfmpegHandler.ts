@@ -44,9 +44,25 @@ export default class FfmpegHandler {
       log('ffmpegDownloadExportQuality', exportQuality.toString())
       log('ffmpegDownloadDoVolumeNormalization', doVolumeNormalization.toString())
       if (paddingDuration >= 0) {
-        ; (await this.padAudio(file, paddingDuration, onProgress, exportQuality, doVolumeNormalization))()
+        ;(
+          await this.padAudio(
+            file,
+            paddingDuration,
+            onProgress,
+            exportQuality,
+            doVolumeNormalization,
+          )
+        )()
       } else {
-        ; (await this.trimAudio(file, -paddingDuration, onProgress, exportQuality, doVolumeNormalization))()
+        ;(
+          await this.trimAudio(
+            file,
+            -paddingDuration,
+            onProgress,
+            exportQuality,
+            doVolumeNormalization,
+          )
+        )()
       }
     } catch (error) {
       const err = error as Error
@@ -84,14 +100,22 @@ export default class FfmpegHandler {
       ? '[0:a][1:a]concat=n=2:v=0:a=1[concat];[concat]loudnorm=I=-14:LRA=11:TP=-1.5[audio_out]'
       : '[0:a][1:a]concat=n=2:v=0:a=1[audio_out]'
     await this.ffmpeg.run(
-      '-f', 'lavfi',
-      '-t', this.formatDuration(silenceDuration),
-      '-i', `anullsrc=channel_layout=stereo:sample_rate=44100`,
-      '-i', inputFileName,
-      '-filter_complex', filterComplex,
-      '-map', '[audio_out]',
-      '-c:a', 'libvorbis',
-      '-q:a', exportQuality.toString(),
+      '-f',
+      'lavfi',
+      '-t',
+      this.formatDuration(silenceDuration),
+      '-i',
+      `anullsrc=channel_layout=stereo:sample_rate=44100`,
+      '-i',
+      inputFileName,
+      '-filter_complex',
+      filterComplex,
+      '-map',
+      '[audio_out]',
+      '-c:a',
+      'libvorbis',
+      '-q:a',
+      exportQuality.toString(),
       outputFileName,
     )
 
@@ -194,10 +218,7 @@ export default class FfmpegHandler {
   getEstimatedFileSize(bpm: number, offset: number, quality: number) {
     const seconds = this.currentAudioBuffer?.duration ?? 0
     return this.formatFileSize(
-      this.estimateFileSize(
-        seconds + songOffsetToSilencePadding(bpm, offset) / 1000,
-        quality,
-      ),
+      this.estimateFileSize(seconds + songOffsetToSilencePadding(bpm, offset) / 1000, quality),
     )
   }
 

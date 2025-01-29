@@ -66,9 +66,9 @@ export function isTouchPrimary() {
 
 export function useBPMFinder({
   muteMetronome,
-  unmuteMetronome
+  unmuteMetronome,
 }: {
-  muteMetronome: () => void,
+  muteMetronome: () => void
   unmuteMetronome: () => void
 }) {
   let clicks: number[] = []
@@ -97,6 +97,6 @@ export function useBPMFinder({
       const timeoutThreshold = now - 15000
       clicks = [...clicks, now].filter((time) => time > timeoutThreshold)
       return calculateBPM(clicks)
-    }
+    },
   }
 }
