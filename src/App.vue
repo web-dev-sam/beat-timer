@@ -205,20 +205,21 @@ async function handleDrop(file: File) {
   <MainLayout :deactivateDropZone="step !== 'start' || isHelpPageShown" @drop="handleDrop">
     <HeaderButtons>
       <template #left>
-        <button @click="isHelpPageShown = true" tooltip-position="right" tooltip="Help" class="cursor-pointer">
+        <button
+          @click="isHelpPageShown = true"
+          tooltip-position="right"
+          tooltip="Help"
+          class="cursor-pointer"
+        >
           <HelpCircle />
         </button>
         <HelpSection v-if="isHelpPageShown" @close="isHelpPageShown = false"> </HelpSection>
       </template>
       <template #right>
-        <UButton
-          :class="{ invisiblyat: hasImportStarted }"
-          @click="loadExampleFile"
-          secondary
-        >
+        <UButton :class="{ invisiblyat: hasImportStarted }" @click="loadExampleFile" secondary>
           Use Example
         </UButton>
-        <UButton v-if="step === 'edit'" class="mb-0 mr-0" @click="goToDownloadStep">
+        <UButton v-if="step === 'edit'" class="mr-0 mb-0" @click="goToDownloadStep">
           Seems On Time
         </UButton>
       </template>
@@ -227,8 +228,10 @@ async function handleDrop(file: File) {
       <template #start>
         <div class="flex flex-col gap-8">
           <h1 class="h2">Import your song.</h1>
-          <p class="text-muted-foreground">You can drag and drop your song here, or click to select a file.</p>
-          <div class="mb-12 mt-2 flex-[0_0_5rem]">
+          <p class="text-muted-foreground">
+            You can drag and drop your song here, or click to select a file.
+          </p>
+          <div class="mt-2 mb-12 flex-[0_0_5rem]">
             <UFileInput :loading="hasImportStarted && !isLoaded" @change="onFileChange">
               Select file
             </UFileInput>
@@ -237,7 +240,7 @@ async function handleDrop(file: File) {
       </template>
       <template #edit>
         <div>
-          <h1 class="h2 mb-18">Align the beat.</h1>
+          <h1 class="h2 mb-0 text-2xl! xl:mb-18 xl:text-4xl">Align the beat.</h1>
         </div>
         <div class="mx-6 flex items-end justify-start md:mx-12" prevent-user-select>
           <UValueEdit
@@ -250,7 +253,7 @@ async function handleDrop(file: File) {
             <template #buttons>
               <span class="ml-8 flex gap-8">
                 <button
-                  class="inline-block translate-y-1 hover:text-primary"
+                  class="hover:text-primary inline-block translate-y-1"
                   :tooltip="
                     isShiftHoveringBPMFinderButton ? 'Detect BPM in this section' : 'Detect BPM'
                   "
@@ -264,7 +267,7 @@ async function handleDrop(file: File) {
                 </button>
                 <button
                   v-if="audioPlayerRef?.isPlaying"
-                  class="inline-block translate-y-1 self-center hover:text-primary"
+                  class="hover:text-primary inline-block translate-y-1 self-center"
                   tooltip="Click with the beat to find BPM"
                   tooltip-position="top"
                   tooltip-primary
@@ -313,7 +316,7 @@ async function handleDrop(file: File) {
       </template>
       <template #export>
         <h1 class="h2 mb-4">Export</h1>
-        <p class="mb-6 text-muted-foreground">
+        <p class="text-muted-foreground mb-6">
           You have made it! You can now export your song. If you want to convert it to another
           format, you can use
           <a href="https://convertio.co/" target="_blank">this converter</a>.
@@ -323,10 +326,7 @@ async function handleDrop(file: File) {
           <UButton :loading="isDownloading" @click="download"> Export </UButton>
         </div>
         <button class="mt-12! inline-flex items-center" @click="toggleAdvancedSettings">
-          <ChevronDown
-            v-if="!isAdvancedSettingsOpen"
-            class="mr-1 inline-block"
-          />
+          <ChevronDown v-if="!isAdvancedSettingsOpen" class="mr-1 inline-block" />
           <ChevronUp v-else class="mr-1 inline-block" />
           <span class="inline-block">Advanced</span>
         </button>

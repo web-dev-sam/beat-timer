@@ -191,7 +191,7 @@ defineExpose({
         </div>
       </div>
     </div>
-    <div class="pt-12">
+    <div class="pt-6 xl:pt-12">
       <URange
         :min="0"
         :max="100"
