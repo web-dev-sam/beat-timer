@@ -179,7 +179,7 @@ function updateValueFromPosition(event: MouseEvent, play = false) {
 <template>
   <div class="root">
     <div
-      class="progress bg-gray-900"
+      class="progress bg-muted"
       :class="{ 'progress-vertical': vertical }"
       ref="progressBarRef"
       @mousedown="onSliderMouseDown"
@@ -194,7 +194,7 @@ function updateValueFromPosition(event: MouseEvent, play = false) {
       ></div>
       <div v-if="showSteps">
         <div
-          class="progress__step bg-gray-700"
+          class="progress__step"
           v-for="step in steps"
           :key="step"
           :style="{

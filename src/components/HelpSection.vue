@@ -10,24 +10,24 @@ const emit = defineEmits(['close'])
   <div
     class="auto-flow-small fixed left-0 top-0 z-10 h-screen min-w-full overflow-y-auto bg-dark p-4 text-center"
   >
-    <button @click="emit('close')" class="absolute left-6 top-6 md:left-12 md:top-12">
+    <button @click="emit('close')" class="absolute left-6 top-8 md:left-12 md:top-14 cursor-pointer">
       <X />
     </button>
     <div class="m-auto w-full lg:w-2/3">
       <h2 class="h2 mb-4 mt-8 md:mt-16 lg:mt-32">
-        Beat Timer <span class="p pl-2 font-bold text-primary">v{{ version }}</span>
+        Beat Timer <strong class="text-lg pl-2 font-bold">v{{ version }}</strong>
       </h2>
       <p>
         A web app to align the beat of your song to the beat of your game. This app is still new,
         and tested primarily with Beat Saber. Please report any issues you find on GitHub.
       </p>
-      <h3 class="h3 !mt-12 mb-4">How To Use</h3>
+      <h3 class="h3 mt-12! mb-4">How To Use</h3>
       <p>
         <strong>Import</strong> your song. <strong>Select its bpm</strong>. Hover over the
         spectogram and <strong>drag to change the offset</strong> (align the lines with the beat).
         Click "Seems On Time" when you're done.
       </p>
-      <h3 class="h3 !mt-12 mb-4">Tips</h3>
+      <h3 class="h3 mt-12! mb-4">Tips</h3>
       <ol class="auto-flow-small list-inside list-decimal">
         <li>You should <strong>double check the BPM online</strong> to make sure its correct.</li>
         <li>
@@ -42,7 +42,7 @@ const emit = defineEmits(['close'])
           If your song has <strong>BPM changes</strong> align the beat to the BPM at the start.
         </li>
       </ol>
-      <h3 class="h3 !mt-12 mb-4">Support</h3>
+      <h3 class="h3 mt-12! mb-4">Support</h3>
       <p>
         You can support me on GitHub by
         <strong>
@@ -51,7 +51,7 @@ const emit = defineEmits(['close'])
           </a>
         </strong>
       </p>
-      <p class="!mt-12">
+      <p class="mt-12!">
         Made with 💜 by
         <strong>
           <a href="https://github.com/web-dev-sam" target="_blank" class="author"> Samuel Braun </a>

@@ -272,10 +272,10 @@ defineExpose({
       prevent-user-select
     >
       <canvas ref="canvasRef" class="hidden h-32"></canvas>
-      <img ref="canvasImg" :src="state.spectogramDataURL" class="!h-32 !w-auto max-w-none" />
+      <img ref="canvasImg" :src="state.spectogramDataURL" class="h-32! w-auto! max-w-none" />
       <div class="absolute left-0 top-0 h-32">
         <div
-          class="progress-tile absolute top-0 text-muted"
+          class="progress-tile absolute top-0 text-white"
           :style="{ left: progressPX + 'px' }"
         ></div>
       </div>
@@ -316,7 +316,7 @@ defineExpose({
         </div>
       </div>
     </div>
-    <div class="start-tile bottom-0 text-muted" :style="{ left: startPosition + 'px' }">
+    <div class="start-tile bottom-0 text-white/40" :style="{ left: startPosition + 'px' }">
       <div class="up-tile top-0"></div>
       <div></div>
     </div>
@@ -387,7 +387,7 @@ defineExpose({
   --w: 1px;
   position: absolute;
   top: 0;
-  background: var(--color-muted);
+  background: #57545b;
   width: var(--w);
   transform: translateX(calc(-1 * var(--w) / 2)) translateZ(0);
   backface-visibility: hidden;

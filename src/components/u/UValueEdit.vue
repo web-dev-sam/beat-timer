@@ -73,14 +73,14 @@ function onEditClick() {
 
 <template>
   <div class="value-edit-wrapper text-left">
-    <div class="align-start flex gap-4" :class="reversed ? 'flex-col-reverse' : 'flex-col'">
+    <div class="items-start flex gap-4" :class="reversed ? 'flex-col-reverse' : 'flex-col'">
       <button @click="onEditClick"><Pencil /></button>
       <div>
         <div class="relative">
           <div class="flex items-center">
             <div class="w-20">
               <span class="h3 text-xl font-bold">{{ value }}</span>
-              <span class="ml-2 self-end text-muted">{{ type }}</span>
+              <span class="ml-2 self-end text-muted-foreground">{{ type }}</span>
             </div>
             <slot name="buttons"></slot>
           </div>
@@ -106,24 +106,37 @@ function onEditClick() {
 }
 
 input[type='text'] {
-  width: 100%;
+  width: 9ch;
   position: absolute;
   border-radius: 1rem;
   padding: 0.5rem 1rem;
   font-size: 1.75rem;
   font-weight: 900;
-  background: var(--color-primary-28-opaque);
+  background: var(--color-background);
   padding-right: 3rem;
+  border: 2px solid var(--color-primary);
   top: -0.5rem;
   left: -1rem;
 }
 
+input[type='text']:focus,
+input[type='text']:focus-visible,
+input[type='text']:focus-within {
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+input[type='text']::selection {
+  background: #4223e080;
+  color: #fff;
+}
+
 kbd {
   position: absolute;
-  right: 2rem;
+  left: 8ch;
   top: 0.3rem;
   padding: 0.25rem 0.5rem;
   border-radius: 0.5rem;
-  background: var(--color-light-dark);
+  background: var(--color-primary);
 }
 </style>

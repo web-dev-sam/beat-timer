@@ -33,9 +33,9 @@ import UCheckbox from '@/components/u/UCheckbox.vue'
 import MainLayout from './layout/MainLayout.vue'
 
 // Plan:
-//        Fix gray colors
 //        Small Screen friendly (esp. height)
-// v2.3.7 Fix .mp3 files not displaying
+// v2.3.7 Zoom on scroll
+//        Fix .mp3 files not displaying
 //        Normalize volume and shorten length at start (make 5min max)
 //        Add import progress bar
 //        Fix export to use original buffer
@@ -58,7 +58,7 @@ const isDownloading = ref(false)
 const hasImportStarted = ref(false)
 const doVolumeNormalization = ref(true)
 const exportQuality = ref(8)
-const zoomLevel = ref(15)
+const zoomLevel = ref(10)
 const downloadProgress = ref(0)
 
 const { bpm, offset, draggingBPM, draggingOffset } = useAudioSettings()
@@ -205,14 +205,13 @@ async function handleDrop(file: File) {
   <MainLayout :deactivateDropZone="step !== 'start' || isHelpPageShown" @drop="handleDrop">
     <HeaderButtons>
       <template #left>
-        <button @click="isHelpPageShown = true" tooltip-position="right" tooltip="Help">
+        <button @click="isHelpPageShown = true" tooltip-position="right" tooltip="Help" class="cursor-pointer">
           <HelpCircle />
         </button>
         <HelpSection v-if="isHelpPageShown" @close="isHelpPageShown = false"> </HelpSection>
       </template>
       <template #right>
         <UButton
-          v-if="step === 'start'"
           :class="{ invisiblyat: hasImportStarted }"
           @click="loadExampleFile"
           secondary
@@ -228,8 +227,8 @@ async function handleDrop(file: File) {
       <template #start>
         <div class="flex flex-col gap-8">
           <h1 class="h2">Import your song.</h1>
-          <p class="text-muted">You can drag and drop your song here, or click to select a file.</p>
-          <div class="mb-12 mt-2">
+          <p class="text-muted-foreground">You can drag and drop your song here, or click to select a file.</p>
+          <div class="mb-12 mt-2 flex-[0_0_5rem]">
             <UFileInput :loading="hasImportStarted && !isLoaded" @change="onFileChange">
               Select file
             </UFileInput>
@@ -287,7 +286,7 @@ async function handleDrop(file: File) {
         <div class="mx-12 mt-6 flex justify-between" prevent-user-select>
           <UValueEdit
             :value="+visualOffset.toFixed(0)"
-            @change="(newOffset) => onTimingOffsetChange(60000 / bpm - newOffset)"
+            @change="(newOffset: number) => onTimingOffsetChange(60000 / bpm - newOffset)"
             type="MS"
             :reversed="true"
             @edit-start="pauseAudio"
@@ -313,8 +312,8 @@ async function handleDrop(file: File) {
         </div>
       </template>
       <template #export>
-        <h1 class="h2">Export</h1>
-        <p class="mb-6 text-muted">
+        <h1 class="h2 mb-4">Export</h1>
+        <p class="mb-6 text-muted-foreground">
           You have made it! You can now export your song. If you want to convert it to another
           format, you can use
           <a href="https://convertio.co/" target="_blank">this converter</a>.
@@ -323,13 +322,12 @@ async function handleDrop(file: File) {
           <UButton :secondary="true" @click="step = 'edit'"> Back </UButton>
           <UButton :loading="isDownloading" @click="download"> Export </UButton>
         </div>
-        <button class="!mt-12 inline-flex items-center" @click="toggleAdvancedSettings">
+        <button class="mt-12! inline-flex items-center" @click="toggleAdvancedSettings">
           <ChevronDown
             v-if="!isAdvancedSettingsOpen"
             class="mr-1 inline-block"
-            style="--icon-size: 16px"
           />
-          <ChevronUp v-else class="mr-1 inline-block" style="--icon-size: 16px" />
+          <ChevronUp v-else class="mr-1 inline-block" />
           <span class="inline-block">Advanced</span>
         </button>
         <div
@@ -349,7 +347,7 @@ async function handleDrop(file: File) {
                 :step="1"
                 :show-steps="true"
                 :snap="true"
-                class="!w-72"
+                class="w-72!"
               />
             </div>
             <div tooltip-position="bottom" tooltip="Could be lower or higher based on the song.">
