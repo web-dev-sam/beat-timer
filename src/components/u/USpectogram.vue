@@ -244,6 +244,18 @@ function onCanvasMouseLeave() {
   state.hovering = false
 }
 
+function onCanvasWheel(event: WheelEvent) {
+  if (!state.spectogramHandler) {
+    return
+  }
+
+  if (event.deltaY > 0) {
+    setZoomLevel(Math.min(state.spectogramHandler.currentZoom + 1, 15))
+  } else {
+    setZoomLevel(Math.max(state.spectogramHandler.currentZoom - 1, 3))
+  }
+}
+
 function updateProgress(time: number, startAtMiddle: boolean = false) {
   state.progress = time
   state.spectogramHandler?.updateTime(time, startAtMiddle ? 0.5 : 0)
@@ -269,11 +281,12 @@ defineExpose({
       @mousedown="onCanvasMouseDown"
       @mouseenter="onCanvasMouseEnter"
       @mouseleave="onCanvasMouseLeave"
+      @wheel="onCanvasWheel"
       prevent-user-select
     >
       <canvas ref="canvasRef" class="hidden h-32"></canvas>
       <img ref="canvasImg" :src="state.spectogramDataURL" class="h-32! w-auto! max-w-none" />
-      <div class="absolute left-0 top-0 h-32">
+      <div class="absolute top-0 left-0 h-32">
         <div
           class="progress-tile absolute top-0 text-white"
           :style="{ left: progressPX + 'px' }"

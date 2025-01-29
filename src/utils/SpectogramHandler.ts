@@ -19,7 +19,7 @@ export default class SpectogramHandler {
   private sampleRate: number
   private hzFilter: number
   private durationInMS: number
-  private currentZoom: number
+  public currentZoom: number
   private vw: number
   private onBeatlineUpdate: (beatlines: BeatLine[]) => void
   private scale: number

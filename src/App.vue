@@ -33,9 +33,7 @@ import UCheckbox from '@/components/u/UCheckbox.vue'
 import MainLayout from './layout/MainLayout.vue'
 
 // Plan:
-//        Small Screen friendly (esp. height)
-// v2.3.7 Zoom on scroll
-//        Fix .mp3 files not displaying
+// v2.3.7 Fix .mp3 files not displaying
 //        Normalize volume and shorten length at start (make 5min max)
 //        Add import progress bar
 //        Fix export to use original buffer
