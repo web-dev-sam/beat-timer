@@ -4,7 +4,12 @@ import { ref, computed, watch, useTemplateRef, nextTick } from 'vue'
 import { BlobWriter, TextReader, Uint8ArrayReader, ZipWriter } from '@zip.js/zip.js'
 import FfmpegHandler from '@/utils/FfmpegHandler'
 import { guess } from 'web-audio-beat-detector'
-import { buildBeatSaberZip, songOffsetToSilencePadding, useBPMFinder } from '@/utils/utils'
+import {
+  buildBeatSaberZip,
+  openGitHubIssue,
+  songOffsetToSilencePadding,
+  useBPMFinder,
+} from '@/utils/utils'
 import { useMouseInElement, useKeyModifier } from '@vueuse/core'
 import useAudioSettings from '@/composables/useAudioSettings'
 import { useFooterProgress } from './composables/useFooterProgress'
@@ -34,10 +39,10 @@ import URange from '@/components/u/URange.vue'
 import UCheckbox from '@/components/u/UCheckbox.vue'
 import MainLayout from '@/layout/MainLayout.vue'
 import ZipModal from './components/ZipModal.vue'
+import { useLogger } from './utils/logger'
 
 // Plan:
 // 0 offset
-// v2.3.8 Debugging button & Github issue link
 // v2.4   Trim audio at end (or add silence)
 
 const ffmpegHandler = new FfmpegHandler()
@@ -261,6 +266,12 @@ async function handleDrop(file: File) {
   await loadAudioFile(file)
   isBufferLoaded.value = true
 }
+
+function copyDebugInformation() {
+  const blogger = useLogger()
+  blogger.copy()
+  blogger.openGithubIssue()
+}
 </script>
 
 <template>
@@ -275,7 +286,12 @@ async function handleDrop(file: File) {
         >
           <HelpCircle />
         </button>
-        <HelpSection v-if="isHelpPageShown" @close="isHelpPageShown = false"> </HelpSection>
+        <HelpSection
+          v-if="isHelpPageShown"
+          @close="isHelpPageShown = false"
+          @bug="copyDebugInformation"
+        >
+        </HelpSection>
       </template>
       <template #right>
         <UButton :class="{ invisiblyat: hasImportStarted }" @click="loadExampleFile" secondary>
