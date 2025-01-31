@@ -1,15 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, watch, useTemplateRef, nextTick } from 'vue'
 
-import { BlobWriter, TextReader, Uint8ArrayReader, ZipWriter } from '@zip.js/zip.js'
 import FfmpegHandler from '@/utils/FfmpegHandler'
 import { guess } from 'web-audio-beat-detector'
-import {
-  buildBeatSaberZip,
-  openGitHubIssue,
-  songOffsetToSilencePadding,
-  useBPMFinder,
-} from '@/utils/utils'
+import { buildBeatSaberZip, songOffsetToSilencePadding, useBPMFinder } from '@/utils/utils'
 import { useMouseInElement, useKeyModifier } from '@vueuse/core'
 import useAudioSettings from '@/composables/useAudioSettings'
 import { useFooterProgress } from './composables/useFooterProgress'
