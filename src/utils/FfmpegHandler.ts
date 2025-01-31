@@ -1,27 +1,52 @@
-import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg'
-import type { FFmpeg } from '@ffmpeg/ffmpeg'
+import { FFmpeg, type FileData } from '@ffmpeg/ffmpeg';
 import { songOffsetToSilencePadding } from './utils'
 import { useLogger } from './logger'
+import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import { useFooterProgress } from '@/composables/useFooterProgress';
 
 const { log } = useLogger()
+const { progress } = useFooterProgress()
 
 export default class FfmpegHandler {
   private ffmpeg: FFmpeg
   private file: File | null
   private currentAudioBuffer: AudioBuffer | null
+  private abortController: AbortController;
+  public mutedProgress: boolean;
 
   constructor() {
-    this.ffmpeg = createFFmpeg({
-      corePath: '/ffmpeg-core/dist/ffmpeg-core.js',
-      log: false,
-    })
+    this.ffmpeg = new FFmpeg()
     this.file = null
+    this.mutedProgress = false
+
     this.currentAudioBuffer = null
+    this.abortController = new AbortController()
   }
 
-  async loadAudio(file: File) {
+  async load() {
+    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/esm'
+    await this.ffmpeg.load({
+      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+    });
+
+    this.ffmpeg.on('log', ({ type, message }) => {
+      if ("debug" in window) {
+        console.log(type, message)
+      }
+    })
+
+    this.ffmpeg.on('progress', ({ progress: p }) => {
+      if (!this.mutedProgress) {
+        progress.value = Math.round(p * 100)
+      } else {
+        progress.value = 0
+      }
+    })
+  }
+
+  useAudio(file: File) {
     this.file = file
-    await this.ffmpeg.load()
   }
 
   async download(
@@ -29,7 +54,6 @@ export default class FfmpegHandler {
     offset: number,
     exportQuality: number,
     doVolumeNormalization: boolean,
-    onProgress: (progress: number) => void,
   ) {
     const file = this.file
     if (!file) {
@@ -44,21 +68,19 @@ export default class FfmpegHandler {
       log('ffmpegDownloadExportQuality', exportQuality.toString())
       log('ffmpegDownloadDoVolumeNormalization', doVolumeNormalization.toString())
       if (paddingDuration >= 0) {
-        ;(
+        ; (
           await this.padAudio(
             file,
             paddingDuration,
-            onProgress,
             exportQuality,
             doVolumeNormalization,
           )
         )()
       } else {
-        ;(
+        ; (
           await this.trimAudio(
             file,
             -paddingDuration,
-            onProgress,
             exportQuality,
             doVolumeNormalization,
           )
@@ -75,7 +97,6 @@ export default class FfmpegHandler {
   async padAudio(
     file: File,
     beginningPad: number = 0,
-    onProgress: (progress: number) => void,
     exportQuality: number = 8,
     doVolumeNormalization: boolean = true,
   ) {
@@ -83,94 +104,109 @@ export default class FfmpegHandler {
     const inputFileName = file.name === wantedFileName ? 'input.ogg' : file.name
     const outputFileName = wantedFileName
 
-    this.ffmpeg.FS('writeFile', inputFileName, await fetchFile(file))
+    this.ffmpeg.writeFile(inputFileName, await fetchFile(file))
 
     const silenceDuration = beginningPad / 1000
-
-    let totalTime = null
-    this.ffmpeg.setLogger((log: { message: string }) => {
-      totalTime ??= this.extractTimeInMs('Duration: ', log.message)
-      const time = this.extractTimeInMs('time=', log.message)
-      if (!time) return
-      if (totalTime) {
-        onProgress((time * 100) / totalTime)
-      }
-    })
     const filterComplex = doVolumeNormalization
       ? '[0:a][1:a]concat=n=2:v=0:a=1[concat];[concat]loudnorm=I=-14:LRA=11:TP=-1.5[audio_out]'
       : '[0:a][1:a]concat=n=2:v=0:a=1[audio_out]'
-    await this.ffmpeg.run(
-      '-f',
-      'lavfi',
-      '-t',
-      this.formatDuration(silenceDuration),
-      '-i',
-      `anullsrc=channel_layout=stereo:sample_rate=44100`,
-      '-i',
-      inputFileName,
-      '-filter_complex',
-      filterComplex,
-      '-map',
-      '[audio_out]',
-      '-c:a',
-      'libvorbis',
-      '-q:a',
-      exportQuality.toString(),
-      outputFileName,
-    )
+    this.mutedProgress = false
+    await this.ffmpeg.exec([
+      '-f', 'lavfi',
+      '-vn',
+      '-t', this.formatDuration(silenceDuration),
+      '-i', `anullsrc=channel_layout=stereo:sample_rate=44100`,
+      '-i', inputFileName,
+      '-filter_complex', filterComplex,
+      '-map', '[audio_out]',
+      '-c:a', 'libvorbis',
+      '-q:a', exportQuality.toString(),
+      outputFileName
+    ], undefined, { signal: this.abortController.signal })
+    this.mutedProgress = true
 
-    const paddedData = this.ffmpeg.FS('readFile', outputFileName)
-    console.log(paddedData)
+    const paddedData = await this.ffmpeg.readFile(outputFileName)
+
+    this.ffmpeg.deleteFile(inputFileName)
+    this.ffmpeg.deleteFile(outputFileName)
+
     return () => this.downloadAudio(paddedData, outputFileName)
   }
 
   async trimAudio(
     file: File,
     beginningTrim = 0,
-    onProgress: (progress: number) => void,
     exportQuality: number = 8,
     doVolumeNormalization: boolean = true,
   ) {
+    const wantedFileName = 'song.ogg'
+    const inputFileName = file.name === wantedFileName ? 'input.ogg' : file.name
+    const outputFileName = wantedFileName
+
+    const dataArray = await fetchFile(file)
+    this.ffmpeg.writeFile(inputFileName, dataArray)
+
+    const trimStart = beginningTrim / 1000
+    this.mutedProgress = false
+    await this.ffmpeg.exec([
+      '-i', inputFileName,
+      '-vn',
+      '-ss', this.formatDuration(trimStart),
+      doVolumeNormalization ? '-filter:a' : '',
+      doVolumeNormalization ? 'loudnorm=I=-14:LRA=11:TP=-1.5' : '',
+      '-c:a', 'libvorbis',
+      '-q:a', exportQuality.toString(),
+      outputFileName,
+    ].filter(Boolean), undefined, { signal: this.abortController.signal })
+    this.mutedProgress = true
+    const trimmedData = await this.ffmpeg.readFile(outputFileName)
+
+    this.ffmpeg.deleteFile(inputFileName)
+    this.ffmpeg.deleteFile(outputFileName)
+
+    return () => this.downloadAudio(trimmedData, outputFileName)
+  }
+
+  async trimAndNormalizeAudio(
+    file: File,
+  ): Promise<AudioBuffer> {
     const name = file.name
     const trimmedName = 'song.ogg'
     const dataArray = await fetchFile(file)
 
-    this.ffmpeg.FS('writeFile', name, dataArray)
+    this.ffmpeg.writeFile(name, dataArray)
 
-    const trimStart = beginningTrim / 1000
-    const trimEnd = 0
-    const trimDuration = ((await this.getDuration(dataArray)) as number) - trimStart - trimEnd
+    const maxDuration = 5 * 60
 
-    let totalTime = null
-    this.ffmpeg.setLogger((log: { message: string }) => {
-      totalTime ??= this.extractTimeInMs('Duration: ', log.message)
-      const time = this.extractTimeInMs('time=', log.message)
-      if (!time) return
-      if (totalTime) {
-        onProgress((time * 100) / totalTime)
-      }
-    })
-
-    const ffmpegArgs = [
-      'pipe:0 -v warning',
-      '-i',
-      name,
-      '-ss',
-      this.formatDuration(trimStart),
-      '-t',
-      this.formatDuration(trimDuration),
-      doVolumeNormalization ? '-filter:a' : '',
-      doVolumeNormalization ? 'loudnorm=I=-14:LRA=11:TP=-1.5' : '',
-      '-c:a',
-      'libvorbis',
-      '-q:a',
-      exportQuality.toString(),
+    this.mutedProgress = false
+    await this.ffmpeg.exec([
+      '-i', name,
+      '-vn',
+      '-t', this.formatDuration(maxDuration),
+      '-filter:a', 'loudnorm=I=-14:LRA=11:TP=-1.5',
+      '-c:a', 'libvorbis',
+      '-q:a', '6',
       trimmedName,
-    ].filter(Boolean)
-    await this.ffmpeg.run(...ffmpegArgs)
+    ], undefined, { signal: this.abortController.signal })
+    this.mutedProgress = true
 
-    const trimmedData = this.ffmpeg.FS('readFile', trimmedName)
-    return () => this.downloadAudio(trimmedData, trimmedName)
+    const trimmedData = await this.ffmpeg.readFile(trimmedName)
+    if (typeof trimmedData === 'string') {
+      throw new Error('Data is a string, expected a Uint8Array. In trimAndNormalizeAudio().')
+    }
+
+    const audioContext = new AudioContext()
+    const audioBuffer = await audioContext.decodeAudioData(trimmedData.buffer)
+
+    this.ffmpeg.deleteFile(name)
+    this.ffmpeg.deleteFile(trimmedName)
+
+    return audioBuffer
+  }
+
+  abortTrimAndNormalizeAudio() {
+    this.abortController.abort()
+    this.mutedProgress = true
   }
 
   extractTimeInMs(prefix: 'time=' | 'Duration: ', ffmpegOutput: string) {
@@ -181,7 +217,6 @@ export default class FfmpegHandler {
 
     const [, hours, minutes, seconds] = match
 
-    // Convert all units to milliseconds
     const hoursMs = parseInt(hours!) * 3600 * 1000
     const minutesMs = parseInt(minutes!) * 60 * 1000
     const secondsMs = parseFloat(seconds!) * 1000
@@ -189,43 +224,12 @@ export default class FfmpegHandler {
     return hoursMs + minutesMs + Math.round(secondsMs)
   }
 
-  private estimateFileSize(durationInSeconds: number, quality: number): number {
-    const bitrates = [64, 80, 96, 112, 128, 160, 192, 224, 256, 320]
-    const bitrate = bitrates[Math.round(quality) - 1]
-    if (!bitrate) {
-      throw new Error('Invalid quality value.')
-    }
-
-    const sizeInBits = bitrate * 1000 * durationInSeconds
-    const sizeInBytes = sizeInBits / 8
-    const sizeInKB = sizeInBytes / 1024
-    const sizeInMB = sizeInKB / 1024
-    return sizeInMB
-  }
-
-  formatFileSize(sizeInMB: number): string {
-    if (sizeInMB < 1) {
-      const sizeInKB = sizeInMB * 1024
-      return sizeInKB.toFixed(2) + ' KB'
-    } else if (sizeInMB < 1024) {
-      return sizeInMB.toFixed(2) + ' MB'
-    } else {
-      const sizeInGB = sizeInMB / 1024
-      return sizeInGB.toFixed(2) + ' GB'
-    }
-  }
-
-  getEstimatedFileSize(bpm: number, offset: number, quality: number) {
-    const seconds = this.currentAudioBuffer?.duration ?? 0
-    return this.formatFileSize(
-      this.estimateFileSize(seconds + songOffsetToSilencePadding(bpm, offset) / 1000, quality),
-    )
-  }
 
   getDuration(dataArray: Uint8Array) {
     return new Promise((resolve, reject) => {
       const hiddenAudio = document.createElement('audio')
       const blob = new Blob([dataArray.buffer], { type: 'audio/wav' })
+      console.log("blob", blob.size)
       const objectUrl = URL.createObjectURL(blob)
       hiddenAudio.src = objectUrl
 
@@ -322,7 +326,10 @@ export default class FfmpegHandler {
     return newBuffer
   }
 
-  downloadAudio(data: Uint8Array, filename: string) {
+  downloadAudio(data: FileData, filename: string) {
+    if (typeof data === 'string') {
+      throw new Error('Data is a string, expected a Uint8Array. In downloadAudio().')
+    }
     const blob = new Blob([data.buffer], { type: 'audio/ogg' })
     const url = URL.createObjectURL(blob)
     const downloadLink = document.createElement('a')
