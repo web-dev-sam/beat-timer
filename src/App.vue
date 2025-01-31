@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch, useTemplateRef } from 'vue'
+import { ref, computed, watch, useTemplateRef, nextTick } from 'vue'
 
 import FfmpegHandler from '@/utils/FfmpegHandler'
 import { guess } from 'web-audio-beat-detector'
@@ -30,9 +30,11 @@ import UButton from '@/components/u/UButton.vue'
 import UValueEdit from '@/components/u/UValueEdit.vue'
 import URange from '@/components/u/URange.vue'
 import UCheckbox from '@/components/u/UCheckbox.vue'
-import MainLayout from './layout/MainLayout.vue'
+import MainLayout from '@/layout/MainLayout.vue'
+import { useFooterProgress } from './composables/useFooterProgress'
 
 // Plan:
+// 0 offset
 // v2.3.7 Fix .mp3 files not displaying
 //        Normalize volume and shorten length at start (make 5min max)
 //        Add import progress bar
@@ -42,10 +44,12 @@ import MainLayout from './layout/MainLayout.vue'
 // v2.4   Trim audio at end (or add silence)
 // v2.5   Updating everything (incl. ffmpeg, tailwind, ...)
 
+const ffmpegHandler = new FfmpegHandler()
+await ffmpegHandler.load()
+
 const detectBPMButtonRef = useTemplateRef('detect-bpm-button')
 const audioPlayerRef = useTemplateRef('audio-player')
 const spectogramRef = useTemplateRef('spectogram')
-const ffmpegHandler = ref(new FfmpegHandler())
 const audioBuffer = ref<AudioBuffer | null>(null)
 const step = ref<'start' | 'edit' | 'export'>('start')
 const isAdvancedSettingsOpen = ref(false)
@@ -57,7 +61,6 @@ const hasImportStarted = ref(false)
 const doVolumeNormalization = ref(true)
 const exportQuality = ref(8)
 const zoomLevel = ref(10)
-const downloadProgress = ref(0)
 
 const { bpm, offset, draggingBPM, draggingOffset } = useAudioSettings()
 const { click: bpmFinderClick } = useBPMFinder({
@@ -70,9 +73,6 @@ const shiftKeyState = useKeyModifier('Shift')
 const isShiftHoveringBPMFinderButton = computed(() => !isOutside.value && shiftKeyState.value)
 const isLoaded = computed(() => isBufferLoaded.value && isSpectogramLoaded.value)
 const visualOffset = computed(() => songOffsetToSilencePadding(bpm.value, draggingOffset.value))
-const estimatedFileSize = computed(
-  () => ffmpegHandler.value?.getEstimatedFileSize(bpm.value, offset.value, exportQuality.value),
-)
 
 watch(
   () => bpm.value,
@@ -110,20 +110,46 @@ function loadExampleFile() {
       )
       isBufferLoaded.value = true
     })
+    .catch((e) => {
+      console.error('Failed to load example file: ', e)
+      hasImportStarted.value = false
+    })
 }
 
-async function loadAudioFile(file: File) {
-  await ffmpegHandler.value.loadAudio(file)
-  audioBuffer.value = await ffmpegHandler.value.getAudioBuffer()
+async function guessBPMOffset() {
+  if (audioBuffer.value == null) return
   try {
     const { bpm: guessedBPM, offset: guessedOffset } = await guess(audioBuffer.value)
     bpm.value = guessedBPM === 0 ? -1 : guessedBPM
-    offset.value = Math.round((guessedOffset * 1000) / 4) * 4
+    offset.value = Math.round(guessedOffset * 1000)
   } catch (e) {
     console.error("Couldn't detect bpm: ", e)
     bpm.value = 120
     offset.value = 250
   }
+}
+
+async function loadAudioFile(file: File) {
+  ffmpegHandler.useAudio(file)
+  try {
+    audioBuffer.value = await ffmpegHandler.trimAndNormalizeAudio(file)
+  } catch (e) {
+    console.error(`Failed to trimAndNormalizeAudio audio file: ${e}`)
+    audioBuffer.value = await ffmpegHandler.getAudioBuffer()
+  }
+  nextTick(() => {
+    guessBPMOffset()
+  })
+}
+
+async function skipNormalizationAtStart() {
+  useFooterProgress().progress.value = 0
+  ffmpegHandler.mutedProgress = true
+  ffmpegHandler.abortTrimAndNormalizeAudio()
+  audioBuffer.value = await ffmpegHandler.getAudioBuffer()
+  nextTick(() => {
+    guessBPMOffset()
+  })
 }
 
 function onBPMChange(changedBPM: number) {
@@ -143,14 +169,11 @@ function goToDownloadStep() {
 
 async function download() {
   isDownloading.value = true
-  await ffmpegHandler.value.download(
+  await ffmpegHandler.download(
     bpm.value,
     offset.value,
     exportQuality.value,
     doVolumeNormalization.value,
-    (progress) => {
-      downloadProgress.value = progress
-    },
   )
   isDownloading.value = false
 }
@@ -181,8 +204,8 @@ async function onBPMGuessClick(onlyCurrentSlice: boolean) {
   if (currentTime == null) return
 
   const buffer = onlyCurrentSlice
-    ? ffmpegHandler.value.getAudioSlice(currentTime - 8, currentTime + 8)
-    : await ffmpegHandler.value.getAudioBuffer()
+    ? ffmpegHandler.getAudioSlice(currentTime - 8, currentTime + 8)
+    : await ffmpegHandler.getAudioBuffer()
   if (buffer == null) return
 
   const { bpm: guessedBPM, offset: guessedOffset } = await guess(buffer)
@@ -229,7 +252,15 @@ async function handleDrop(file: File) {
           <p class="text-muted-foreground">
             You can drag and drop your song here, or click to select a file.
           </p>
-          <div class="mt-2 mb-12 flex-[0_0_5rem]">
+          <div class="mt-2 mb-12 flex flex-[0_0_5rem] items-center justify-center gap-4">
+            <UButton
+              class="h-10!"
+              secondary
+              v-if="hasImportStarted && !isLoaded"
+              @click="skipNormalizationAtStart"
+            >
+              Skip normalization
+            </UButton>
             <UFileInput :loading="hasImportStarted && !isLoaded" @change="onFileChange">
               Select file
             </UFileInput>
@@ -238,7 +269,7 @@ async function handleDrop(file: File) {
       </template>
       <template #edit>
         <div>
-          <h1 class="h2 mb-0 text-2xl! xl:mb-18 xl:text-4xl">Align the beat.</h1>
+          <h1 class="h2 mb-0 text-2xl! lg:text-4xl xl:mb-18">Align the beat.</h1>
         </div>
         <div class="mx-6 flex items-end justify-start md:mx-12" prevent-user-select>
           <UValueEdit
@@ -348,9 +379,6 @@ async function handleDrop(file: File) {
                 class="w-72!"
               />
             </div>
-            <div tooltip-position="bottom" tooltip="Could be lower or higher based on the song.">
-              ~{{ estimatedFileSize }}
-            </div>
           </div>
           <div class="text-right">Volume Normalization</div>
           <div class="flex items-center gap-4">
@@ -367,7 +395,7 @@ async function handleDrop(file: File) {
         @metronome="onMetronomeBeat"
         @seek="onAudioPlayerSeek"
       />
-      <DownloadProgress :downloadProgress="downloadProgress" />
+      <DownloadProgress />
     </FooterArea>
   </MainLayout>
 </template>

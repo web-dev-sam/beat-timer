@@ -21,6 +21,9 @@ export default defineConfig({
       'Cross-Origin-Opener-Policy': 'same-origin',
     },
   },
+  optimizeDeps: {
+    exclude: ['@ffmpeg/ffmpeg'],
+  },
   define: {
     APP_VERSION: JSON.stringify(require('./package.json').version),
   }
