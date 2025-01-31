@@ -54,7 +54,8 @@ export default class FfmpegHandler {
     offset: number,
     exportQuality: number,
     doVolumeNormalization: boolean,
-  ) {
+    type: "zip" | "ogg" = "ogg"
+  ): Promise<Uint8Array | void> {
     const file = this.file
     if (!file) {
       return
@@ -68,23 +69,29 @@ export default class FfmpegHandler {
       log('ffmpegDownloadExportQuality', exportQuality.toString())
       log('ffmpegDownloadDoVolumeNormalization', doVolumeNormalization.toString())
       if (paddingDuration >= 0) {
-        ; (
-          await this.padAudio(
-            file,
-            paddingDuration,
-            exportQuality,
-            doVolumeNormalization,
-          )
-        )()
+        const result = await this.padAudio(
+          file,
+          paddingDuration,
+          exportQuality,
+          doVolumeNormalization,
+        )
+        if (type === "ogg") {
+          result.download()
+        } else {
+          return result.fileData
+        }
       } else {
-        ; (
-          await this.trimAudio(
-            file,
-            -paddingDuration,
-            exportQuality,
-            doVolumeNormalization,
-          )
-        )()
+        const result = await this.trimAudio(
+          file,
+          -paddingDuration,
+          exportQuality,
+          doVolumeNormalization,
+        )
+        if (type === "ogg") {
+          result.download()
+        } else {
+          return result.fileData
+        }
       }
     } catch (error) {
       const err = error as Error
@@ -130,7 +137,10 @@ export default class FfmpegHandler {
     this.ffmpeg.deleteFile(inputFileName)
     this.ffmpeg.deleteFile(outputFileName)
 
-    return () => this.downloadAudio(paddedData, outputFileName)
+    return {
+      download: () => this.downloadAudio(paddedData, outputFileName),
+      fileData: paddedData as Uint8Array
+    }
   }
 
   async trimAudio(
@@ -159,12 +169,15 @@ export default class FfmpegHandler {
       outputFileName,
     ].filter(Boolean), undefined, { signal: this.abortController.signal })
     this.mutedProgress = true
-    const trimmedData = await this.ffmpeg.readFile(outputFileName)
+    const trimmedData = await this.ffmpeg.readFile(outputFileName) as Uint8Array
 
     this.ffmpeg.deleteFile(inputFileName)
     this.ffmpeg.deleteFile(outputFileName)
 
-    return () => this.downloadAudio(trimmedData, outputFileName)
+    return {
+      download: () => this.downloadAudio(trimmedData, outputFileName),
+      fileData: trimmedData as Uint8Array
+    }
   }
 
   async trimAndNormalizeAudio(

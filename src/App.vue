@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, watch, useTemplateRef, nextTick } from 'vue'
 
+import { BlobWriter, TextReader, Uint8ArrayReader, ZipWriter } from '@zip.js/zip.js'
 import FfmpegHandler from '@/utils/FfmpegHandler'
 import { guess } from 'web-audio-beat-detector'
-import { songOffsetToSilencePadding, useBPMFinder } from '@/utils/utils'
+import { buildBeatSaberZip, songOffsetToSilencePadding, useBPMFinder } from '@/utils/utils'
 import { useMouseInElement, useKeyModifier } from '@vueuse/core'
 import useAudioSettings from '@/composables/useAudioSettings'
+import { useFooterProgress } from './composables/useFooterProgress'
 
 import {
   ChevronDown,
@@ -31,12 +33,11 @@ import UValueEdit from '@/components/u/UValueEdit.vue'
 import URange from '@/components/u/URange.vue'
 import UCheckbox from '@/components/u/UCheckbox.vue'
 import MainLayout from '@/layout/MainLayout.vue'
-import { useFooterProgress } from './composables/useFooterProgress'
+import ZipModal from './components/ZipModal.vue'
 
 // Plan:
 // 0 offset
-// v2.3.8 Export new zipped BeatSaber map with right settings
-//        Debugging button & Github issue link
+// v2.3.8 Debugging button & Github issue link
 // v2.4   Trim audio at end (or add silence)
 
 const ffmpegHandler = new FfmpegHandler()
@@ -52,6 +53,7 @@ const isSpectogramLoaded = ref(false)
 const isHelpPageShown = ref(false)
 const isBufferLoaded = ref(false)
 const isDownloading = ref(false)
+const isZipModalShown = ref(false)
 const hasImportStarted = ref(false)
 const doVolumeNormalization = ref(true)
 const exportQuality = ref(8)
@@ -169,8 +171,52 @@ async function download() {
     offset.value,
     exportQuality.value,
     doVolumeNormalization.value,
+    'ogg',
   )
   isDownloading.value = false
+}
+
+async function downloadZip(metadata: {
+  songName: string
+  subtitle: string
+  songAuthor: string
+  levelAuthor: string
+}) {
+  isDownloading.value = true
+  isZipModalShown.value = false
+  const maybeUInt8Array = await ffmpegHandler.download(
+    bpm.value,
+    offset.value,
+    exportQuality.value,
+    doVolumeNormalization.value,
+    'zip',
+  )
+  if (!maybeUInt8Array) {
+    isDownloading.value = false
+    return
+  }
+
+  const zipBlob = await buildBeatSaberZip(
+    {
+      ...metadata,
+      bpm: bpm.value,
+    },
+    maybeUInt8Array,
+  )
+
+  const url = URL.createObjectURL(zipBlob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'song.zip'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+  isDownloading.value = false
+}
+
+function openZipModal() {
+  isZipModalShown.value = true
 }
 
 function toggleZoom() {
@@ -347,8 +393,15 @@ async function handleDrop(file: File) {
         </p>
         <div class="flex justify-center gap-4">
           <UButton :secondary="true" @click="step = 'edit'"> Back </UButton>
-          <UButton :loading="isDownloading" @click="download"> Export </UButton>
+          <UButton :loading="isDownloading" @click="download"> Export .ogg </UButton>
         </div>
+
+        <div class="mt-4! flex justify-center gap-4">
+          <UButton secondary :disabled="isDownloading" @click="openZipModal" class="h-8">
+            Export Map .zip
+          </UButton>
+        </div>
+
         <button class="mt-12! inline-flex items-center" @click="toggleAdvancedSettings">
           <ChevronDown v-if="!isAdvancedSettingsOpen" class="mr-1 inline-block" />
           <ChevronUp v-else class="mr-1 inline-block" />
@@ -391,6 +444,7 @@ async function handleDrop(file: File) {
         @seek="onAudioPlayerSeek"
       />
       <DownloadProgress />
+      <ZipModal v-if="isZipModalShown" @close="isZipModalShown = false" @export="downloadZip" />
     </FooterArea>
   </MainLayout>
 </template>
