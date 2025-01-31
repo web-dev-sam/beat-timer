@@ -35,14 +35,9 @@ import { useFooterProgress } from './composables/useFooterProgress'
 
 // Plan:
 // 0 offset
-// v2.3.7 Fix .mp3 files not displaying
-//        Normalize volume and shorten length at start (make 5min max)
-//        Add import progress bar
-//        Fix export to use original buffer
-//        Debugging button & Github issue link
 // v2.3.8 Export new zipped BeatSaber map with right settings
+//        Debugging button & Github issue link
 // v2.4   Trim audio at end (or add silence)
-// v2.5   Updating everything (incl. ffmpeg, tailwind, ...)
 
 const ffmpegHandler = new FfmpegHandler()
 await ffmpegHandler.load()
