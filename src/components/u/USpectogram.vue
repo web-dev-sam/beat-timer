@@ -59,7 +59,7 @@ const visualOffset = computed(() => {
 
 const startPosition = computed(() => {
   if (!state.spectogramHandler) {
-    return -100
+    return -9999
   }
 
   return state.spectogramHandler.getStartPosition(0)
@@ -67,15 +67,15 @@ const startPosition = computed(() => {
 
 const newStartPosition = computed(() => {
   if (!state.spectogramHandler) {
-    return -100
+    return -9999
   }
 
   return state.spectogramHandler.getStartPosition(-visualOffset.value)
 })
 
 const newEndPosition = computed(() => {
-  if (!state.spectogramHandler) {
-    return -100
+  if (!state.spectogramHandler || trimEndPosition.value == null) {
+    return -9999
   }
 
   return state.spectogramHandler.getProgressPX(trimEndPosition.value / 1000)
@@ -228,7 +228,7 @@ function onNewEndMouseDown(event: MouseEvent) {
     if (state.newEndDragging && state.spectogramHandler) {
       const dragDelta = e.clientX - (state.newEndDragStart ?? 0)
       const currentTime = state.spectogramHandler.pxToSec(dragDelta)
-      trimEndPosition.value = Math.max(0, trimEndPosition.value + currentTime * 1000)
+      trimEndPosition.value = Math.max(0, (trimEndPosition.value || 0) + currentTime * 1000)
       state.newEndDragStart = e.clientX
     }
   }
@@ -388,7 +388,7 @@ defineExpose({
     </div>
 
     <div
-      v-if="newEndPosition > newStartPosition"
+      v-if="newEndPosition > newStartPosition && trimEndPosition != null"
       class="start-tile -top-1/2 select-none"
       :style="{ left: newEndPosition + 'px' }"
       @mousedown="onNewEndMouseDown"
@@ -398,9 +398,9 @@ defineExpose({
         New End
         <button
           class="remove-end absolute -top-2 -right-5 opacity-0 transition-opacity hover:opacity-100"
-          @click.stop="trimEndPosition = 0"
+          @click.stop="trimEndPosition = null"
         >
-          <X class="h-4 w-4" />
+          <X />
         </button>
       </div>
     </div>

@@ -5,7 +5,7 @@ const draggingBPM = ref(120)
 const offset = ref(0)
 const draggingOffset = ref(0)
 const bpmMultiplier = ref(1)
-const trimEndPosition = ref(0)
+const trimEndPosition = ref<number | null>(null)
 
 function setBPMMultiplier(newMultiplier: 1 | 2) {
   const newBPM = newMultiplier * bpm.value
