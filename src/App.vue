@@ -299,6 +299,7 @@ async function handleDrop(file: File) {
 
 function copyDebugInformation() {
   const blogger = useLogger()
+  blogger.log('ffmpegLogs', ffmpegHandler.getFfmpegLogs())
   blogger.copy()
   blogger.openGithubIssue()
 }

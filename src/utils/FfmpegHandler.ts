@@ -13,6 +13,7 @@ export default class FfmpegHandler {
   private currentAudioBuffer: AudioBuffer | null
   private abortController: AbortController;
   public mutedProgress: boolean;
+  private ffmpegLogs: { type: string; message: string }[] = [];
 
   constructor() {
     this.ffmpeg = new FFmpeg()
@@ -31,6 +32,7 @@ export default class FfmpegHandler {
     });
 
     this.ffmpeg.on('log', ({ type, message }) => {
+      this.ffmpegLogs.push({ type, message });
       if ("debug" in window) {
         console.log(type, message)
       }
@@ -245,6 +247,10 @@ export default class FfmpegHandler {
   abortTrimAndNormalizeAudio() {
     this.abortController.abort()
     this.mutedProgress = true
+  }
+
+  getFfmpegLogs(): string {
+    return this.ffmpegLogs.map(log => `[${log.type}] ${log.message}`).join('\n')
   }
 
   extractTimeInMs(prefix: 'time=' | 'Duration: ', ffmpegOutput: string) {
