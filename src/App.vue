@@ -17,6 +17,7 @@ import {
   WandSparkles,
   ZoomIn,
   ZoomOut,
+  AlertTriangle,
 } from 'lucide-vue-next'
 
 import AudioPlayer from '@/components/AudioPlayer.vue'
@@ -38,14 +39,8 @@ import { useLogger } from './utils/logger'
 
 // Plan:
 // v2.3.9
-//        Warnings before continue:
-//        Trimming too much
-//        Adding too little silence
-//        Adding too much silence
-//        Did not change anything
-//
 //        Adding ffmpeg log to copy paste and ffmpeg errors to issue
-// v2.4   Trim audio at end (or add silence)
+// v2.4   Add silence at end
 
 const ffmpegHandler = new FfmpegHandler()
 await ffmpegHandler.load()
@@ -77,6 +72,27 @@ const shiftKeyState = useKeyModifier('Shift')
 const isShiftHoveringBPMFinderButton = computed(() => !isOutside.value && shiftKeyState.value)
 const isLoaded = computed(() => isBufferLoaded.value && isSpectogramLoaded.value)
 const visualOffset = computed(() => songOffsetToSilencePadding(bpm.value, draggingOffset.value))
+
+const warnings = computed(() => {
+  const result = []
+
+  if (trimEndPosition.value && audioBuffer.value) {
+    const trimAmount = audioBuffer.value.duration * 1000 - trimEndPosition.value
+    if (trimAmount > 10000) {
+      result.push('Trimming more than 10s from end')
+    }
+  }
+
+  if (visualOffset.value < 5 && visualOffset.value >= 0) {
+    result.push('Adding less than 5ms of silence')
+  } else if (visualOffset.value < 0 && visualOffset.value > -5) {
+    result.push('Trimming less than 5ms of audio')
+  } else if (visualOffset.value > 4000) {
+    result.push('Adding more than 4s of silence')
+  }
+
+  return result
+})
 
 watch(
   () => bpm.value,
@@ -311,9 +327,19 @@ function copyDebugInformation() {
         <UButton :class="{ invisiblyat: hasImportStarted }" @click="loadExampleFile" secondary>
           Use Example
         </UButton>
-        <UButton v-if="step === 'edit'" class="mr-0 mb-0" @click="goToDownloadStep">
-          Seems On Time
-        </UButton>
+        <div v-if="step === 'edit'" class="flex items-start gap-4">
+          <div v-if="warnings.length > 0" class="flex flex-col gap-2 pt-3">
+            <div
+              v-for="warning in warnings"
+              :key="warning"
+              class="text-warning-foreground flex items-center gap-2 text-sm"
+            >
+              <span>{{ warning }}</span>
+              <AlertTriangle class="h-4 w-4" />
+            </div>
+          </div>
+          <UButton class="mr-0 mb-0" @click="goToDownloadStep"> Seems On Time </UButton>
+        </div>
       </template>
     </HeaderButtons>
     <Step :step="step">
@@ -340,7 +366,7 @@ function copyDebugInformation() {
       </template>
       <template #edit>
         <div>
-          <h1 class="h2 mb-0 text-2xl! lg:text-4xl xl:mb-18">Align the beat.</h1>
+          <h1 class="h2 mb-0 text-2xl! lg:text-4xl! xl:mb-18!">Align the beat.</h1>
         </div>
         <div class="mx-6 flex items-end justify-between md:mx-12" prevent-user-select>
           <UValueEdit
