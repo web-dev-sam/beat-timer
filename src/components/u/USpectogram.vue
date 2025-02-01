@@ -3,6 +3,7 @@ import { reactive, computed, watch, ref, onMounted, nextTick } from 'vue'
 import SpectogramHandler, { type BeatLine } from '@/utils/SpectogramHandler'
 import { debounce, songOffsetToSilencePadding } from '@/utils/utils'
 import useAudioSettings from '@/composables/useAudioSettings'
+import { X } from 'lucide-vue-next'
 
 const props = defineProps<{
   audioBuffer: AudioBuffer
@@ -13,7 +14,7 @@ const emit = defineEmits<{
   (e: 'loaded'): void
 }>()
 
-const { bpm, offset, draggingBPM, draggingOffset } = useAudioSettings()
+const { bpm, offset, draggingBPM, draggingOffset, trimEndPosition } = useAudioSettings()
 const initialBpm = bpm.value
 const initialOffset = offset.value
 const state = reactive<{
@@ -25,7 +26,9 @@ const state = reactive<{
   progress: number
   mouseX: number
   spectogramDataURL: string
-  dragTarget: 'new-start' | 'beat-line' | null
+  dragTarget: 'new-start' | 'new-end' | 'beat-line' | null
+  newEndDragging: boolean
+  newEndDragStart: number | null
 }>({
   spectogramHandler: null,
   beatlines: [],
@@ -36,6 +39,8 @@ const state = reactive<{
   mouseX: 0,
   spectogramDataURL: '',
   dragTarget: null,
+  newEndDragging: false,
+  newEndDragStart: null,
 })
 
 const progressPX = computed(() => {
@@ -54,18 +59,34 @@ const visualOffset = computed(() => {
 
 const startPosition = computed(() => {
   if (!state.spectogramHandler) {
-    return -100
+    return -9999
   }
 
   return state.spectogramHandler.getStartPosition(0)
 })
 
+const endPosition = computed(() => {
+  if (!state.spectogramHandler) {
+    return -9999
+  }
+
+  return state.spectogramHandler.getProgressPX(props.audioBuffer.duration)
+})
+
 const newStartPosition = computed(() => {
   if (!state.spectogramHandler) {
-    return -100
+    return -9999
   }
 
   return state.spectogramHandler.getStartPosition(-visualOffset.value)
+})
+
+const newEndPosition = computed(() => {
+  if (!state.spectogramHandler || trimEndPosition.value == null) {
+    return -9999
+  }
+
+  return state.spectogramHandler.getProgressPX(trimEndPosition.value / 1000)
 })
 
 const hoverSec = computed(() => {
@@ -207,6 +228,38 @@ function onNewStartMouseDown(event: MouseEvent) {
   emit('drag-start')
 }
 
+function onNewEndMouseDown(event: MouseEvent) {
+  state.newEndDragging = true
+  state.newEndDragStart = event.clientX
+
+  const onMouseMove = (e: MouseEvent) => {
+    if (state.newEndDragging && state.spectogramHandler) {
+      const dragDelta = e.clientX - (state.newEndDragStart ?? 0)
+      const currentTime = state.spectogramHandler.pxToSec(dragDelta)
+      const newPosition = (trimEndPosition.value || 0) + currentTime * 1000
+
+      trimEndPosition.value = Math.max(
+        Math.max(-visualOffset.value * 1000, 0),
+        Math.min(newPosition, props.audioBuffer.duration * 1000),
+      )
+      state.newEndDragStart = e.clientX
+    }
+  }
+
+  const onMouseUp = () => {
+    state.newEndDragging = false
+    state.newEndDragStart = null
+    if (trimEndPosition.value != null && trimEndPosition.value <= 0) {
+      trimEndPosition.value = null
+    }
+    document.removeEventListener('mousemove', onMouseMove)
+    document.removeEventListener('mouseup', onMouseUp)
+  }
+
+  document.addEventListener('mousemove', onMouseMove)
+  document.addEventListener('mouseup', onMouseUp)
+}
+
 function onCanvasMouseUp(event: MouseEvent) {
   if (state.dragStart != null) {
     const updater = state.dragTarget === 'new-start' ? updateOnOffsetDragNormal : updateOnOffsetDrag
@@ -312,7 +365,10 @@ defineExpose({
         <div
           class="beat-line-time"
           :style="{
-            opacity: state.hovering || state.dragStart != null ? 1 : 0,
+            opacity:
+              state.hovering || (state.dragStart != null && state.dragTarget !== 'new-start')
+                ? 1
+                : 0,
             left: state.mouseX + 'px',
           }"
         >
@@ -321,7 +377,10 @@ defineExpose({
         <div
           class="beat-line-beat"
           :style="{
-            opacity: state.hovering || state.dragStart != null ? 1 : 0,
+            opacity:
+              state.hovering || (state.dragStart != null && state.dragTarget !== 'new-start')
+                ? 1
+                : 0,
             left: state.mouseX + 'px',
           }"
         >
@@ -330,6 +389,10 @@ defineExpose({
       </div>
     </div>
     <div class="start-tile bottom-0 text-white/40" :style="{ left: startPosition + 'px' }">
+      <div class="up-tile top-0"></div>
+      <div></div>
+    </div>
+    <div class="start-tile bottom-0 text-white/40" :style="{ left: endPosition + 'px' }">
       <div class="up-tile top-0"></div>
       <div></div>
     </div>
@@ -342,6 +405,24 @@ defineExpose({
     >
       <div class="up-tile top-0"></div>
       <div>New Start</div>
+    </div>
+
+    <div
+      v-if="newEndPosition > newStartPosition && trimEndPosition != null"
+      class="start-tile -top-1/2 select-none"
+      :style="{ left: newEndPosition + 'px' }"
+      @mousedown="onNewEndMouseDown"
+    >
+      <div class="down-tile top-0"></div>
+      <div class="relative -translate-y-11">
+        New End
+        <button
+          class="remove-end absolute -top-2 -right-5 opacity-0 transition-opacity hover:opacity-100"
+          @click.stop="trimEndPosition = null"
+        >
+          <X />
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -377,6 +458,15 @@ defineExpose({
   border-style: solid;
   border-width: 1rem 1rem 0 0;
   border-color: currentColor transparent transparent transparent;
+}
+
+.down-tile {
+  width: 0;
+  height: 0;
+  transform: rotate(45deg);
+  border-style: solid;
+  border-width: 0 0 1rem 1rem;
+  border-color: transparent transparent currentColor transparent;
 }
 
 .start-tile {
@@ -434,5 +524,21 @@ defineExpose({
   background: white;
   color: var(--color-dark);
   z-index: 1;
+}
+
+.remove-end {
+  font-size: 1.2rem;
+  line-height: 1;
+  width: 1rem;
+  height: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: currentColor;
+}
+
+.start-tile:hover .remove-end {
+  opacity: 0.6 !important;
 }
 </style>

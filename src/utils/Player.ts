@@ -6,9 +6,9 @@ export default class Player {
   private pausedTime: number
   private started: boolean
   private gainNode: GainNode
-  private onStop: (sender?: 'player') => void
+  private onStop: (sender?: 'player' | 'end') => void
 
-  constructor(context: AudioContext, onStop: (sender?: 'player') => void) {
+  constructor(context: AudioContext, onStop: (sender?: 'player' | 'end') => void) {
     this.context = context
     this.source = null
     this.buffer = null
@@ -22,10 +22,11 @@ export default class Player {
 
   getCurrentTime(): number {
     const currentTime = this.started ? this.context.currentTime - this.startTime : this.pausedTime
+    const duration = this.getDuration()
 
-    if (currentTime > this.getDuration()) {
-      this.stop()
-      return 0
+    if (currentTime > duration) {
+      this.onStop('end')
+      return duration
     }
 
     return currentTime

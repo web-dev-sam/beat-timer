@@ -33,11 +33,16 @@ export function useLogger() {
   }
 
   const copy = () => {
+    navigator.clipboard.writeText(JSON.stringify(globalDebugInformation, null, 2))
+  }
+
+  const openGithubIssue = () => {
     openGitHubIssue(globalDebugInformation)
   }
 
   return {
     log,
     copy,
+    openGithubIssue
   }
 }

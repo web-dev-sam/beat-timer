@@ -1,21 +1,32 @@
 <script setup lang="ts">
-import { X } from 'lucide-vue-next'
+import { Bug, X } from 'lucide-vue-next'
 
 const version = APP_VERSION
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'bug'])
 </script>
 
 <template>
   <div
-    class="auto-flow-small fixed left-0 top-0 z-10 h-screen min-w-full overflow-y-auto bg-dark p-4 text-center"
+    class="auto-flow-small bg-dark fixed top-0 left-0 z-10 h-screen min-w-full overflow-y-auto p-4 text-center"
   >
-    <button @click="emit('close')" class="absolute left-6 top-8 md:left-12 md:top-14 cursor-pointer">
+    <button
+      @click="emit('close')"
+      class="absolute top-8 left-6 cursor-pointer md:top-14 md:left-12"
+    >
       <X />
     </button>
+    <button
+      @click="emit('bug')"
+      class="absolute! top-8 right-6 mt-0! cursor-pointer md:top-14 md:right-12"
+      tooltip="Report a bug"
+      tooltip-position="bottom"
+    >
+      <Bug />
+    </button>
     <div class="m-auto w-full lg:w-2/3">
-      <h2 class="h2 mb-4 mt-8 md:mt-16 lg:mt-32">
-        Beat Timer <strong class="text-lg pl-2 font-bold">v{{ version }}</strong>
+      <h2 class="h2 mt-8 mb-4 md:mt-16 lg:mt-32">
+        Beat Timer <strong class="pl-2 text-lg font-bold">v{{ version }}</strong>
       </h2>
       <p>
         A web app to align the beat of your song to the beat of your game. This app is still new,

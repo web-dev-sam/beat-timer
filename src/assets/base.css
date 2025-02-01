@@ -20,6 +20,7 @@
   --color-primary-foreground: hsl(210, 20%, 98%);
   --color-secondary: hsl(215, 27.9%, 16.9%);
   --color-secondary-foreground: hsl(210, 20%, 98%);
+  --color-warning-foreground: #fe9a00;
   --color-muted: hsl(215, 27.9%, 16.9%);
   --color-muted-foreground: hsl(217.9, 10.6%, 64.9%);
   --color-accent: hsl(215, 27.9%, 16.9%);
@@ -181,7 +182,7 @@ strong {
 }
 
 [tooltip-position='left']::after {
-  transform: translate(calc(-100% - 1rem), -1rem);
+  transform: translate(calc(-100% + 3.5rem), -1rem);
   @apply left-0 top-1/2;
 }
 

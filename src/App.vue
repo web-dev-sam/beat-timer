@@ -3,18 +3,21 @@ import { ref, computed, watch, useTemplateRef, nextTick } from 'vue'
 
 import FfmpegHandler from '@/utils/FfmpegHandler'
 import { guess } from 'web-audio-beat-detector'
-import { songOffsetToSilencePadding, useBPMFinder } from '@/utils/utils'
+import { buildBeatSaberZip, songOffsetToSilencePadding, useBPMFinder } from '@/utils/utils'
 import { useMouseInElement, useKeyModifier } from '@vueuse/core'
 import useAudioSettings from '@/composables/useAudioSettings'
+import { useFooterProgress } from './composables/useFooterProgress'
 
 import {
   ChevronDown,
   ChevronUp,
   Drum,
   HelpCircle,
+  Scissors,
   WandSparkles,
   ZoomIn,
   ZoomOut,
+  AlertTriangle,
 } from 'lucide-vue-next'
 
 import AudioPlayer from '@/components/AudioPlayer.vue'
@@ -31,13 +34,11 @@ import UValueEdit from '@/components/u/UValueEdit.vue'
 import URange from '@/components/u/URange.vue'
 import UCheckbox from '@/components/u/UCheckbox.vue'
 import MainLayout from '@/layout/MainLayout.vue'
-import { useFooterProgress } from './composables/useFooterProgress'
+import ZipModal from './components/ZipModal.vue'
+import { useLogger } from './utils/logger'
 
 // Plan:
-// 0 offset
-// v2.3.8 Export new zipped BeatSaber map with right settings
-//        Debugging button & Github issue link
-// v2.4   Trim audio at end (or add silence)
+// v2.4   Add silence at end
 
 const ffmpegHandler = new FfmpegHandler()
 await ffmpegHandler.load()
@@ -52,12 +53,13 @@ const isSpectogramLoaded = ref(false)
 const isHelpPageShown = ref(false)
 const isBufferLoaded = ref(false)
 const isDownloading = ref(false)
+const isZipModalShown = ref(false)
 const hasImportStarted = ref(false)
 const doVolumeNormalization = ref(true)
 const exportQuality = ref(8)
 const zoomLevel = ref(10)
 
-const { bpm, offset, draggingBPM, draggingOffset } = useAudioSettings()
+const { bpm, offset, draggingBPM, draggingOffset, trimEndPosition } = useAudioSettings()
 const { click: bpmFinderClick } = useBPMFinder({
   muteMetronome: () => audioPlayerRef.value?.metronome?.mute?.(),
   unmuteMetronome: () => audioPlayerRef.value?.metronome?.unmute?.(),
@@ -68,6 +70,27 @@ const shiftKeyState = useKeyModifier('Shift')
 const isShiftHoveringBPMFinderButton = computed(() => !isOutside.value && shiftKeyState.value)
 const isLoaded = computed(() => isBufferLoaded.value && isSpectogramLoaded.value)
 const visualOffset = computed(() => songOffsetToSilencePadding(bpm.value, draggingOffset.value))
+
+const warnings = computed(() => {
+  const result = []
+
+  if (trimEndPosition.value && audioBuffer.value) {
+    const trimAmount = audioBuffer.value.duration * 1000 - trimEndPosition.value
+    if (trimAmount > 10000) {
+      result.push('Trimming more than 10s from end')
+    }
+  }
+
+  if (visualOffset.value < 5 && visualOffset.value >= 0) {
+    result.push('Adding less than 5ms of silence')
+  } else if (visualOffset.value < 0 && visualOffset.value > -5) {
+    result.push('Trimming less than 5ms of audio')
+  } else if (visualOffset.value > 4000) {
+    result.push('Adding more than 4s of silence')
+  }
+
+  return result
+})
 
 watch(
   () => bpm.value,
@@ -157,6 +180,22 @@ function onTimingOffsetChange(changedOffset: number) {
   draggingOffset.value = changedOffset
 }
 
+function setTrimEndMark() {
+  const currentTimeInS = audioPlayerRef.value?.player?.getCurrentTime?.()
+  const totalDurationInS = audioPlayerRef.value?.player?.getDuration?.()
+  if (!currentTimeInS || !totalDurationInS) {
+    return
+  }
+
+  // Convert to milliseconds for consistent comparison
+  const currentTimeMs = currentTimeInS * 1000
+  const totalDurationMs = totalDurationInS * 1000
+
+  // Ensure the end marker is within valid bounds (between 0 and total duration)
+  const validEndPosition = Math.max(0, Math.min(currentTimeMs, totalDurationMs))
+  trimEndPosition.value = validEndPosition
+}
+
 function goToDownloadStep() {
   pauseAudio()
   step.value = 'export'
@@ -167,10 +206,56 @@ async function download() {
   await ffmpegHandler.download(
     bpm.value,
     offset.value,
+    trimEndPosition.value,
     exportQuality.value,
     doVolumeNormalization.value,
+    'ogg',
   )
   isDownloading.value = false
+}
+
+async function downloadZip(metadata: {
+  songName: string
+  subtitle: string
+  songAuthor: string
+  levelAuthor: string
+}) {
+  isDownloading.value = true
+  isZipModalShown.value = false
+  const maybeUInt8Array = await ffmpegHandler.download(
+    bpm.value,
+    offset.value,
+    trimEndPosition.value,
+    exportQuality.value,
+    doVolumeNormalization.value,
+    'zip',
+  )
+  if (!maybeUInt8Array) {
+    isDownloading.value = false
+    return
+  }
+
+  const zipBlob = await buildBeatSaberZip(
+    {
+      ...metadata,
+      bpm: bpm.value,
+    },
+    maybeUInt8Array,
+  )
+
+  const url = URL.createObjectURL(zipBlob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'song.zip'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+  isDownloading.value = false
+}
+
+function openZipModal() {
+  isZipModalShown.value = true
 }
 
 function toggleZoom() {
@@ -215,6 +300,13 @@ async function handleDrop(file: File) {
   await loadAudioFile(file)
   isBufferLoaded.value = true
 }
+
+function copyDebugInformation() {
+  const blogger = useLogger()
+  blogger.log('ffmpegLogs', ffmpegHandler.getFfmpegLogs())
+  blogger.copy()
+  blogger.openGithubIssue()
+}
 </script>
 
 <template>
@@ -229,15 +321,30 @@ async function handleDrop(file: File) {
         >
           <HelpCircle />
         </button>
-        <HelpSection v-if="isHelpPageShown" @close="isHelpPageShown = false"> </HelpSection>
+        <HelpSection
+          v-if="isHelpPageShown"
+          @close="isHelpPageShown = false"
+          @bug="copyDebugInformation"
+        >
+        </HelpSection>
       </template>
       <template #right>
         <UButton :class="{ invisiblyat: hasImportStarted }" @click="loadExampleFile" secondary>
           Use Example
         </UButton>
-        <UButton v-if="step === 'edit'" class="mr-0 mb-0" @click="goToDownloadStep">
-          Seems On Time
-        </UButton>
+        <div v-if="step === 'edit'" class="flex items-start gap-4">
+          <div v-if="warnings.length > 0" class="flex flex-col gap-2 pt-3">
+            <div
+              v-for="warning in warnings"
+              :key="warning"
+              class="text-warning-foreground flex items-center gap-2 text-sm"
+            >
+              <span>{{ warning }}</span>
+              <AlertTriangle class="h-4 w-4" />
+            </div>
+          </div>
+          <UButton class="mr-0 mb-0" @click="goToDownloadStep"> Seems On Time </UButton>
+        </div>
       </template>
     </HeaderButtons>
     <Step :step="step">
@@ -264,9 +371,9 @@ async function handleDrop(file: File) {
       </template>
       <template #edit>
         <div>
-          <h1 class="h2 mb-0 text-2xl! lg:text-4xl xl:mb-18">Align the beat.</h1>
+          <h1 class="h2 mb-0 text-2xl! lg:text-4xl! xl:mb-18!">Align the beat.</h1>
         </div>
-        <div class="mx-6 flex items-end justify-start md:mx-12" prevent-user-select>
+        <div class="mx-6 flex items-end justify-between md:mx-12" prevent-user-select>
           <UValueEdit
             :value="draggingBPM"
             @change="onBPMChange"
@@ -302,6 +409,15 @@ async function handleDrop(file: File) {
               </span>
             </template>
           </UValueEdit>
+          <button
+            class="hover:text-primary inline-block translate-y-1 self-center"
+            tooltip="Mark to trim end here"
+            tooltip-position="left"
+            tooltip-primary
+            @click="setTrimEndMark"
+          >
+            <Scissors />
+          </button>
         </div>
         <USpectogram
           v-if="audioBuffer"
@@ -347,8 +463,15 @@ async function handleDrop(file: File) {
         </p>
         <div class="flex justify-center gap-4">
           <UButton :secondary="true" @click="step = 'edit'"> Back </UButton>
-          <UButton :loading="isDownloading" @click="download"> Export </UButton>
+          <UButton :loading="isDownloading" @click="download"> Export .ogg </UButton>
         </div>
+
+        <div class="mt-4! flex justify-center gap-4">
+          <UButton secondary :disabled="isDownloading" @click="openZipModal" class="h-8">
+            Export Map .zip
+          </UButton>
+        </div>
+
         <button class="mt-12! inline-flex items-center" @click="toggleAdvancedSettings">
           <ChevronDown v-if="!isAdvancedSettingsOpen" class="mr-1 inline-block" />
           <ChevronUp v-else class="mr-1 inline-block" />
@@ -391,6 +514,7 @@ async function handleDrop(file: File) {
         @seek="onAudioPlayerSeek"
       />
       <DownloadProgress />
+      <ZipModal v-if="isZipModalShown" @close="isZipModalShown = false" @export="downloadZip" />
     </FooterArea>
   </MainLayout>
 </template>
