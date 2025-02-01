@@ -349,7 +349,10 @@ defineExpose({
         <div
           class="beat-line-time"
           :style="{
-            opacity: state.hovering || state.dragStart != null ? 1 : 0,
+            opacity:
+              state.hovering || (state.dragStart != null && state.dragTarget !== 'new-start')
+                ? 1
+                : 0,
             left: state.mouseX + 'px',
           }"
         >
@@ -358,7 +361,10 @@ defineExpose({
         <div
           class="beat-line-beat"
           :style="{
-            opacity: state.hovering || state.dragStart != null ? 1 : 0,
+            opacity:
+              state.hovering || (state.dragStart != null && state.dragTarget !== 'new-start')
+                ? 1
+                : 0,
             left: state.mouseX + 'px',
           }"
         >
@@ -382,6 +388,7 @@ defineExpose({
     </div>
 
     <div
+      v-if="newEndPosition > newStartPosition"
       class="start-tile -top-1/2 select-none"
       :style="{ left: newEndPosition + 'px' }"
       @mousedown="onNewEndMouseDown"
