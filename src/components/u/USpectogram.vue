@@ -26,6 +26,8 @@ const state = reactive<{
   mouseX: number
   spectogramDataURL: string
   dragTarget: 'new-start' | 'new-end' | 'beat-line' | null
+  newEndDragging: boolean
+  newEndDragStart: number | null
 }>({
   spectogramHandler: null,
   beatlines: [],
@@ -36,6 +38,8 @@ const state = reactive<{
   mouseX: 0,
   spectogramDataURL: '',
   dragTarget: null,
+  newEndDragging: false,
+  newEndDragStart: null,
 })
 
 const progressPX = computed(() => {
@@ -215,7 +219,29 @@ function onNewStartMouseDown(event: MouseEvent) {
   emit('drag-start')
 }
 
-function onNewEndMouseDown(event: MouseEvent) {}
+function onNewEndMouseDown(event: MouseEvent) {
+  state.newEndDragging = true
+  state.newEndDragStart = event.clientX
+
+  const onMouseMove = (e: MouseEvent) => {
+    if (state.newEndDragging && state.spectogramHandler) {
+      const dragDelta = e.clientX - (state.newEndDragStart ?? 0)
+      const currentTime = state.spectogramHandler.pxToSec(dragDelta)
+      trimEndPosition.value = Math.max(0, trimEndPosition.value + currentTime * 1000)
+      state.newEndDragStart = e.clientX
+    }
+  }
+
+  const onMouseUp = () => {
+    state.newEndDragging = false
+    state.newEndDragStart = null
+    document.removeEventListener('mousemove', onMouseMove)
+    document.removeEventListener('mouseup', onMouseUp)
+  }
+
+  document.addEventListener('mousemove', onMouseMove)
+  document.addEventListener('mouseup', onMouseUp)
+}
 
 function onCanvasMouseUp(event: MouseEvent) {
   if (state.dragStart != null) {
