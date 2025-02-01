@@ -37,7 +37,14 @@ import ZipModal from './components/ZipModal.vue'
 import { useLogger } from './utils/logger'
 
 // Plan:
-// 0 offset
+// v2.3.9
+//        Warnings before continue:
+//        Trimming too much
+//        Adding too little silence
+//        Adding too much silence
+//        Did not change anything
+//
+//        Adding ffmpeg log to copy paste and ffmpeg errors to issue
 // v2.4   Trim audio at end (or add silence)
 
 const ffmpegHandler = new FfmpegHandler()
@@ -167,7 +174,6 @@ function setTrimEndMark() {
   }
 
   trimEndPosition.value = currentTimeInS * 1000
-  trimEndPositionPX.value = spectogramRef.value?.spectogramHandler.getProgressPX(currentTimeInS)
 }
 
 function goToDownloadStep() {
