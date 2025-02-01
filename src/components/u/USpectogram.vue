@@ -65,6 +65,14 @@ const startPosition = computed(() => {
   return state.spectogramHandler.getStartPosition(0)
 })
 
+const endPosition = computed(() => {
+  if (!state.spectogramHandler) {
+    return -9999
+  }
+
+  return state.spectogramHandler.getProgressPX(props.audioBuffer.duration)
+})
+
 const newStartPosition = computed(() => {
   if (!state.spectogramHandler) {
     return -9999
@@ -373,6 +381,10 @@ defineExpose({
       </div>
     </div>
     <div class="start-tile bottom-0 text-white/40" :style="{ left: startPosition + 'px' }">
+      <div class="up-tile top-0"></div>
+      <div></div>
+    </div>
+    <div class="start-tile bottom-0 text-white/40" :style="{ left: endPosition + 'px' }">
       <div class="up-tile top-0"></div>
       <div></div>
     </div>
