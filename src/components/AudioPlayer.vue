@@ -113,7 +113,14 @@ function pause() {
   state.isStopped = false
 }
 
-function stop(sender?: 'player') {
+function stop(sender?: 'player' | 'end') {
+  if (sender === 'end') {
+    pause()
+    state.songProgress = 100
+    emit('metronome', player.value?.getDuration() || 0, player.value?.getDuration() || 1)
+    return
+  }
+
   if (sender !== 'player') {
     player.value?.stop()
   }
