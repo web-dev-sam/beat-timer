@@ -150,6 +150,10 @@ export default class SpectogramHandler {
     return cursorAbsolutePosition * this.scale - this.a
   }
 
+  getPositionSec(positionPX: number) {
+    return this.pxToSec(this.a + positionPX) + draggingOffset.value / 1000
+  }
+
   zoom(sPerVw: number) {
     this.currentZoom = sPerVw
     this.jumpToCursor(this.time, 0.5, this.currentZoom)
@@ -184,9 +188,6 @@ export default class SpectogramHandler {
     return trimDurationInPX - this.a
   }
 
-  getPositionSec(positionPX: number) {
-    return this.pxToSec(this.a + positionPX) + draggingOffset.value / 1000
-  }
 
   setSegmentSize(segmentSize: number) {
     this.segmentSize = segmentSize

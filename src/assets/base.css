@@ -181,7 +181,7 @@ strong {
 }
 
 [tooltip-position='left']::after {
-  transform: translate(calc(-100% - 1rem), -1rem);
+  transform: translate(calc(-100% + 3.5rem), -1rem);
   @apply left-0 top-1/2;
 }
 

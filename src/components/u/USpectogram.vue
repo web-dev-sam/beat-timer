@@ -13,7 +13,7 @@ const emit = defineEmits<{
   (e: 'loaded'): void
 }>()
 
-const { bpm, offset, draggingBPM, draggingOffset } = useAudioSettings()
+const { bpm, offset, draggingBPM, draggingOffset, trimEndPosition } = useAudioSettings()
 const initialBpm = bpm.value
 const initialOffset = offset.value
 const state = reactive<{
@@ -25,7 +25,7 @@ const state = reactive<{
   progress: number
   mouseX: number
   spectogramDataURL: string
-  dragTarget: 'new-start' | 'beat-line' | null
+  dragTarget: 'new-start' | 'new-end' | 'beat-line' | null
 }>({
   spectogramHandler: null,
   beatlines: [],
@@ -66,6 +66,14 @@ const newStartPosition = computed(() => {
   }
 
   return state.spectogramHandler.getStartPosition(-visualOffset.value)
+})
+
+const newEndPosition = computed(() => {
+  if (!state.spectogramHandler) {
+    return -100
+  }
+
+  return state.spectogramHandler.getProgressPX(trimEndPosition.value / 1000)
 })
 
 const hoverSec = computed(() => {
@@ -207,6 +215,8 @@ function onNewStartMouseDown(event: MouseEvent) {
   emit('drag-start')
 }
 
+function onNewEndMouseDown(event: MouseEvent) {}
+
 function onCanvasMouseUp(event: MouseEvent) {
   if (state.dragStart != null) {
     const updater = state.dragTarget === 'new-start' ? updateOnOffsetDragNormal : updateOnOffsetDrag
@@ -343,6 +353,17 @@ defineExpose({
       <div class="up-tile top-0"></div>
       <div>New Start</div>
     </div>
+
+    <div
+      class="start-tile -top-1/2 select-none"
+      tooltip-position="top"
+      tooltip="Exported song will end here"
+      :style="{ left: newEndPosition + 'px' }"
+      @mousedown="onNewEndMouseDown"
+    >
+      <div class="down-tile top-0"></div>
+      <div class="-translate-y-11">New End</div>
+    </div>
   </div>
 </template>
 
@@ -377,6 +398,15 @@ defineExpose({
   border-style: solid;
   border-width: 1rem 1rem 0 0;
   border-color: currentColor transparent transparent transparent;
+}
+
+.down-tile {
+  width: 0;
+  height: 0;
+  transform: rotate(45deg);
+  border-style: solid;
+  border-width: 0 0 1rem 1rem;
+  border-color: transparent transparent currentColor transparent;
 }
 
 .start-tile {

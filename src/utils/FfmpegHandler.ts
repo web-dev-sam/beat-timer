@@ -52,6 +52,7 @@ export default class FfmpegHandler {
   async download(
     bpm: number,
     offset: number,
+    trimEndPosition: number,
     exportQuality: number,
     doVolumeNormalization: boolean,
     type: "zip" | "ogg" = "ogg"
@@ -66,12 +67,14 @@ export default class FfmpegHandler {
     try {
       log('ffmpegDownloadBPM', bpm.toString())
       log('ffmpegDownloadPaddingDuration', paddingDuration.toString())
+      log('ffmpegDownloadTrimEndOffset', trimEndPosition.toString())
       log('ffmpegDownloadExportQuality', exportQuality.toString())
       log('ffmpegDownloadDoVolumeNormalization', doVolumeNormalization.toString())
       if (paddingDuration >= 0) {
         const result = await this.padAudio(
           file,
           paddingDuration,
+          trimEndPosition,
           exportQuality,
           doVolumeNormalization,
         )
@@ -84,6 +87,7 @@ export default class FfmpegHandler {
         const result = await this.trimAudio(
           file,
           -paddingDuration,
+          trimEndPosition,
           exportQuality,
           doVolumeNormalization,
         )
@@ -104,6 +108,7 @@ export default class FfmpegHandler {
   async padAudio(
     file: File,
     beginningPad: number = 0,
+    trimEndPosition: number = 0,
     exportQuality: number = 8,
     doVolumeNormalization: boolean = true,
   ) {
@@ -123,6 +128,7 @@ export default class FfmpegHandler {
       '-vn',
       '-t', this.formatDuration(silenceDuration),
       '-i', `anullsrc=channel_layout=stereo:sample_rate=44100`,
+      '-t', this.formatDuration((trimEndPosition / 1000)),
       '-i', inputFileName,
       '-filter_complex', filterComplex,
       '-map', '[audio_out]',
@@ -130,12 +136,23 @@ export default class FfmpegHandler {
       '-q:a', exportQuality.toString(),
       outputFileName
     ], undefined, { signal: this.abortController.signal })
+
+    // Above command breaks metadata for some reason, soooo... YEEET!!
+    await this.ffmpeg.exec([
+      '-i', outputFileName,
+      '-c', 'copy',
+      '-write_xing', '0',
+      '-fflags', '+bitexact',
+      '-map_metadata', '',
+      'fixed_' + outputFileName
+    ]);
     this.mutedProgress = true
 
-    const paddedData = await this.ffmpeg.readFile(outputFileName)
+    const paddedData = await this.ffmpeg.readFile('fixed_' + outputFileName)
 
     this.ffmpeg.deleteFile(inputFileName)
     this.ffmpeg.deleteFile(outputFileName)
+    this.ffmpeg.deleteFile('fixed_' + outputFileName)
 
     return {
       download: () => this.downloadAudio(paddedData, outputFileName),
@@ -146,6 +163,7 @@ export default class FfmpegHandler {
   async trimAudio(
     file: File,
     beginningTrim = 0,
+    trimEndPosition: number = 0,
     exportQuality: number = 8,
     doVolumeNormalization: boolean = true,
   ) {
@@ -157,11 +175,13 @@ export default class FfmpegHandler {
     this.ffmpeg.writeFile(inputFileName, dataArray)
 
     const trimStart = beginningTrim / 1000
+    console.log(this.formatDuration(trimEndPosition / 1000))
     this.mutedProgress = false
     await this.ffmpeg.exec([
       '-i', inputFileName,
       '-vn',
       '-ss', this.formatDuration(trimStart),
+      '-to', this.formatDuration(trimEndPosition / 1000),
       doVolumeNormalization ? '-filter:a' : '',
       doVolumeNormalization ? 'loudnorm=I=-14:LRA=11:TP=-1.5' : '',
       '-c:a', 'libvorbis',
@@ -259,15 +279,17 @@ export default class FfmpegHandler {
   }
 
   formatDuration(seconds: number) {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const remainingSeconds = seconds % 60
+    const sign = seconds < 0 ? '-' : ''
+    const absSeconds = Math.abs(seconds)
+    const hours = Math.floor(absSeconds / 3600)
+    const minutes = Math.floor((absSeconds % 3600) / 60)
+    const remainingSeconds = absSeconds % 60
 
     const formattedHours = hours.toString().padStart(2, '0')
     const formattedMinutes = minutes.toString().padStart(2, '0')
     const formattedSeconds = remainingSeconds.toFixed(3).padStart(6, '0')
 
-    return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`
+    return `${sign}${formattedHours}:${formattedMinutes}:${formattedSeconds}`
   }
 
   getAudioBuffer(): Promise<AudioBuffer> {

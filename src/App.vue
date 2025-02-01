@@ -13,6 +13,7 @@ import {
   ChevronUp,
   Drum,
   HelpCircle,
+  Scissors,
   WandSparkles,
   ZoomIn,
   ZoomOut,
@@ -58,7 +59,7 @@ const doVolumeNormalization = ref(true)
 const exportQuality = ref(8)
 const zoomLevel = ref(10)
 
-const { bpm, offset, draggingBPM, draggingOffset } = useAudioSettings()
+const { bpm, offset, draggingBPM, draggingOffset, trimEndPosition } = useAudioSettings()
 const { click: bpmFinderClick } = useBPMFinder({
   muteMetronome: () => audioPlayerRef.value?.metronome?.mute?.(),
   unmuteMetronome: () => audioPlayerRef.value?.metronome?.unmute?.(),
@@ -158,6 +159,17 @@ function onTimingOffsetChange(changedOffset: number) {
   draggingOffset.value = changedOffset
 }
 
+function setTrimEndMark() {
+  const currentTimeInS = audioPlayerRef.value?.player?.getCurrentTime?.()
+  const totalDurationInS = audioPlayerRef.value?.player?.getDuration?.()
+  if (!currentTimeInS || !totalDurationInS) {
+    return
+  }
+
+  trimEndPosition.value = currentTimeInS * 1000
+  trimEndPositionPX.value = spectogramRef.value?.spectogramHandler.getProgressPX(currentTimeInS)
+}
+
 function goToDownloadStep() {
   pauseAudio()
   step.value = 'export'
@@ -168,6 +180,7 @@ async function download() {
   await ffmpegHandler.download(
     bpm.value,
     offset.value,
+    trimEndPosition.value,
     exportQuality.value,
     doVolumeNormalization.value,
     'ogg',
@@ -186,6 +199,7 @@ async function downloadZip(metadata: {
   const maybeUInt8Array = await ffmpegHandler.download(
     bpm.value,
     offset.value,
+    trimEndPosition.value,
     exportQuality.value,
     doVolumeNormalization.value,
     'zip',
@@ -322,7 +336,7 @@ function copyDebugInformation() {
         <div>
           <h1 class="h2 mb-0 text-2xl! lg:text-4xl xl:mb-18">Align the beat.</h1>
         </div>
-        <div class="mx-6 flex items-end justify-start md:mx-12" prevent-user-select>
+        <div class="mx-6 flex items-end justify-between md:mx-12" prevent-user-select>
           <UValueEdit
             :value="draggingBPM"
             @change="onBPMChange"
@@ -358,6 +372,15 @@ function copyDebugInformation() {
               </span>
             </template>
           </UValueEdit>
+          <button
+            class="hover:text-primary inline-block translate-y-1 self-center"
+            tooltip="Mark to trim end here"
+            tooltip-position="left"
+            tooltip-primary
+            @click="setTrimEndMark"
+          >
+            <Scissors />
+          </button>
         </div>
         <USpectogram
           v-if="audioBuffer"
