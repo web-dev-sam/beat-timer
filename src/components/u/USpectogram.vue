@@ -236,7 +236,12 @@ function onNewEndMouseDown(event: MouseEvent) {
     if (state.newEndDragging && state.spectogramHandler) {
       const dragDelta = e.clientX - (state.newEndDragStart ?? 0)
       const currentTime = state.spectogramHandler.pxToSec(dragDelta)
-      trimEndPosition.value = Math.max(0, (trimEndPosition.value || 0) + currentTime * 1000)
+      const newPosition = (trimEndPosition.value || 0) + currentTime * 1000
+
+      trimEndPosition.value = Math.max(
+        Math.max(-visualOffset.value * 1000, 0),
+        Math.min(newPosition, props.audioBuffer.duration * 1000),
+      )
       state.newEndDragStart = e.clientX
     }
   }
@@ -244,6 +249,9 @@ function onNewEndMouseDown(event: MouseEvent) {
   const onMouseUp = () => {
     state.newEndDragging = false
     state.newEndDragStart = null
+    if (trimEndPosition.value != null && trimEndPosition.value <= 0) {
+      trimEndPosition.value = null
+    }
     document.removeEventListener('mousemove', onMouseMove)
     document.removeEventListener('mouseup', onMouseUp)
   }

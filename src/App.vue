@@ -38,8 +38,6 @@ import ZipModal from './components/ZipModal.vue'
 import { useLogger } from './utils/logger'
 
 // Plan:
-// v2.3.9
-//        Adding ffmpeg log to copy paste and ffmpeg errors to issue
 // v2.4   Add silence at end
 
 const ffmpegHandler = new FfmpegHandler()
@@ -189,7 +187,13 @@ function setTrimEndMark() {
     return
   }
 
-  trimEndPosition.value = currentTimeInS * 1000
+  // Convert to milliseconds for consistent comparison
+  const currentTimeMs = currentTimeInS * 1000
+  const totalDurationMs = totalDurationInS * 1000
+
+  // Ensure the end marker is within valid bounds (between 0 and total duration)
+  const validEndPosition = Math.max(0, Math.min(currentTimeMs, totalDurationMs))
+  trimEndPosition.value = validEndPosition
 }
 
 function goToDownloadStep() {
