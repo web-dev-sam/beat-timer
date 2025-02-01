@@ -382,13 +382,19 @@ defineExpose({
 
     <div
       class="start-tile -top-1/2 select-none"
-      tooltip-position="top"
-      tooltip="Exported song will end here"
       :style="{ left: newEndPosition + 'px' }"
       @mousedown="onNewEndMouseDown"
     >
       <div class="down-tile top-0"></div>
-      <div class="-translate-y-11">New End</div>
+      <div class="relative -translate-y-11">
+        New End
+        <button
+          class="remove-end absolute -top-2 -right-5 opacity-0 transition-opacity hover:opacity-100"
+          @click.stop="trimEndPosition = 0"
+        >
+          ×
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -490,5 +496,21 @@ defineExpose({
   background: white;
   color: var(--color-dark);
   z-index: 1;
+}
+
+.remove-end {
+  font-size: 1.2rem;
+  line-height: 1;
+  width: 1rem;
+  height: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: currentColor;
+}
+
+.start-tile:hover .remove-end {
+  opacity: 0.6 !important;
 }
 </style>
