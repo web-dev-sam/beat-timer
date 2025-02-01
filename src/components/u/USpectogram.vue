@@ -3,6 +3,7 @@ import { reactive, computed, watch, ref, onMounted, nextTick } from 'vue'
 import SpectogramHandler, { type BeatLine } from '@/utils/SpectogramHandler'
 import { debounce, songOffsetToSilencePadding } from '@/utils/utils'
 import useAudioSettings from '@/composables/useAudioSettings'
+import { X } from 'lucide-vue-next'
 
 const props = defineProps<{
   audioBuffer: AudioBuffer
@@ -392,7 +393,7 @@ defineExpose({
           class="remove-end absolute -top-2 -right-5 opacity-0 transition-opacity hover:opacity-100"
           @click.stop="trimEndPosition = 0"
         >
-          ×
+          <X class="h-4 w-4" />
         </button>
       </div>
     </div>
