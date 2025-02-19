@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import Metronome from '@/utils/Metronome'
 import Player from '@/utils/Player'
 
@@ -11,6 +11,7 @@ import { Speaker } from 'lucide-vue-next'
 
 const props = defineProps<{
   audioBuffer: AudioBuffer
+  step?: 'start' | 'edit' | 'export'
 }>()
 
 const emit = defineEmits<{
@@ -32,6 +33,15 @@ const state = reactive({
 
 const metronome = ref<Metronome>()
 const player = ref<Player>()
+
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.code === 'Space') {
+    event.preventDefault()
+    if (props.step === 'edit') {
+      play()
+    }
+  }
+}
 
 onMounted(async function () {
   const audioContext = new AudioContext()
@@ -56,11 +66,24 @@ onMounted(async function () {
   player.value.loadBuffer(props.audioBuffer)
   player.value.setVolume(state.volume / 2)
 
-  document.addEventListener('keydown', (event) => {
-    if (event.code === 'Space') {
-      state.isPlaying ? pause() : play()
+  if (props.step === 'edit') {
+    document.addEventListener('keydown', handleKeydown)
+  }
+})
+
+watch(
+  () => props.step,
+  (newStep, oldStep) => {
+    if (newStep === 'edit') {
+      document.addEventListener('keydown', handleKeydown)
+    } else {
+      document.removeEventListener('keydown', handleKeydown)
     }
-  })
+  },
+)
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', handleKeydown)
 })
 
 watch(
@@ -93,7 +116,7 @@ function toggleMetronome() {
 }
 
 function play() {
-  if (state.isPlaying) {
+  if (state.isPlaying || player.value?.isPlaying()) {
     pause()
     return
   }

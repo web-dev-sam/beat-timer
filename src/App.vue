@@ -507,6 +507,7 @@ function copyDebugInformation() {
         v-if="step === 'edit' && audioBuffer"
         ref="audio-player"
         :audio-buffer="audioBuffer"
+        :step="step"
         @metronome="onMetronomeBeat"
         @seek="onAudioPlayerSeek"
       />

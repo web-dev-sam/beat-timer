@@ -70,6 +70,8 @@ export default class Player {
       return
     }
     this.source!.stop()
+    this.source!.disconnect()
+    this.source = null
     this.pausedTime = this.context.currentTime - this.startTime
     this.started = false
   }
@@ -77,6 +79,8 @@ export default class Player {
   stop(): void {
     if (this.source) {
       this.source.stop(0)
+      this.source.disconnect()
+      this.source = null
       this.pausedTime = 0
       this.started = false
       this.onStop('player')
@@ -87,5 +91,9 @@ export default class Player {
     this.pause()
     this.pausedTime = time
     if (play) this.play()
+  }
+
+  isPlaying(): boolean {
+    return this.started
   }
 }
