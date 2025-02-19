@@ -73,14 +73,14 @@ function onEditClick() {
 
 <template>
   <div class="value-edit-wrapper text-left">
-    <div class="items-start flex gap-4" :class="reversed ? 'flex-col-reverse' : 'flex-col'">
+    <div class="flex items-start gap-4" :class="reversed ? 'flex-col-reverse' : 'flex-col'">
       <button @click="onEditClick"><Pencil /></button>
       <div>
         <div class="relative">
           <div class="flex items-center">
             <div class="w-20">
               <span class="h3 text-xl font-bold">{{ value }}</span>
-              <span class="ml-2 self-end text-muted-foreground">{{ type }}</span>
+              <span class="text-muted-foreground ml-2 self-end">{{ type }}</span>
             </div>
             <slot name="buttons"></slot>
           </div>

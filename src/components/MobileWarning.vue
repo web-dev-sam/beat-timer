@@ -5,7 +5,7 @@ const emit = defineEmits(['close'])
 </script>
 
 <template>
-  <div class="flex h-full items-center bg-dark transition-all">
+  <div class="bg-dark flex h-full items-center transition-all">
     <div class="-translate-y-8 space-y-4">
       <h1 class="text-2xl font-semibold">Be careful</h1>
       <p class="px-12 opacity-60">

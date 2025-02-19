@@ -188,7 +188,6 @@ export default class SpectogramHandler {
     return trimDurationInPX - this.a
   }
 
-
   setSegmentSize(segmentSize: number) {
     this.segmentSize = segmentSize
   }

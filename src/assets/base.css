@@ -33,8 +33,8 @@
   --color-current: currentColor;
 
   --font-*: initial;
-  --font-sans: Kanit, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-  'Helvetica Neue', Arial, sans-serif;
+  --font-sans: Kanit, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
 
   --radius-primary: 0.5rem;
 }
@@ -170,7 +170,7 @@ strong {
 
 [tooltip]::after {
   content: attr(tooltip);
-  @apply pointer-events-none absolute left-1/2 top-full w-max -translate-x-1/2 transform rounded-sm px-2 py-2 text-sm text-white opacity-0;
+  @apply pointer-events-none absolute top-full left-1/2 w-max -translate-x-1/2 transform rounded-sm px-2 py-2 text-sm text-white opacity-0;
 }
 
 [tooltip]:hover::after {
@@ -183,19 +183,19 @@ strong {
 
 [tooltip-position='left']::after {
   transform: translate(calc(-100% + 3.5rem), -1rem);
-  @apply left-0 top-1/2;
+  @apply top-1/2 left-0;
 }
 
 [tooltip-position='right']::after {
-  @apply left-full top-1/2 -translate-y-4 translate-x-2 transform;
+  @apply top-1/2 left-full -translate-y-4 translate-x-2 transform;
 }
 
 [tooltip-position='top']::after {
-  @apply bottom-full left-1/2 top-auto -translate-x-1/2 -translate-y-4 transform;
+  @apply top-auto bottom-full left-1/2 -translate-x-1/2 -translate-y-4 transform;
 }
 
 [tooltip-position='bottom']::after {
-  @apply left-1/2 top-full -translate-x-1/2 transform;
+  @apply top-full left-1/2 -translate-x-1/2 transform;
 }
 
 [prevent-user-select] {
@@ -218,7 +218,7 @@ strong {
 }
 
 ::-webkit-scrollbar-track {
-  @apply rounded-sm bg-purple-28;
+  @apply bg-purple-28 rounded-sm;
 }
 
 ::-webkit-scrollbar-thumb {

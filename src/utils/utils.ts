@@ -1,4 +1,4 @@
-import { BlobWriter, TextReader, Uint8ArrayReader, ZipWriter } from "@zip.js/zip.js"
+import { BlobWriter, TextReader, Uint8ArrayReader, ZipWriter } from '@zip.js/zip.js'
 
 export function hslToRgb(h: number, s: number, l: number): number[] {
   let r, g, b
@@ -103,78 +103,89 @@ export function useBPMFinder({
   }
 }
 
-export async function buildBeatSaberZip(metadata: {
-  songName: string
-  subtitle: string
-  songAuthor: string
-  levelAuthor: string
-  bpm: number
-}, audioData: Uint8Array) {
+export async function buildBeatSaberZip(
+  metadata: {
+    songName: string
+    subtitle: string
+    songAuthor: string
+    levelAuthor: string
+    bpm: number
+  },
+  audioData: Uint8Array,
+) {
   const zipWriter = new ZipWriter(new BlobWriter())
   const audioReader = new Uint8ArrayReader(audioData)
-  const explusReader = new TextReader(JSON.stringify({
-    "version": "3.3.0",
-    "bpmEvents": [],
-    "rotationEvents": [],
-    "basicBeatmapEvents": [],
-    "colorBoostBeatmapEvents": [],
-    "colorNotes": [],
-    "bombNotes": [],
-    "obstacles": [],
-    "sliders": [],
-    "burstSliders": [],
-    "waypoints": [],
-    "lightColorEventBoxGroups": [],
-    "lightRotationEventBoxGroups": [],
-    "lightTranslationEventBoxGroups": [],
-    "vfxEventBoxGroups": [],
-    "_fxEventsCollection": { "_il": [], "_fl": [] },
-    "basicEventTypesWithKeywords": { "d": [] },
-    "useNormalEventsAsCompatibleEvents": true
-  }))
-  const infodatReader = new TextReader(JSON.stringify({
-    "_version": "2.1.0",
-    "_songName": metadata.songName || "",
-    "_songSubName": metadata.subtitle || "",
-    "_songAuthorName": metadata.songAuthor || "",
-    "_levelAuthorName": metadata.levelAuthor || "",
-    "_beatsPerMinute": metadata.bpm || 120,
-    "_previewStartTime": 12,
-    "_previewDuration": 10,
-    "_songTimeOffset": 0,
-    "_shuffle": 0,
-    "_shufflePeriod": 0.5,
-    "_coverImageFilename": "cover.png",
-    "_songFilename": "song.ogg",
-    "_environmentName": "DefaultEnvironment",
-    "_allDirectionsEnvironmentName": "GlassDesertEnvironment",
-    "_environmentNames": [],
-    "_colorSchemes": [],
-    "_customData": {
-      "_editors": {
-        "_lastEditedBy": "BeatTimer",
-        "BeatTimer": {
-          "version": APP_VERSION
-        }
-      }
-    },
-    "_difficultyBeatmapSets": [
+  const explusReader = new TextReader(
+    JSON.stringify({
+      version: '3.3.0',
+      bpmEvents: [],
+      rotationEvents: [],
+      basicBeatmapEvents: [],
+      colorBoostBeatmapEvents: [],
+      colorNotes: [],
+      bombNotes: [],
+      obstacles: [],
+      sliders: [],
+      burstSliders: [],
+      waypoints: [],
+      lightColorEventBoxGroups: [],
+      lightRotationEventBoxGroups: [],
+      lightTranslationEventBoxGroups: [],
+      vfxEventBoxGroups: [],
+      _fxEventsCollection: { _il: [], _fl: [] },
+      basicEventTypesWithKeywords: { d: [] },
+      useNormalEventsAsCompatibleEvents: true,
+    }),
+  )
+  const infodatReader = new TextReader(
+    JSON.stringify(
       {
-        "_beatmapCharacteristicName": "Standard",
-        "_difficultyBeatmaps": [
+        _version: '2.1.0',
+        _songName: metadata.songName || '',
+        _songSubName: metadata.subtitle || '',
+        _songAuthorName: metadata.songAuthor || '',
+        _levelAuthorName: metadata.levelAuthor || '',
+        _beatsPerMinute: metadata.bpm || 120,
+        _previewStartTime: 12,
+        _previewDuration: 10,
+        _songTimeOffset: 0,
+        _shuffle: 0,
+        _shufflePeriod: 0.5,
+        _coverImageFilename: 'cover.png',
+        _songFilename: 'song.ogg',
+        _environmentName: 'DefaultEnvironment',
+        _allDirectionsEnvironmentName: 'GlassDesertEnvironment',
+        _environmentNames: [],
+        _colorSchemes: [],
+        _customData: {
+          _editors: {
+            _lastEditedBy: 'BeatTimer',
+            BeatTimer: {
+              version: APP_VERSION,
+            },
+          },
+        },
+        _difficultyBeatmapSets: [
           {
-            "_difficulty": "ExpertPlus",
-            "_difficultyRank": 9,
-            "_beatmapFilename": "ExpertPlusStandard.dat",
-            "_noteJumpMovementSpeed": 16,
-            "_noteJumpStartBeatOffset": -0.8,
-            "_beatmapColorSchemeIdx": 0,
-            "_environmentNameIdx": 0
-          }
-        ]
-      }
-    ]
-  }, null, 2))
+            _beatmapCharacteristicName: 'Standard',
+            _difficultyBeatmaps: [
+              {
+                _difficulty: 'ExpertPlus',
+                _difficultyRank: 9,
+                _beatmapFilename: 'ExpertPlusStandard.dat',
+                _noteJumpMovementSpeed: 16,
+                _noteJumpStartBeatOffset: -0.8,
+                _beatmapColorSchemeIdx: 0,
+                _environmentNameIdx: 0,
+              },
+            ],
+          },
+        ],
+      },
+      null,
+      2,
+    ),
+  )
   const bpminfoReader = new TextReader(`{
     "_version" : "2.0.0",
     "_songSampleCount" : 0,

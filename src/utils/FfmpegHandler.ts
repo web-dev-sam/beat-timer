@@ -1,8 +1,8 @@
-import { FFmpeg, type FileData } from '@ffmpeg/ffmpeg';
+import { FFmpeg, type FileData } from '@ffmpeg/ffmpeg'
 import { songOffsetToSilencePadding } from './utils'
 import { useLogger } from './logger'
-import { fetchFile, toBlobURL } from '@ffmpeg/util';
-import { useFooterProgress } from '@/composables/useFooterProgress';
+import { fetchFile, toBlobURL } from '@ffmpeg/util'
+import { useFooterProgress } from '@/composables/useFooterProgress'
 
 const { log } = useLogger()
 const { progress } = useFooterProgress()
@@ -11,9 +11,9 @@ export default class FfmpegHandler {
   private ffmpeg: FFmpeg
   private file: File | null
   private currentAudioBuffer: AudioBuffer | null
-  private abortController: AbortController;
-  public mutedProgress: boolean;
-  private ffmpegLogs: { type: string; message: string }[] = [];
+  private abortController: AbortController
+  public mutedProgress: boolean
+  private ffmpegLogs: { type: string; message: string }[] = []
 
   constructor() {
     this.ffmpeg = new FFmpeg()
@@ -29,11 +29,11 @@ export default class FfmpegHandler {
     await this.ffmpeg.load({
       coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
       wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-    });
+    })
 
     this.ffmpeg.on('log', ({ type, message }) => {
-      this.ffmpegLogs.push({ type, message });
-      if ("debug" in window) {
+      this.ffmpegLogs.push({ type, message })
+      if ('debug' in window) {
         console.log(type, message)
       }
     })
@@ -57,7 +57,7 @@ export default class FfmpegHandler {
     trimEndPosition: number | null,
     exportQuality: number,
     doVolumeNormalization: boolean,
-    type: "zip" | "ogg" = "ogg"
+    type: 'zip' | 'ogg' = 'ogg',
   ): Promise<Uint8Array | void> {
     const file = this.file
     if (!file) {
@@ -69,7 +69,7 @@ export default class FfmpegHandler {
     try {
       log('ffmpegDownloadBPM', bpm.toString())
       log('ffmpegDownloadPaddingDuration', paddingDuration.toString())
-      log('ffmpegDownloadTrimEndOffset', trimEndPosition?.toString() ?? "null")
+      log('ffmpegDownloadTrimEndOffset', trimEndPosition?.toString() ?? 'null')
       log('ffmpegDownloadExportQuality', exportQuality.toString())
       log('ffmpegDownloadDoVolumeNormalization', doVolumeNormalization.toString())
       if (paddingDuration >= 0) {
@@ -80,7 +80,7 @@ export default class FfmpegHandler {
           exportQuality,
           doVolumeNormalization,
         )
-        if (type === "ogg") {
+        if (type === 'ogg') {
           result.download()
         } else {
           return result.fileData
@@ -93,7 +93,7 @@ export default class FfmpegHandler {
           exportQuality,
           doVolumeNormalization,
         )
-        if (type === "ogg") {
+        if (type === 'ogg') {
           result.download()
         } else {
           return result.fileData
@@ -125,32 +125,46 @@ export default class FfmpegHandler {
       ? '[0:a][1:a]concat=n=2:v=0:a=1[concat];[concat]loudnorm=I=-14:LRA=11:TP=-1.5[audio_out]'
       : '[0:a][1:a]concat=n=2:v=0:a=1[audio_out]'
     this.mutedProgress = false
-    await this.ffmpeg.exec([
-      '-f', 'lavfi',
-      '-vn',
-      '-t', this.formatDuration(silenceDuration),
-      '-i', `anullsrc=channel_layout=stereo:sample_rate=44100`,
-      ...(
-        trimEndPosition != null
-          ? ['-t', this.formatDuration((trimEndPosition / 1000))]
-          : []),
-      '-i', inputFileName,
-      '-filter_complex', filterComplex,
-      '-map', '[audio_out]',
-      '-c:a', 'libvorbis',
-      '-q:a', exportQuality.toString(),
-      outputFileName
-    ], undefined, { signal: this.abortController.signal })
+    await this.ffmpeg.exec(
+      [
+        '-f',
+        'lavfi',
+        '-vn',
+        '-t',
+        this.formatDuration(silenceDuration),
+        '-i',
+        `anullsrc=channel_layout=stereo:sample_rate=44100`,
+        ...(trimEndPosition != null ? ['-t', this.formatDuration(trimEndPosition / 1000)] : []),
+        '-i',
+        inputFileName,
+        '-filter_complex',
+        filterComplex,
+        '-map',
+        '[audio_out]',
+        '-c:a',
+        'libvorbis',
+        '-q:a',
+        exportQuality.toString(),
+        outputFileName,
+      ],
+      undefined,
+      { signal: this.abortController.signal },
+    )
 
     // Above command breaks metadata for some reason, soooo... YEEET!!
     await this.ffmpeg.exec([
-      '-i', outputFileName,
-      '-c', 'copy',
-      '-write_xing', '0',
-      '-fflags', '+bitexact',
-      '-map_metadata', '',
-      'fixed_' + outputFileName
-    ]);
+      '-i',
+      outputFileName,
+      '-c',
+      'copy',
+      '-write_xing',
+      '0',
+      '-fflags',
+      '+bitexact',
+      '-map_metadata',
+      '',
+      'fixed_' + outputFileName,
+    ])
     this.mutedProgress = true
 
     const paddedData = await this.ffmpeg.readFile('fixed_' + outputFileName)
@@ -161,7 +175,7 @@ export default class FfmpegHandler {
 
     return {
       download: () => this.downloadAudio(paddedData, outputFileName),
-      fileData: paddedData as Uint8Array
+      fileData: paddedData as Uint8Array,
     }
   }
 
@@ -181,35 +195,38 @@ export default class FfmpegHandler {
 
     const trimStart = beginningTrim / 1000
     this.mutedProgress = false
-    await this.ffmpeg.exec([
-      '-i', inputFileName,
-      '-vn',
-      '-ss', this.formatDuration(trimStart),
-      ...(
-        trimEndPosition != null
-          ? ['-to', this.formatDuration(trimEndPosition / 1000)]
-          : []),
-      doVolumeNormalization ? '-filter:a' : '',
-      doVolumeNormalization ? 'loudnorm=I=-14:LRA=11:TP=-1.5' : '',
-      '-c:a', 'libvorbis',
-      '-q:a', exportQuality.toString(),
-      outputFileName,
-    ].filter(Boolean), undefined, { signal: this.abortController.signal })
+    await this.ffmpeg.exec(
+      [
+        '-i',
+        inputFileName,
+        '-vn',
+        '-ss',
+        this.formatDuration(trimStart),
+        ...(trimEndPosition != null ? ['-to', this.formatDuration(trimEndPosition / 1000)] : []),
+        doVolumeNormalization ? '-filter:a' : '',
+        doVolumeNormalization ? 'loudnorm=I=-14:LRA=11:TP=-1.5' : '',
+        '-c:a',
+        'libvorbis',
+        '-q:a',
+        exportQuality.toString(),
+        outputFileName,
+      ].filter(Boolean),
+      undefined,
+      { signal: this.abortController.signal },
+    )
     this.mutedProgress = true
-    const trimmedData = await this.ffmpeg.readFile(outputFileName) as Uint8Array
+    const trimmedData = (await this.ffmpeg.readFile(outputFileName)) as Uint8Array
 
     this.ffmpeg.deleteFile(inputFileName)
     this.ffmpeg.deleteFile(outputFileName)
 
     return {
       download: () => this.downloadAudio(trimmedData, outputFileName),
-      fileData: trimmedData as Uint8Array
+      fileData: trimmedData as Uint8Array,
     }
   }
 
-  async trimAndNormalizeAudio(
-    file: File,
-  ): Promise<AudioBuffer> {
+  async trimAndNormalizeAudio(file: File): Promise<AudioBuffer> {
     const name = file.name
     const trimmedName = 'song.ogg'
     const dataArray = await fetchFile(file)
@@ -219,15 +236,24 @@ export default class FfmpegHandler {
     const maxDuration = 5 * 60
 
     this.mutedProgress = false
-    await this.ffmpeg.exec([
-      '-i', name,
-      '-vn',
-      '-t', this.formatDuration(maxDuration),
-      '-filter:a', 'loudnorm=I=-14:LRA=11:TP=-1.5',
-      '-c:a', 'libvorbis',
-      '-q:a', '6',
-      trimmedName,
-    ], undefined, { signal: this.abortController.signal })
+    await this.ffmpeg.exec(
+      [
+        '-i',
+        name,
+        '-vn',
+        '-t',
+        this.formatDuration(maxDuration),
+        '-filter:a',
+        'loudnorm=I=-14:LRA=11:TP=-1.5',
+        '-c:a',
+        'libvorbis',
+        '-q:a',
+        '6',
+        trimmedName,
+      ],
+      undefined,
+      { signal: this.abortController.signal },
+    )
     this.mutedProgress = true
 
     const trimmedData = await this.ffmpeg.readFile(trimmedName)
@@ -250,7 +276,7 @@ export default class FfmpegHandler {
   }
 
   getFfmpegLogs(): string {
-    return this.ffmpegLogs.map(log => `[${log.type}] ${log.message}`).join('\n')
+    return this.ffmpegLogs.map((log) => `[${log.type}] ${log.message}`).join('\n')
   }
 
   extractTimeInMs(prefix: 'time=' | 'Duration: ', ffmpegOutput: string) {
@@ -268,12 +294,11 @@ export default class FfmpegHandler {
     return hoursMs + minutesMs + Math.round(secondsMs)
   }
 
-
   getDuration(dataArray: Uint8Array) {
     return new Promise((resolve, reject) => {
       const hiddenAudio = document.createElement('audio')
       const blob = new Blob([dataArray.buffer], { type: 'audio/wav' })
-      console.log("blob", blob.size)
+      console.log('blob', blob.size)
       const objectUrl = URL.createObjectURL(blob)
       hiddenAudio.src = objectUrl
 

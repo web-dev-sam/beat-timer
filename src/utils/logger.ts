@@ -43,6 +43,6 @@ export function useLogger() {
   return {
     log,
     copy,
-    openGithubIssue
+    openGithubIssue,
   }
 }

@@ -32,7 +32,7 @@ function toggle() {
     }"
   >
     <div
-      class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-200"
+      class="absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-transform duration-200"
       :class="{
         'translate-x-5': model,
       }"

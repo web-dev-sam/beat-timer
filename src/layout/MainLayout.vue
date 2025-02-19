@@ -34,7 +34,7 @@ function onDrop(files: File[] | null) {
 
 <template>
   <div
-    class="h-screen bg-purple-28 transition-all"
+    class="bg-purple-28 h-screen transition-all"
     ref="drop-zone"
     :style="{
       padding: !deactivateDropZone && isOverDropZone ? '0.5rem' : '0',
@@ -46,7 +46,7 @@ function onDrop(files: File[] | null) {
     />
     <div
       v-else
-      class="flex h-full flex-col bg-dark transition-all"
+      class="bg-dark flex h-full flex-col transition-all"
       :style="{
         'border-radius': isOverDropZone ? '0.5rem' : '0',
       }"
@@ -55,10 +55,10 @@ function onDrop(files: File[] | null) {
     </div>
 
     <div
-      class="light pointer-events-none absolute left-0 top-0 z-10 h-[100vh] w-[100vw] bg-primary opacity-20"
+      class="light bg-primary pointer-events-none absolute top-0 left-0 z-10 h-[100vh] w-[100vw] opacity-20"
     ></div>
     <div
-      class="light-cover pointer-events-none absolute top-0 z-20 h-screen w-screen bg-dark opacity-100"
+      class="light-cover bg-dark pointer-events-none absolute top-0 z-20 h-screen w-screen opacity-100"
     ></div>
   </div>
 </template>

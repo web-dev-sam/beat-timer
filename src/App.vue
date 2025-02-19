@@ -6,7 +6,7 @@ import { guess } from 'web-audio-beat-detector'
 import { buildBeatSaberZip, songOffsetToSilencePadding, useBPMFinder } from '@/utils/utils'
 import { useMouseInElement, useKeyModifier } from '@vueuse/core'
 import useAudioSettings from '@/composables/useAudioSettings'
-import { useFooterProgress } from './composables/useFooterProgress'
+import { useFooterProgress } from '@/composables/useFooterProgress'
 
 import {
   ChevronDown,
@@ -34,11 +34,8 @@ import UValueEdit from '@/components/u/UValueEdit.vue'
 import URange from '@/components/u/URange.vue'
 import UCheckbox from '@/components/u/UCheckbox.vue'
 import MainLayout from '@/layout/MainLayout.vue'
-import ZipModal from './components/ZipModal.vue'
-import { useLogger } from './utils/logger'
-
-// Plan:
-// v2.4   Add silence at end
+import ZipModal from '@/components/ZipModal.vue'
+import { useLogger } from '@/utils/logger'
 
 const ffmpegHandler = new FfmpegHandler()
 await ffmpegHandler.load()
