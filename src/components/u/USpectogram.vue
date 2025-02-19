@@ -3,7 +3,7 @@ import { reactive, computed, watch, ref, onMounted, nextTick } from 'vue'
 import SpectogramHandler, { type BeatLine } from '@/utils/SpectogramHandler'
 import { debounce, songOffsetToSilencePadding } from '@/utils/utils'
 import useAudioSettings from '@/composables/useAudioSettings'
-import { X } from 'lucide-vue-next'
+import { X, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
 const props = defineProps<{
   audioBuffer: AudioBuffer
@@ -289,6 +289,22 @@ function updateOnOffsetDragNormal(dragChange: number) {
   return newOffset
 }
 
+function jumpBeatLeft() {
+  if (!state.spectogramHandler || !bpm.value) return
+  const beatDuration = 60 / bpm.value
+  const newOffset = offset.value - beatDuration * 1000
+  offset.value = newOffset
+  draggingOffset.value = newOffset
+}
+
+function jumpBeatRight() {
+  if (!state.spectogramHandler || !bpm.value) return
+  const beatDuration = 60 / bpm.value
+  const newOffset = offset.value + beatDuration * 1000
+  offset.value = newOffset
+  draggingOffset.value = newOffset
+}
+
 function onCanvasMouseEnter() {
   state.hovering = true
 }
@@ -397,14 +413,20 @@ defineExpose({
       <div></div>
     </div>
     <div
-      class="start-tile bottom-0 select-none"
+      class="start-tile relative bottom-0 select-none"
       tooltip-position="bottom"
       tooltip="Exported song will start here"
       :style="{ left: newStartPosition + 'px' }"
       @mousedown="onNewStartMouseDown"
     >
+      <button class="beat-jump-btn left-btn" @click.stop="jumpBeatLeft">
+        <ChevronLeft class="h-4 w-4" />
+      </button>
       <div class="up-tile top-0"></div>
       <div>New Start</div>
+      <button class="beat-jump-btn right-btn" @click.stop="jumpBeatRight">
+        <ChevronRight class="h-4 w-4" />
+      </button>
     </div>
 
     <div
@@ -480,6 +502,7 @@ defineExpose({
   cursor: grab;
   cursor: -moz-grab;
   cursor: -webkit-grab;
+  padding: 0 32px;
 }
 
 .beat-line-wrapper {
@@ -538,7 +561,38 @@ defineExpose({
   color: currentColor;
 }
 
-.start-tile:hover .remove-end {
-  opacity: 0.6 !important;
+.beat-jump-btn {
+  position: absolute;
+  bottom: 0;
+  transform: translateY(-0.12rem);
+  background: white;
+  color: var(--color-dark);
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.2s;
+  pointer-events: auto;
+}
+
+.start-tile:hover .beat-jump-btn {
+  opacity: 1;
+}
+
+.beat-jump-btn:hover {
+  opacity: 0.85 !important;
+  transform: translateY(-0.12rem) scale(1.1);
+}
+
+.left-btn {
+  left: -0.2rem;
+}
+
+.right-btn {
+  right: -0.2rem;
 }
 </style>
