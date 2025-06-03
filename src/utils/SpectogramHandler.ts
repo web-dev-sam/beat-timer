@@ -204,71 +204,111 @@ export default class SpectogramHandler {
       }
 
       const fftSize = this.segmentSize
-      const subsectionData = this.audioBuffer.getChannelData(0)
-      const numSegments = Math.floor(
-        (subsectionData.length - this.segmentOverlap) / (fftSize - this.segmentOverlap),
-      )
+      if (fftSize <= 0 || (fftSize & (fftSize - 1)) !== 0) {
+        console.error(`Invalid FFT size: ${fftSize}. Must be a power of 2 (e.g., 256, 512, 1024, 2048)`)
+        resolve(null)
+        return
+      }
+
+      const originalChannelData = this.audioBuffer.getChannelData(0)
+      const subsectionData = new Float32Array(originalChannelData.length)
+      for (let i = 0; i < originalChannelData.length; i++) {
+        subsectionData[i] = originalChannelData[i]!
+      }
+
+      const hopSize = fftSize - this.segmentOverlap
+      const maxSegments = Math.floor((subsectionData.length - fftSize) / hopSize) + 1
+      const numSegments = Math.max(0, maxSegments);
 
       this.canvas.width = numSegments
       this.zoom(this.currentZoom)
-
       const width = this.canvas.width
       const height = this.canvas.height
       const imageData = this.canvasContext.createImageData(width, height)
       const colorMap = [...Array(256).keys()].map(this.getColorFromIntensity)
-
       let segmentsProcessed = 0
 
-      // Helper function to dispatch work to a worker
-      const dispatchWork = (worker: Worker, segmentIndex: number) => {
-        const startIdx = segmentIndex * (fftSize - this.segmentOverlap)
-        const segment = subsectionData.slice(startIdx, startIdx + fftSize)
-        if (subsectionData.length > startIdx + fftSize) {
-          worker.postMessage({
-            segment,
-            height,
-            segmentIndex: segmentIndex, // send the index to keep track in the worker
-          })
-        }
+      if (numSegments <= 0) {
+        console.warn("No full segments fit within the audio data")
+        resolve(this.canvas.toDataURL())
+        return
       }
 
-      // Setup workers and initial message posting
+      const dispatchWork = (worker: Worker, segmentIndex: number) => {
+        if (segmentIndex >= numSegments) {
+          segmentsProcessed++;
+          if (segmentsProcessed === numSegments) {
+            this.canvasContext.putImageData(imageData, 0, 0)
+            Promise.resolve().then(() => {
+              this.workers.forEach((w) => w.terminate())
+              this.workers = this.initWorkers()
+            })
+            resolve(this.canvas.toDataURL())
+          }
+          return;
+        }
+
+        const hopSize = fftSize - this.segmentOverlap
+        const startIdx = segmentIndex * hopSize
+
+        if (startIdx + fftSize > subsectionData.length) {
+          console.warn(`Segment ${segmentIndex}: would exceed data bounds (startIdx: ${startIdx}, fftSize: ${fftSize}, dataLength: ${subsectionData.length})`)
+          segmentsProcessed++;
+          return;
+        }
+
+        const segment = new Float32Array(fftSize)
+        for (let i = 0; i < fftSize; i++) {
+          segment[i] = subsectionData[startIdx + i]!
+        }
+
+        worker.postMessage({
+          segment,
+          height,
+          segmentIndex: segmentIndex,
+          fftSize: fftSize,
+        })
+      }
+
       for (const [i, worker] of this.workers.entries()) {
         worker.onmessage = (e) => {
           const { result, segmentIndex } = e.data
 
-          // Process the `result` array to extract and use magnitudes
           for (let j = 0; j < result.length; j++) {
             const y = height - 1 - j
             const intensity = result[j]
             const [red, green, blue] = colorMap[intensity] || [0, 0, 0]
             const idx = (y * width + segmentIndex) * 4
-
             imageData.data[idx] = red!
             imageData.data[idx + 1] = green!
             imageData.data[idx + 2] = blue!
             imageData.data[idx + 3] = 255
           }
-
           segmentsProcessed++
           if (segmentsProcessed === numSegments) {
             this.canvasContext.putImageData(imageData, 0, 0)
-            new Promise(() => {
+            Promise.resolve().then(() => {
               this.workers.forEach((w) => w.terminate())
               this.workers = this.initWorkers()
             })
             resolve(this.canvas.toDataURL())
           } else {
-            dispatchWork(worker, segmentIndex + this.workers.length)
+            const nextSegmentIndex = segmentIndex + this.workers.length;
+            dispatchWork(worker, nextSegmentIndex);
           }
         }
-        // Dispatch initial work
+
+        worker.onerror = (error) => {
+          console.error('Worker error for segment', i, error)
+        }
+
         if (i < numSegments) {
           dispatchWork(worker, i)
         }
       }
     })
   }
+
 
   public canvasToTransparentImage(): string {
     const imageData = this.canvasContext.getImageData(0, 0, this.canvas.width, this.canvas.height)
