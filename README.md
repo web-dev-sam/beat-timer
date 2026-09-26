@@ -12,7 +12,7 @@ _Easily add silence or trim the beginning of your song so it starts at the right
 &nbsp;
 
 ## Why does this exist?
-1. Mappers of rhythm games like BeatSaber shouldn't need an audio editor like Audacity or ArrowVortex just to fix where a song starts.
+1. Mappers of rhythm games like BeatSaber would otherwise need an audio editor like Audacity or ArrowVortex just to fix where a song starts.
 2. It runs entirely in the browser using WebAssembly ffmpeg.
 
 ## How it looks
@@ -21,13 +21,13 @@ _Easily add silence or trim the beginning of your song so it starts at the right
 
 ## About
 
-Beat Timer is mainly built to allow mappers of rythm games like BeatSaber to easily add silence or trim their audio at the beginning of their song to make it start at the right time without having to do it manually with an audio editor like Audacity and ArrowVortex.
+Beat Timer is mainly built to allow mappers of rhythm games like BeatSaber to easily add silence or trim audio at the beginning of their song to make it start at the right time without installing an audio editor like Audacity and ArrowVortex.
 
 ## How to use it
 1. Go to the [website](https://beat-timer.webry.com/).
 2. If you have difficulties check the help menu on top left.
 
-## How to develop it
+## Development
 1. Clone the repository
 2. Install dependencies with `npm install`
 3. Run the development server with `npm run dev`
