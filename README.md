@@ -12,8 +12,7 @@ _Easily add silence or trim the beginning of your song so it starts at the right
 &nbsp;
 
 ## Why does this exist?
-1. Mappers of rhythm games like BeatSaber would otherwise need an audio editor like Audacity or ArrowVortex just to fix where a song starts.
-2. It runs entirely in the browser using WebAssembly ffmpeg.
+Mappers of rhythm games like BeatSaber would otherwise need an audio editor like Audacity or ArrowVortex just to fix where a song starts.
 
 ## How it looks
 

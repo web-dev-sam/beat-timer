@@ -8,10 +8,7 @@
       "alt": "Open"
     }
   ],
-  "why": [
-    "Mappers of rhythm games like BeatSaber would otherwise need an audio editor like Audacity or ArrowVortex just to fix where a song starts.",
-    "It runs entirely in the browser using WebAssembly ffmpeg."
-  ],
+  "why": "Mappers of rhythm games like BeatSaber would otherwise need an audio editor like Audacity or ArrowVortex just to fix where a song starts.",
   "sections": [
     {
       "title": "How it looks",
